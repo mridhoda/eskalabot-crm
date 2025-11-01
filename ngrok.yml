@@ -1,0 +1,9 @@
+# Contoh konfigurasi ngrok (opsional)
+# Simpan sebagai ngrok.yml, lalu jalankan:
+#   ngrok start --all --config=ngrok.yml
+version: "2"
+authtoken: YOUR_NGROK_AUTHTOKEN
+tunnels:
+  api:
+    proto: http
+    addr: 5000
