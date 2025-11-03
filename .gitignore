@@ -11,6 +11,11 @@ web/dist/
 web/.env
 web/.env.*.local
 web/*.local
+server/node_modules/
+server/uploads/
+# Optional server env variants
+server/.env.local
+server/.env.*.local
 
 # Logs
 logs
