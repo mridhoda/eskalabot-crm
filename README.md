@@ -1,13 +1,13 @@
-# Chatbot CRM - React + Express + Mongo + ngrok
+# Chatbot CRM - React + Express + Mongo + Cloudflare Tunnel
 
-> Starter project yang siap dijalankan untuk **Chatbot CRM seperti Cekat.ai** sesuai brief Anda: React (Vite) frontend, Express backend, MongoDB (Mongoose), OTP email verification, role Human Agent (Agent/Super Agent), AI Agents + test UI, Connected Platforms, Inbox/Chats, dan **webhook via ngrok**.
+> Starter project yang siap dijalankan untuk **Chatbot CRM seperti Cekat.ai** sesuai brief Anda: React (Vite) frontend, Express backend, MongoDB (Mongoose), OTP email verification, role Human Agent (Agent/Super Agent), AI Agents + test UI, Connected Platforms, Inbox/Chats, dan **webhook via Cloudflare Tunnel**.
 
 ## Arsitektur
 
 - `web/` — Frontend React (Vite). UI putih-oranye, animasi halus, sidebar **expand on hover**.
 - `server/` — Backend Express + MongoDB. Auth + OTP, JWT, AI Agents, Platforms, Chats/Messages, Webhooks, Analytics, Billing, Profile.
 - `docker-compose.yml` — Opsional untuk MongoDB (dev).
-- `ngrok.yml` — Contoh konfigurasi ngrok (opsional).
+- `CLOUDFLARE_TUNNEL_GUIDE.md` — Cara expose backend via Cloudflare Tunnel.
 
 ---
 
@@ -74,27 +74,23 @@ Akses UI di URL yang ditampilkan (mis. `http://localhost:5173`).
 
 ---
 
-## 3) Konfigurasi ngrok (Webhook)
+## 3) Konfigurasi Cloudflare Tunnel (Webhook)
 
-1. **Install ngrok**: https://ngrok.com/download  
-2. **Authtoken**:  
+1. **Install Cloudflared**: https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/downloads/
+2. **Quick Tunnel** (paling cepat):
    ```bash
-   ngrok config add-authtoken <YOUR_NGROK_AUTHTOKEN>
+   cloudflared tunnel --url http://localhost:5000
    ```
-3. **Expose backend (port 5000)**:
-   ```bash
-   ngrok http 5000
-   ```
-4. Ambil **Forwarding URL** (mis. `https://abc123.ngrok.app`) dan set di `.env` backend:
+   Simpan URL `https://*.trycloudflare.com` yang muncul di log.
+3. **Set `.env` backend**:
    ```env
-   PUBLIC_BASE_URL=https://abc123.ngrok.app
+   PUBLIC_BASE_URL=https://example.trycloudflare.com
    ```
-5. **Webhook endpoint** bawaan:
+4. **Webhook endpoint** bawaan:
    - Generic: `POST /webhook/:platform` (contoh: `/webhook/telegram`)
    - Telegram-style sample (opsional): `POST /webhooks/telegram/:botId/:secret?` (contoh path saja)
 
-> Setelah `PUBLIC_BASE_URL` di-set, Anda bisa mendaftarkan webhook di platform sesuai dokumentasinya masing-masing dengan URL:  
-> `https://abc123.ngrok.app/webhook/<platform>`
+> Untuk setup Named Tunnel (URL stabil + kontrol akses), lihat `CLOUDFLARE_TUNNEL_GUIDE.md`.
 
 ---
 
@@ -153,7 +149,7 @@ Role Human Agent:
 - **Analytics**: rata-rata chat per hari/minggu (dummy aggregate dari messages).
 - **Connected Platforms**: simpan token/id akun; tampil daftar.
 - **AI Agents**: CRUD + knowledge source URL/teks/PDF (metadata disimpan, implementasi retrieval sederhana).
-- **Webhook (ngrok)**: `POST /webhook/:platform` → membuat contact/chat & balas via AI service/fallback.
+- **Webhook (via Cloudflare Tunnel)**: `POST /webhook/:platform` → membuat contact/chat & balas via AI service/fallback.
 
 ---
 

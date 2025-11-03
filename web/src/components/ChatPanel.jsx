@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react'
+import React, { useEffect, useState, useRef, useCallback } from 'react'
 import api from '../api'
 
 function MessageFooter({ message, selected, user }) {
@@ -24,6 +24,7 @@ export default function ChatPanel({ selected, reload, onChatUpdate }) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
   const fileInputRef = useRef(null);
+  const endRef = useRef(null)
 
   const [user] = useState(() => {
     try {
@@ -33,19 +34,35 @@ export default function ChatPanel({ selected, reload, onChatUpdate }) {
     }
   })
 
-  const loadMessages = async () => {
-    if (!selected?._id) return;
-    const r = await api.get(`/chats/${selected._id}/messages`);
+  const selectedId = selected?._id;
+
+  const loadMessages = useCallback(async () => {
+    if (!selectedId) return;
+    const r = await api.get(`/chats/${selectedId}/messages`);
     setMessages(r.data);
-  };
+  }, [selectedId]);
 
   useEffect(() => {
-    loadMessages();
-  }, [selected])
+    loadMessages()
+  }, [loadMessages])
+
+  useEffect(() => {
+    if (endRef.current) {
+      endRef.current.scrollIntoView({ behavior: 'smooth' })
+    }
+  }, [messages])
+
+  useEffect(() => {
+    if (!selectedId) return
+    const interval = setInterval(() => {
+      loadMessages()
+    }, 4000)
+    return () => clearInterval(interval)
+  }, [selectedId, loadMessages])
 
   const send = async () => {
-    if (!text) return
-    await api.post(`/chats/${selected._id}/send`, { text })
+    if (!selectedId || !text) return
+    await api.post(`/chats/${selectedId}/send`, { text })
     setText('')
     loadMessages();
     reload?.()
@@ -53,7 +70,7 @@ export default function ChatPanel({ selected, reload, onChatUpdate }) {
 
   const handleFileSelected = async (event) => {
     const file = event.target.files[0];
-    if (!file) return;
+    if (!file || !selectedId) return;
 
     setIsUploading(true);
     const formData = new FormData();
@@ -69,7 +86,7 @@ export default function ChatPanel({ selected, reload, onChatUpdate }) {
       const { filePath, originalName } = uploadResponse.data;
 
       // 2. Send the message with the attachment URL
-      await api.post(`/chats/${selected._id}/send`, {
+      await api.post(`/chats/${selectedId}/send`, {
         text: `File: ${originalName}`,
         attachment: {
           url: filePath,
@@ -93,9 +110,10 @@ export default function ChatPanel({ selected, reload, onChatUpdate }) {
   };
 
   const takeover = async () => {
+    if (!selectedId) return
     setIsSubmitting(true)
     try {
-      const r = await api.post(`/chats/${selected._id}/takeover`)
+      const r = await api.post(`/chats/${selectedId}/takeover`)
       onChatUpdate(r.data)
     } finally {
       setIsSubmitting(false)
@@ -103,9 +121,10 @@ export default function ChatPanel({ selected, reload, onChatUpdate }) {
   }
 
   const resolve = async () => {
+    if (!selectedId) return
     setIsSubmitting(true)
     try {
-      const r = await api.post(`/chats/${selected._id}/resolve`)
+      const r = await api.post(`/chats/${selectedId}/resolve`)
       onChatUpdate(r.data)
     } finally {
       setIsSubmitting(false)
@@ -173,8 +192,12 @@ export default function ChatPanel({ selected, reload, onChatUpdate }) {
           gap: 8,
         }}
       >
-        {messages.map((m) => (
-          <div key={m._id} className={`msg-wrap ${m.from}`}>
+        {messages.map((m, idx) => (
+          <div
+            key={m._id}
+            className={`msg-wrap ${m.from}`}
+            ref={idx === messages.length - 1 ? endRef : null}
+          >
             <div className={`bbl ${m.from}`}>
               {m.text}
               {m.attachment && (

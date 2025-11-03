@@ -70,12 +70,29 @@ function Inbox() {
   const load = useCallback(async () => {
     const r = await api.get('/chats', { params: filters })
     setChats(r.data)
+    setSelected((prev) => {
+      if (!prev?._id) return prev
+      const updated = r.data.find((chat) => chat._id === prev._id)
+      return updated || prev
+    })
   }, [filters])
 
-  // Reload chats when filters change
   useEffect(() => {
     load()
-  }, [filters, load])
+  }, [load])
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      load()
+    }, 4000)
+    return () => clearInterval(interval)
+  }, [load])
+
+  useEffect(() => {
+    const handleFocus = () => load()
+    window.addEventListener('focus', handleFocus)
+    return () => window.removeEventListener('focus', handleFocus)
+  }, [load])
 
   const handleContactUpdate = (updatedContact) => {
     const newChats = chats.map((c) => {

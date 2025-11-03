@@ -93,7 +93,7 @@ router.post('/telegram', async (req, res) => {
     if (text) {
       await Message.create({
         chatId: chat._id,
-        workspaceId: platform.userId, // <-- FIX: Add workspaceId
+        workspaceId: platform.workspaceId,
         from: 'user',
         text,
         createdAt: new Date(),
@@ -111,7 +111,7 @@ router.post('/telegram', async (req, res) => {
     if (isNewChat) {
         const processedWelcome = welcome.replace('{{name}}', contact.name);
         await tgSend(platform.token, chatId, processedWelcome);
-        await Message.create({ chatId: chat._id, workspaceId: platform.userId, from: 'ai', text: processedWelcome, createdAt: new Date() });
+        await Message.create({ chatId: chat._id, workspaceId: platform.workspaceId, from: 'ai', text: processedWelcome, createdAt: new Date() });
 
         if (agent && agent.stickerUrl) {
             try {
@@ -135,7 +135,7 @@ router.post('/telegram', async (req, res) => {
         }
         await Message.create({ 
           chatId: chat._id, 
-          workspaceId: platform.userId, 
+          workspaceId: platform.workspaceId, 
           from: 'ai', 
           text: replyText, 
           attachment: attachment, 
@@ -168,7 +168,7 @@ router.post('/telegram', async (req, res) => {
       // simpan pesan AI
       await Message.create({ 
         chatId: chat._id, 
-        workspaceId: platform.userId, 
+        workspaceId: platform.workspaceId, 
         from: 'ai', 
         text: replyText, 
         attachment: attachment, // Save attachment info
@@ -270,7 +270,7 @@ router.post('/meta', async (req, res) => {
 
             await Message.create({
               chatId: chat._id,
-              workspaceId: platform.userId,
+              workspaceId: platform.workspaceId,
               from: 'user',
               text,
               createdAt: new Date(),
@@ -285,7 +285,7 @@ router.post('/meta', async (req, res) => {
             if (isNewChat) {
               const processedWelcome = welcome.replace('{{name}}', contact.name);
               await waSend(platform.token, fromPhoneNumberId, from, processedWelcome);
-              await Message.create({ chatId: chat._id, workspaceId: platform.userId, from: 'ai', text: processedWelcome, createdAt: new Date() });
+              await Message.create({ chatId: chat._id, workspaceId: platform.workspaceId, from: 'ai', text: processedWelcome, createdAt: new Date() });
             }
 
             if (text && (!isNewChat || text.toLowerCase() !== '/start')) {
@@ -314,7 +314,7 @@ router.post('/meta', async (req, res) => {
 
               await Message.create({ 
                 chatId: chat._id, 
-                workspaceId: platform.userId, 
+                workspaceId: platform.workspaceId, 
                 from: 'ai', 
                 text: replyText, 
                 attachment: attachment, // Save attachment info
@@ -414,7 +414,7 @@ router.post('/meta', async (req, res) => {
 
             await Message.create({
               chatId: chat._id,
-              workspaceId: platform.userId,
+              workspaceId: platform.workspaceId,
               from: 'user',
               text,
               createdAt: new Date(),
@@ -431,7 +431,7 @@ router.post('/meta', async (req, res) => {
               console.log(`[meta] sending welcome message to ${from}: ${processedWelcome}`);
               await igSend(platform.token, from, processedWelcome);
               console.log('[meta] welcome message sent.');
-              await Message.create({ chatId: chat._id, workspaceId: platform.userId, from: 'ai', text: processedWelcome, createdAt: new Date() });
+              await Message.create({ chatId: chat._id, workspaceId: platform.workspaceId, from: 'ai', text: processedWelcome, createdAt: new Date() });
             }
 
             if (text && (!isNewChat || text.toLowerCase() !== '/start')) {
@@ -449,7 +449,7 @@ router.post('/meta', async (req, res) => {
               console.log('[meta] AI reply sent.');
               await Message.create({ 
                 chatId: chat._id, 
-                workspaceId: platform.userId, 
+                workspaceId: platform.workspaceId, 
                 from: 'ai', 
                 text: replyText, 
                 attachment: attachment, // Save attachment info
