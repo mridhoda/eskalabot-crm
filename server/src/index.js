@@ -9,7 +9,7 @@ import userRoutes from './routes/users.js';
 import platformRoutes from './routes/platforms.js';
 import agentRoutes from './routes/agents.js';
 import chatRoutes from './routes/chats.js';
-import webhookRoutes from './routes/webhooks.js';
+import webhookRoutes from './routes/webhooks/index.js';
 import analyticsRoutes from './routes/analytics.js';
 import billingRoutes from './routes/billing.js';
 import profileRoutes from './routes/profile.js';
