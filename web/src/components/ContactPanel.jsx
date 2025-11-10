@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import api from '../api'
 
-export default function ContactPanel({ selected, onUpdate }) {
+export default function ContactPanel({ selected, onUpdate, onDeleteChat }) {
   const [tags, setTags] = useState([])
   const [notes, setNotes] = useState('')
   const [tagInput, setTagInput] = useState('')
@@ -146,9 +146,18 @@ export default function ContactPanel({ selected, onUpdate }) {
         />
       </div>
 
-      <button className='btn' onClick={save} disabled={saving}>
-        {saving ? 'Saving...' : 'Save Details'}
-      </button>
+      <div className='col' style={{ gap: 8 }}>
+        <button className='btn' onClick={save} disabled={saving}>
+          {saving ? 'Saving...' : 'Save Details'}
+        </button>
+        <button
+          className='btn ghost'
+          style={{ borderColor: '#ef4444', color: '#ef4444' }}
+          onClick={() => onDeleteChat?.(selected?._id)}
+        >
+          Delete Chat
+        </button>
+      </div>
     </div>
   )
 }

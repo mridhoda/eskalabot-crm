@@ -61,6 +61,7 @@ function Inbox() {
     tags: [],
     unreadOnly: false,
   })
+  const panelHeight = 'calc(100vh - 58px - 20px)'
 
   // Load agents for filter dropdown
   useEffect(() => {
@@ -119,6 +120,19 @@ function Inbox() {
     setSelected(updatedChat)
   }
 
+  const handleDeleteChat = async (chatId) => {
+    if (!chatId) return
+    if (!window.confirm('Delete this chat and all of its messages?')) return
+    try {
+      await api.delete(`/chats/${chatId}`)
+      setChats((prev) => prev.filter((c) => c._id !== chatId))
+      setSelected((prev) => (prev?._id === chatId ? null : prev))
+    } catch (error) {
+      console.error('Failed to delete chat', error)
+      alert('Failed to delete chat.')
+    }
+  }
+
   return (
     <>
       <div
@@ -126,7 +140,8 @@ function Inbox() {
           display: 'grid',
           gridTemplateColumns: '400px 1fr 320px',
           gap: 16,
-          alignItems: 'start',
+          alignItems: 'stretch',
+          height: panelHeight,
         }}
       >
         {/* Left Column */}
@@ -134,7 +149,7 @@ function Inbox() {
           <div
             className='card col'
             style={{
-              height: 'calc(100vh - 58px - 20px)',
+              height: '100%',
               gap: 12,
               overflow: 'hidden',
               minHeight: 0,
@@ -202,7 +217,10 @@ function Inbox() {
               </div>
             )}
 
-            <div className='list inbox-scroll'>
+            <div
+              className='list inbox-scroll'
+              style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}
+            >
               {chats.map((c) => (
                 <div
                   key={c._id}
@@ -309,7 +327,11 @@ function Inbox() {
 
         {/* Right Column */}
         <div>
-          <ContactPanel selected={selected} onUpdate={handleContactUpdate} />
+          <ContactPanel
+            selected={selected}
+            onUpdate={handleContactUpdate}
+            onDeleteChat={handleDeleteChat}
+          />
         </div>
       </div>
 

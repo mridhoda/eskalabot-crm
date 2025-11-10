@@ -120,4 +120,14 @@ router.post('/:chatId/resolve', authRequired, attachUser, async (req, res) => {
   res.json(chat);
 });
 
+router.delete('/:chatId', authRequired, attachUser, async (req, res) => {
+  const { chatId } = req.params;
+  const chat = await Chat.findOneAndDelete({ _id: chatId, workspaceId: req.me.workspaceId });
+  if (!chat) {
+    return res.status(404).json({ error: 'Chat not found' });
+  }
+  await Message.deleteMany({ chatId, workspaceId: req.me.workspaceId });
+  res.json({ success: true });
+});
+
 export default router;
