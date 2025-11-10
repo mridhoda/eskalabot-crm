@@ -55,98 +55,89 @@ export default function ContactPanel({ selected, onUpdate, onDeleteChat }) {
 
   if (!selected || !contact) {
     return (
-      <div
-        className='card col'
-        style={{
-          width: 320,
-          height: '100%',
-          justifyContent: 'center',
-          alignItems: 'center',
-        }}
-      >
+      <div className='card col contact-panel empty'>
         <div className='muted'>No Contact Selected</div>
       </div>
     )
   }
 
   return (
-    <div
-      className='card col'
-      style={{ width: 320, gap: 16, height: 'fit-content' }}
-    >
-      <div className='col' style={{ gap: 4 }}>
-        <div className='muted'>Client Name</div>
-        <div style={{ fontWeight: 700 }}>{contact.name}</div>
-      </div>
-
-      <div className='col' style={{ gap: 4 }}>
-        <div className='muted'>Client ID</div>
-        <div className='row' style={{ alignItems: 'center', gap: 8 }}>
-          <div className='badge'>{contact.platformAccountId}</div>
-          <button
-            className='btn ghost'
-            onClick={() => copy(contact.platformAccountId)}
-          >
-            Copy
-          </button>
+    <div className='card col contact-panel'>
+      <div className='col contact-panel-body'>
+        <div className='col' style={{ gap: 4 }}>
+          <div className='muted'>Client Name</div>
+          <div style={{ fontWeight: 700 }}>{contact.name}</div>
         </div>
-      </div>
 
-      <div className='col' style={{ gap: 4 }}>
-        <div className='muted'>Platform</div>
-        <div className='badge'>{contact.platformType}</div>
-      </div>
-
-      <div className='col' style={{ gap: 4 }}>
-        <div className='muted'>Handled By</div>
-        <div style={{ fontWeight: 700 }}>{selected.agentId?.name || 'N/A'}</div>
-      </div>
-
-      <div className='col' style={{ gap: 8 }}>
-        <div className='muted'>Labels</div>
-        <div className='row' style={{ flexWrap: 'wrap', gap: 6 }}>
-          {tags.map((tag) => (
-            <div
-              key={tag}
-              className='badge row'
-              style={{ alignItems: 'center', gap: 4 }}
+        <div className='col' style={{ gap: 4 }}>
+          <div className='muted'>Client ID</div>
+          <div className='row' style={{ alignItems: 'center', gap: 8 }}>
+            <div className='badge'>{contact.platformAccountId}</div>
+            <button
+              className='btn ghost'
+              onClick={() => copy(contact.platformAccountId)}
             >
-              <span>{tag}</span>
-              <span
-                onClick={() => removeTag(tag)}
-                style={{ cursor: 'pointer', fontSize: 14 }}
+              Copy
+            </button>
+          </div>
+        </div>
+
+        <div className='col' style={{ gap: 4 }}>
+          <div className='muted'>Platform</div>
+          <div className='badge'>{contact.platformType}</div>
+        </div>
+
+        <div className='col' style={{ gap: 4 }}>
+          <div className='muted'>Handled By</div>
+          <div style={{ fontWeight: 700 }}>{selected.agentId?.name || 'N/A'}</div>
+        </div>
+
+        <div className='col' style={{ gap: 8 }}>
+          <div className='muted'>Labels</div>
+          <div className='row' style={{ flexWrap: 'wrap', gap: 6 }}>
+            {tags.map((tag) => (
+              <div
+                key={tag}
+                className='badge row'
+                style={{ alignItems: 'center', gap: 4 }}
               >
-                ×
-              </span>
-            </div>
-          ))}
+                <span>{tag}</span>
+                <span
+                  onClick={() => removeTag(tag)}
+                  style={{ cursor: 'pointer', fontSize: 14 }}
+                >
+                  x
+                </span>
+              </div>
+            ))}
+          </div>
+          <div className='row'>
+            <input
+              className='input'
+              placeholder='Add a label...'
+              value={tagInput}
+              onChange={(e) => setTagInput(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && addTag()}
+            />
+            <button className='btn' onClick={addTag}>
+              Add
+            </button>
+          </div>
         </div>
-        <div className='row'>
-          <input
-            className='input'
-            placeholder='Add a label...'
-            value={tagInput}
-            onChange={(e) => setTagInput(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && addTag()}
+
+        <div className='col' style={{ gap: 4 }}>
+          <div className='muted'>Notes</div>
+          <textarea
+            className='textarea'
+            rows={5}
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            placeholder='Add notes about this client...'
           />
-          <button className='btn' onClick={addTag}>
-            Add
-          </button>
         </div>
       </div>
 
-      <div className='col' style={{ gap: 4 }}>
-        <div className='muted'>Notes</div>
-        <textarea
-          className='textarea'
-          rows={5}
-          value={notes}
-          onChange={(e) => setNotes(e.target.value)}
-          placeholder='Add notes about this client...'
-        />
-      </div>
-
-      <div className='col' style={{ gap: 8 }}>
+      <div className='col contact-panel-actions'>
         <button className='btn' onClick={save} disabled={saving}>
           {saving ? 'Saving...' : 'Save Details'}
         </button>

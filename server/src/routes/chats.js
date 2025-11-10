@@ -8,29 +8,94 @@ import { tgSend, waSend, tgSendDocument, waSendDocument } from '../services/send
 const router = express.Router();
 
 router.get('/', authRequired, attachUser, async (req, res) => {
-  const { unreadOnly } = req.query;
+  const {
+    unreadOnly,
+    agentId,
+    from,
+    to,
+    tags = [],
+    search = '',
+    assignment,
+  } = req.query;
 
   const queryFilter = { workspaceId: req.me.workspaceId };
   if (unreadOnly === 'true') {
     queryFilter.unread = { $gt: 0 };
   }
+  if (agentId) {
+    queryFilter.agentId = agentId;
+  }
+  if (assignment === 'assigned') {
+    queryFilter.takeoverBy = { $ne: null };
+  } else if (assignment === 'unassigned') {
+    queryFilter.takeoverBy = null;
+  }
+
+  if (from || to) {
+    queryFilter.lastMessageAt = {};
+    if (from) {
+      queryFilter.lastMessageAt.$gte = new Date(from);
+    }
+    if (to) {
+      const toDate = new Date(to);
+      toDate.setHours(23, 59, 59, 999);
+      queryFilter.lastMessageAt.$lte = toDate;
+    }
+  }
+
+  let tagList = [];
+  if (Array.isArray(tags)) {
+    tagList = tags;
+  } else if (typeof tags === 'string' && tags.length) {
+    tagList = tags.split(',').map((t) => t.trim()).filter(Boolean);
+  } else if (tags && typeof tags === 'object') {
+    tagList = Object.values(tags);
+  }
+
+  const contactPopulate = { path: 'contactId' };
+  if (tagList.length) {
+    contactPopulate.match = { tags: { $all: tagList } };
+  }
+
+  const requireContactMatch = !!tagList.length;
 
   const rows = await Chat.find(queryFilter)
-    .populate('contactId')
+    .populate(contactPopulate)
     .populate('agentId')
     .sort({ lastMessageAt: -1 })
     .limit(200);
-  
-  const populatedRows = await Promise.all(rows.map(async (chat) => {
-    const lastMessage = await Message.findOne({ chatId: chat._id }).sort({ createdAt: -1 });
-    return {
-      ...chat.toObject(),
-      lastMessage: lastMessage?.text,
-      platformType: chat.contactId?.platformType,
-    };
-  }));
 
-  res.json(populatedRows);
+  const populatedRows = await Promise.all(
+    rows.map(async (chat) => {
+      if (requireContactMatch && !chat.contactId) return null;
+      const lastMessage = await Message.findOne({ chatId: chat._id }).sort({
+        createdAt: -1,
+      });
+      return {
+        ...chat.toObject(),
+        lastMessage: lastMessage?.text || '',
+        platformType: chat.contactId?.platformType,
+      };
+    })
+  );
+
+  const regexSafe = (value) =>
+    value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const searchTerm = search.trim();
+  const searchRegex = searchTerm
+    ? new RegExp(regexSafe(searchTerm), 'i')
+    : null;
+
+  const filteredRows = populatedRows
+    .filter(Boolean)
+    .filter((chat) => {
+      if (!searchRegex) return true;
+      const nameMatches = searchRegex.test(chat.contactId?.name || '');
+      const messageMatches = searchRegex.test(chat.lastMessage || '');
+      return nameMatches || messageMatches;
+    });
+
+  res.json(filteredRows);
 });
 
 router.get('/:chatId/messages', authRequired, attachUser, async (req, res) => {

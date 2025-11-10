@@ -66,6 +66,75 @@ a:hover {
   background: var(--brand);
   color: white;
 }
+.icon-btn {
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: white;
+  color: var(--muted);
+  cursor: pointer;
+  transition:
+    color 0.15s ease,
+    border-color 0.2s ease,
+    background 0.2s ease;
+}
+.icon-btn:hover {
+  color: var(--brand);
+  border-color: var(--brand);
+}
+.icon-btn.active {
+  color: var(--brand);
+  border-color: var(--brand);
+  background: rgba(255, 122, 0, 0.12);
+}
+.inbox-panel {
+  font-size: 13px;
+}
+.inbox-panel .input,
+.inbox-panel .select {
+  font-size: 13px;
+  padding: 8px 10px;
+}
+.inbox-panel .icon-btn {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+}
+.inbox-panel .searchbox .input {
+  font-size: 13px;
+}
+.inbox-panel .list .rowi {
+  padding: 8px 10px;
+}
+.inbox-panel .list .rowi div:first-child {
+  font-size: 13px;
+}
+.inbox-panel .list .rowi .badge {
+  font-size: 11px;
+}
+.contact-panel {
+  min-height: 0;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  gap: 16px;
+}
+.contact-panel.empty {
+  justify-content: center;
+  align-items: center;
+}
+.contact-panel-body {
+  flex: 1;
+  overflow-y: auto;
+  gap: 16px;
+}
+.contact-panel-actions {
+  gap: 8px;
+}
 .input,
 .select,
 .textarea {

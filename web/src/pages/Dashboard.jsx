@@ -11,6 +11,8 @@ import FilterPopup from '../components/FilterPopup'
 import Platforms from './Platforms'
 import * as XLSX from 'xlsx'
 import { Line, Pie, Bar } from 'react-chartjs-2'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faMagnifyingGlass, faSliders, faEnvelopeOpen } from '@fortawesome/free-solid-svg-icons'
 import {
   Chart as ChartJS,
   ArcElement,
@@ -52,7 +54,7 @@ function Inbox() {
 
   // Filter state
   const [showFilterPopup, setShowFilterPopup] = useState(false)
-  const [showSearch, setShowSearch] = useState(false)
+  const [showSearch, setShowSearch] = useState(true)
   const [filters, setFilters] = useState({
     agentId: '',
     search: '',
@@ -60,8 +62,11 @@ function Inbox() {
     to: '',
     tags: [],
     unreadOnly: false,
+    assignment: 'all',
   })
   const panelHeight = 'calc(100vh - 58px - 20px)'
+  const hasAdvancedFilters = Boolean(filters.from || filters.to || filters.tags.length)
+  const searchActive = Boolean(showSearch || filters.search)
 
   // Load agents for filter dropdown
   useEffect(() => {
@@ -69,7 +74,21 @@ function Inbox() {
   }, [])
 
   const load = useCallback(async () => {
-    const r = await api.get('/chats', { params: filters })
+    const params = {
+      ...filters,
+      search: filters.search.trim() || undefined,
+      tags: filters.tags.length ? filters.tags.join(',') : undefined,
+    }
+
+    if (!filters.assignment || filters.assignment === 'all') {
+      delete params.assignment
+    }
+    if (!filters.agentId) delete params.agentId
+    if (!filters.from) delete params.from
+    if (!filters.to) delete params.to
+    if (!filters.unreadOnly) delete params.unreadOnly
+
+    const r = await api.get('/chats', { params })
     setChats(r.data)
     setSelected((prev) => {
       if (!prev?._id) return prev
@@ -133,12 +152,13 @@ function Inbox() {
     }
   }
 
+
   return (
     <>
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: '400px 1fr 320px',
+          gridTemplateColumns: '320px 1fr 280px',
           gap: 16,
           alignItems: 'stretch',
           height: panelHeight,
@@ -147,7 +167,7 @@ function Inbox() {
         {/* Left Column */}
         <div className='col' style={{ minHeight: 0 }}>
           <div
-            className='card col'
+            className='card col inbox-panel'
             style={{
               height: '100%',
               gap: 12,
@@ -164,51 +184,54 @@ function Inbox() {
                 justifyContent: 'space-between',
                 flexWrap: 'wrap',
                 gap: 8,
+                alignItems: 'center',
               }}
             >
-              <div className='row' style={{ flexWrap: 'wrap', gap: 8 }}>
-                <select
-                  className='select'
-                  style={{ width: 'auto' }}
-                  value={filters.agentId}
-                  onChange={(e) =>
-                    handleFilterChange({ agentId: e.target.value })
-                  }
-                >
-                  <option value=''>All Agents</option>
-                  {agents.map((a) => (
-                    <option key={a._id} value={a._id}>
-                      {a.name}
-                    </option>
-                  ))}
-                </select>
+              <select
+                className='select'
+                style={{ flex: 1, minWidth: 140 }}
+                value={filters.agentId}
+                onChange={(e) => handleFilterChange({ agentId: e.target.value })}
+              >
+                <option value=''>All Agents</option>
+                {agents.map((a) => (
+                  <option key={a._id} value={a._id}>
+                    {a.name}
+                  </option>
+                ))}
+              </select>
+
+              <div className='row' style={{ gap: 8 }}>
                 <button
-                  className={`btn ghost ${filters.unreadOnly ? 'active' : ''}`}
+                  className={`icon-btn ${filters.unreadOnly ? 'active' : ''}`}
                   onClick={() =>
                     handleFilterChange({ unreadOnly: !filters.unreadOnly })
                   }
+                  title='Show unread only'
                 >
-                  Unread
+                  <FontAwesomeIcon icon={faEnvelopeOpen} />
                 </button>
                 <button
-                  className='btn ghost'
+                  className={`icon-btn ${hasAdvancedFilters ? 'active' : ''}`}
                   onClick={() => setShowFilterPopup(true)}
+                  title='Advanced filters'
                 >
-                  Filters
+                  <FontAwesomeIcon icon={faSliders} />
+                </button>
+                <button
+                  className={`icon-btn ${searchActive ? 'active' : ''}`}
+                  onClick={() => setShowSearch((prev) => !prev)}
+                  title='Search conversations'
+                >
+                  <FontAwesomeIcon icon={faMagnifyingGlass} />
                 </button>
               </div>
-              <button
-                className='btn ghost'
-                onClick={() => setShowSearch((prev) => !prev)}
-              >
-                🔍
-              </button>
             </div>
             {showSearch && (
               <div className='searchbox'>
                 <input
                   className='input'
-                  placeholder='Search by name...'
+                  placeholder='Search messages'
                   value={filters.search}
                   onChange={(e) =>
                     handleFilterChange({ search: e.target.value })
@@ -299,7 +322,7 @@ function Inbox() {
         </div>
 
         {/* Middle Column */}
-        <div style={{ flex: 1, height: 'calc(100vh - 58px - 24px)' }}>
+        <div style={{ flex: 1, height: panelHeight }}>
           {selected ? (
             <ChatPanel
               selected={selected}
@@ -326,7 +349,7 @@ function Inbox() {
         </div>
 
         {/* Right Column */}
-        <div>
+        <div style={{ height: '100%', display: 'flex' }}>
           <ContactPanel
             selected={selected}
             onUpdate={handleContactUpdate}
