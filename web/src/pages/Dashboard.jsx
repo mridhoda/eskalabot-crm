@@ -130,8 +130,16 @@ function Inbox() {
         }}
       >
         {/* Left Column */}
-        <div className='col'>
-          <div className='card col'>
+        <div className='col' style={{ minHeight: 0 }}>
+          <div
+            className='card col'
+            style={{
+              height: 'calc(100vh - 58px - 20px)',
+              gap: 12,
+              overflow: 'hidden',
+              minHeight: 0,
+            }}
+          >
             <div style={{ fontWeight: 700 }}>Inbox</div>
 
             {/* New Filters */}
@@ -194,7 +202,7 @@ function Inbox() {
               </div>
             )}
 
-            <div className='list'>
+            <div className='list inbox-scroll'>
               {chats.map((c) => (
                 <div
                   key={c._id}
@@ -2357,20 +2365,22 @@ export default function Dashboard() {
         <Sidebar />
       </div>
       <Navbar authed user={user} plan={plan} />
-      <div className='main' style={{ padding: 12 }}>
-        <Routes>
-          <Route index element={<Inbox />} />
-          <Route path='analytics' element={<AnalyticsPage />} />
-          <Route path='contacts' element={<Contacts />} />
-          <Route path='platforms' element={<Platforms />} />
-          <Route path='agents' element={<Agents />} />
-      <Route path='/agents/:id' element={<Navigate to='general' replace />} />
-      <Route path='/agents/:id/:tab' element={<AgentDetail />} />
-          <Route path='humans' element={<Humans />} />
-          <Route path='settings' element={<Settings />} />
-          <Route path='billing' element={<Billing />} />
-          <Route path='profile' element={<Profile />} />
-        </Routes>
+      <div className='main'>
+        <div className='main-body'>
+          <Routes>
+            <Route index element={<Inbox />} />
+            <Route path='analytics' element={<AnalyticsPage />} />
+            <Route path='contacts' element={<Contacts />} />
+            <Route path='platforms' element={<Platforms />} />
+            <Route path='agents' element={<Agents />} />
+            <Route path='/agents/:id' element={<Navigate to='general' replace />} />
+            <Route path='/agents/:id/:tab' element={<AgentDetail />} />
+            <Route path='humans' element={<Humans />} />
+            <Route path='settings' element={<Settings />} />
+            <Route path='billing' element={<Billing />} />
+            <Route path='profile' element={<Profile />} />
+          </Routes>
+        </div>
       </div>
     </div>
   )
