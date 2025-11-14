@@ -73,7 +73,8 @@ export async function generateAIReply({ system, prompt, message, knowledge, agen
       try {
         const model = geminiClient.getGenerativeModel({ model: 'gemini-pro' });
 
-        const systemInstruction = `You are a professional, direct, and efficient assistant. Your primary goal is to help the user as quickly as possible. Do not use playful, theatrical, or challenging language. Be concise. IMPORTANT: If a user asks for a file, and you are replying here, it means the file was not found; you MUST inform them the file was not found. Do not make up file sending messages. The user's name is ${contactName}.`;
+        // Use agent behavior as system instruction for Gemini
+        const systemInstruction = (system || 'You are a helpful assistant.') + contactName;
 
         const geminiHistory = [
           { role: 'user', parts: [{ text: systemInstruction }] },
