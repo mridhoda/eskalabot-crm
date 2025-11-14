@@ -757,11 +757,25 @@ a:hover {
 
 /* ===== Agents Grid ===== */
 .agent-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
-  gap: 14px;
+  display: flex;
+  gap: 16px;
+  overflow-x: auto;
+  padding: 4px 8px 14px;
+  align-items: stretch;
+  scroll-snap-type: x proximity;
+}
+.agent-grid::-webkit-scrollbar {
+  height: 6px;
+}
+.agent-grid::-webkit-scrollbar-track {
+  background: transparent;
+}
+.agent-grid::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 999px;
 }
 .agent-card {
+  flex: 0 0 clamp(230px, 28vw, 320px);
   background: #fff;
   border: 1px solid var(--border);
   border-radius: 18px;
@@ -775,6 +789,7 @@ a:hover {
   transition:
     transform 0.12s ease,
     box-shadow 0.12s ease;
+  scroll-snap-align: start;
 }
 .agent-card:hover {
   transform: translateY(-2px);
@@ -819,6 +834,29 @@ a:hover {
   justify-content: center;
   font-size: 28px;
   color: var(--muted);
+}
+
+.upload-status {
+  font-size: 13px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  text-align: left;
+}
+.upload-status.loading {
+  background: #fff7ed;
+  border-color: #fed7aa;
+  color: #9a3412;
+}
+.upload-status.success {
+  background: #ecfdf5;
+  border-color: #a7f3d0;
+  color: #0f766e;
+}
+.upload-status.error {
+  background: #fef2f2;
+  border-color: #fecaca;
+  color: #b91c1c;
 }
 
 /* ===== Platforms (Inboxes) ===== */

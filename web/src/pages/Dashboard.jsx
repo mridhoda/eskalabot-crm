@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react'
+import React, { useEffect, useState, useCallback, useMemo } from 'react'
 import { Routes, Route, useNavigate, useParams, Navigate } from 'react-router-dom'
 import Sidebar from '../components/Sidebar'
 import Navbar from '../components/Navbar'
@@ -1104,6 +1104,7 @@ import FileInput from '../components/FileInput'
 /* ========================= AGENT DETAIL ========================= */
 function AgentDetail() {
   const { id, tab = 'general' } = useParams()
+  const localDbStorageKey = useMemo(() => `agent-db-${id}`, [id])
   const navigate = useNavigate()
 
   const setTab = (newTab) => {
@@ -1124,10 +1125,81 @@ function AgentDetail() {
   const [followUps, setFollowUps] = useState([])
   const [database, setDatabase] = useState([])
   const [knowledgeTab, setKnowledgeTab] = useState('url')
+  const [localDatabase, setLocalDatabase] = useState([])
+  const [databaseCustomId, setDatabaseCustomId] = useState('')
+  const [dbUploadStatus, setDbUploadStatus] = useState({
+    status: 'idle',
+    message: '',
+  })
 
   const [messages, setMessages] = useState([])
   const [testMsg, setTestMsg] = useState('')
   const [testing, setTesting] = useState(false)
+  const combinedDatabase = useMemo(
+    () => [
+      ...database.map((f) => ({ ...f, source: 'remote' })),
+      ...localDatabase.map((f) => ({ ...f, source: 'local' })),
+    ],
+    [database, localDatabase]
+  )
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.localStorage) return
+    try {
+      const raw = window.localStorage.getItem(localDbStorageKey)
+      setLocalDatabase(raw ? JSON.parse(raw) : [])
+    } catch (error) {
+      console.error('Failed to load local database files:', error)
+      setLocalDatabase([])
+    }
+  }, [localDbStorageKey])
+
+  const persistLocalDatabase = (updater) => {
+    setLocalDatabase((prev) => {
+      const next =
+        typeof updater === 'function'
+          ? updater(prev)
+          : Array.isArray(updater)
+            ? updater
+            : prev
+      if (typeof window !== 'undefined' && window.localStorage) {
+        try {
+          window.localStorage.setItem(localDbStorageKey, JSON.stringify(next))
+        } catch (error) {
+          console.error('Failed to persist local database files:', error)
+        }
+      }
+      return next
+    })
+  }
+
+  const readFileAsDataUrl = (file, entryId) =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload = () => {
+        const entry = {
+          id: entryId,
+          originalName: file.name,
+          size: file.size,
+          uploadedAt: new Date().toISOString(),
+          dataUrl: reader.result,
+        }
+        persistLocalDatabase((prev) => {
+          const filtered = prev.filter((item) => item.id !== entryId)
+          return [...filtered, entry]
+        })
+        resolve(entry)
+      }
+      reader.onerror = reject
+      reader.readAsDataURL(file)
+    })
+
+  const generateLocalId = () =>
+    typeof window !== 'undefined' &&
+    window.crypto &&
+    typeof window.crypto.randomUUID === 'function'
+      ? window.crypto.randomUUID()
+      : `${Date.now()}-${Math.random().toString(16).slice(2)}`
 
   useEffect(() => {
     ;(async () => {
@@ -1230,11 +1302,32 @@ function AgentDetail() {
   }
 
   const handleDatabaseFileSelect = async (file) => {
-    const customId = document.getElementById('custom-file-id').value.trim();
+    if (!file) return
+    const customId = databaseCustomId.trim()
+    const entryId = customId || generateLocalId()
+    setDbUploadStatus({
+      status: 'loading',
+      message: `Processing ${file.name}...`,
+    })
+    try {
+      await readFileAsDataUrl(file, entryId)
+      setDbUploadStatus({
+        status: 'loading',
+        message: 'Stored locally. Uploading to server...',
+      })
+    } catch (error) {
+      console.error('Failed to store database file locally:', error)
+      setDbUploadStatus({
+        status: 'error',
+        message: 'Cannot store file locally. Please try another file.',
+      })
+      return
+    }
+
     const formData = new FormData()
     formData.append('file', file)
     if (customId) {
-      formData.append('id', customId);
+      formData.append('id', customId)
     }
     try {
       const response = await api.post(`/agents/${id}/database`, formData, {
@@ -1242,18 +1335,35 @@ function AgentDetail() {
           'Content-Type': 'multipart/form-data',
         },
       })
-      setDatabase([...database, response.data])
+      setDatabase((prev) => [...prev, response.data])
+      persistLocalDatabase((prev) => prev.filter((item) => item.id !== entryId))
+      setDbUploadStatus({
+        status: 'success',
+        message: `${file.name} uploaded successfully.`,
+      })
+      setDatabaseCustomId('')
     } catch (error) {
       console.error('Database file upload error:', error)
-      alert('Database file upload failed.')
+      setDbUploadStatus({
+        status: 'error',
+        message: 'Upload failed, file saved locally on this device.',
+      })
     }
   }
 
-  const deleteDatabaseFile = async (fileId) => {
+  const deleteDatabaseFile = async (file) => {
     if (!confirm('Are you sure you want to delete this file?')) return
+    if (file.source === 'local') {
+      persistLocalDatabase((prev) => prev.filter((f) => f.id !== file.id))
+      setDbUploadStatus({
+        status: 'idle',
+        message: '',
+      })
+      return
+    }
     try {
-      await api.delete(`/agents/${id}/database/${fileId}`)
-      setDatabase(database.filter((f) => f.id !== fileId))
+      await api.delete(`/agents/${id}/database/${file.id}`)
+      setDatabase((prev) => prev.filter((f) => f.id !== file.id))
     } catch (error) {
       console.error('Database file delete error:', error)
       alert('Database file delete failed.')
@@ -2163,99 +2273,110 @@ function AgentDetail() {
 
 
               {tab === 'database' && (
-
                 <div className='col'>
-
                   <div
-
                     className='row'
-
                     style={{
-
                       justifyContent: 'space-between',
-
-                      alignItems: 'center',
-
+                      alignItems: 'flex-start',
+                      gap: 16,
+                      flexWrap: 'wrap',
                     }}
-
                   >
-
                     <h3 style={{ margin: 0 }}>Database Files</h3>
-
-                    <FileInput onFileSelect={handleDatabaseFileSelect} />
-
+                    <div
+                      className='col'
+                      style={{
+                        gap: 8,
+                        minWidth: 260,
+                        maxWidth: 340,
+                        flex: '0 0 auto',
+                      }}
+                    >
+                      <input
+                        id='custom-file-id'
+                        className='input'
+                        placeholder='Custom file ID (optional)'
+                        value={databaseCustomId}
+                        onChange={(e) => setDatabaseCustomId(e.target.value)}
+                      />
+                      <FileInput onFileSelect={handleDatabaseFileSelect} />
+                      {dbUploadStatus.status !== 'idle' && (
+                        <div className={`upload-status ${dbUploadStatus.status}`}>
+                          {dbUploadStatus.message}
+                        </div>
+                      )}
+                    </div>
                   </div>
 
                   <div className='list'>
-
-                    {database.map((f, i) => (
-
-                      <div key={i} className='rowi'>
-
-                        <div
-
-                          className='row'
-
-                          style={{ gap: 8, alignItems: 'center', flex: 1 }}
-
-                        >
-
-                          <span>{f.originalName}</span>
-
-                          <a
-
-                            href={`${api.defaults.baseURL}/files/${f.storedName}`}
-
-                            target='_blank'
-
-                            rel='noreferrer'
-
+                    {combinedDatabase.map((f, i) => (
+                      <div
+                        key={f.id || f.storedName || `${f.originalName}-${i}`}
+                        className='rowi'
+                      >
+                        <div className='col' style={{ gap: 4, flex: 1 }}>
+                          <div
+                            className='row'
+                            style={{
+                              gap: 8,
+                              alignItems: 'center',
+                              flexWrap: 'wrap',
+                            }}
                           >
-
-                            Open
-
-                          </a>
-
+                            <span>{f.originalName}</span>
+                            {f.source === 'remote' && f.storedName ? (
+                              <a
+                                href={`${api.defaults.baseURL}/files/${f.storedName}`}
+                                target='_blank'
+                                rel='noreferrer'
+                              >
+                                Open
+                              </a>
+                            ) : (
+                              f.dataUrl && (
+                                <a href={f.dataUrl} download={f.originalName}>
+                                  Download
+                                </a>
+                              )
+                            )}
+                            <span
+                              className='badge'
+                              style={{
+                                background:
+                                  f.source === 'remote' ? '#ecfdf3' : '#e0f2fe',
+                                color:
+                                  f.source === 'remote' ? '#047857' : '#0369a1',
+                              }}
+                            >
+                              {f.source === 'remote' ? 'Server' : 'Local only'}
+                            </span>
+                          </div>
+                          {f.size && (
+                            <div className='muted' style={{ fontSize: 12 }}>
+                              {(f.size / 1024).toFixed(1)} KB
+                            </div>
+                          )}
                         </div>
 
-                        <button
-
-                          className='btn ghost'
-
-                          onClick={() => alert(f.id)}
-
-                        >
-
+                        <button className='btn ghost' onClick={() => alert(f.id)}>
                           ID
-
                         </button>
 
                         <button
-
                           className='btn ghost'
-
-                          onClick={() => deleteDatabaseFile(f.id)}
-
+                          onClick={() => deleteDatabaseFile(f)}
                         >
-
-                          🗑️
-
+                          ???
                         </button>
-
                       </div>
-
                     ))}
 
-                    {!database.length && (
-
+                    {!combinedDatabase.length && (
                       <div className='muted'>No database files yet.</div>
-
                     )}
-
                   </div>
-
                 </div>
-
               )}
 
             </div>
