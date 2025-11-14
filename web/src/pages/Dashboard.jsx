@@ -1131,6 +1131,7 @@ function AgentDetail() {
     status: 'idle',
     message: '',
   })
+  const [activeLinkId, setActiveLinkId] = useState(null)
 
   const [messages, setMessages] = useState([])
   const [testMsg, setTestMsg] = useState('')
@@ -1142,6 +1143,35 @@ function AgentDetail() {
     ],
     [database, localDatabase]
   )
+
+  const getFileLink = (file) => {
+    if (file.source === 'remote' && file.storedName) {
+      return `${api.defaults.baseURL}/files/${file.storedName}`
+    }
+    if (file.source === 'local' && file.dataUrl) {
+      return file.dataUrl
+    }
+    return ''
+  }
+
+  const toggleLinkPanel = (fileKey, file) => {
+    const link = getFileLink(file)
+    if (!link) {
+      alert('Link tidak tersedia untuk file ini.')
+      return
+    }
+    setActiveLinkId((prev) => (prev === fileKey ? null : fileKey))
+  }
+
+  const copyLink = async (link) => {
+    if (!link) return
+    try {
+      await navigator.clipboard.writeText(link)
+    } catch (error) {
+      console.error('Failed to copy link:', error)
+      alert('Gagal menyalin link.')
+    }
+  }
 
   useEffect(() => {
     if (typeof window === 'undefined' || !window.localStorage) return
@@ -2310,67 +2340,104 @@ function AgentDetail() {
                   </div>
 
                   <div className='list'>
-                    {combinedDatabase.map((f, i) => (
-                      <div
-                        key={f.id || f.storedName || `${f.originalName}-${i}`}
-                        className='rowi'
-                      >
-                        <div className='col' style={{ gap: 4, flex: 1 }}>
-                          <div
-                            className='row'
-                            style={{
-                              gap: 8,
-                              alignItems: 'center',
-                              flexWrap: 'wrap',
-                            }}
-                          >
-                            <span>{f.originalName}</span>
-                            {f.source === 'remote' && f.storedName ? (
-                              <a
-                                href={`${api.defaults.baseURL}/files/${f.storedName}`}
-                                target='_blank'
-                                rel='noreferrer'
+                    {combinedDatabase.map((f, i) => {
+                      const fileKey = f.id || f.storedName || `${f.originalName}-${i}`
+                      const link = getFileLink(f)
+                      return (
+                        <div key={fileKey} className='rowi' style={{ flexDirection: 'column', gap: 8 }}>
+                          <div className='row' style={{ width: '100%', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+                            <div className='col' style={{ gap: 4, flex: 1 }}>
+                              <div
+                                className='row'
+                                style={{
+                                  gap: 8,
+                                  alignItems: 'center',
+                                  flexWrap: 'wrap',
+                                }}
                               >
-                                Open
-                              </a>
-                            ) : (
-                              f.dataUrl && (
-                                <a href={f.dataUrl} download={f.originalName}>
-                                  Download
-                                </a>
-                              )
-                            )}
-                            <span
-                              className='badge'
+                                <span>{f.originalName}</span>
+                                {f.source === 'remote' && f.storedName ? (
+                                  <a
+                                    href={`${api.defaults.baseURL}/files/${f.storedName}`}
+                                    target='_blank'
+                                    rel='noreferrer'
+                                  >
+                                    Open
+                                  </a>
+                                ) : (
+                                  f.dataUrl && (
+                                    <a href={f.dataUrl} download={f.originalName}>
+                                      Download
+                                    </a>
+                                  )
+                                )}
+                                <span
+                                  className='badge'
+                                  style={{
+                                    background:
+                                      f.source === 'remote' ? '#ecfdf3' : '#e0f2fe',
+                                    color:
+                                      f.source === 'remote' ? '#047857' : '#0369a1',
+                                  }}
+                                >
+                                  {f.source === 'remote' ? 'Server' : 'Local only'}
+                                </span>
+                              </div>
+                              {f.size && (
+                                <div className='muted' style={{ fontSize: 12 }}>
+                                  {(f.size / 1024).toFixed(1)} KB
+                                </div>
+                              )}
+                            </div>
+
+                            <div className='row' style={{ gap: 6 }}>
+                              <button className='btn ghost' onClick={() => alert(f.id)}>
+                                ID
+                              </button>
+                              <button
+                                className='btn ghost'
+                                onClick={() => toggleLinkPanel(fileKey, f)}
+                              >
+                                Link
+                              </button>
+                              <button
+                                className='btn ghost'
+                                onClick={() => deleteDatabaseFile(f)}
+                              >
+                                ???
+                              </button>
+                            </div>
+                          </div>
+
+                          {activeLinkId === fileKey && link && (
+                            <div
+                              className='row'
                               style={{
-                                background:
-                                  f.source === 'remote' ? '#ecfdf3' : '#e0f2fe',
-                                color:
-                                  f.source === 'remote' ? '#047857' : '#0369a1',
+                                width: '100%',
+                                gap: 8,
+                                alignItems: 'center',
+                                flexWrap: 'wrap',
                               }}
                             >
-                              {f.source === 'remote' ? 'Server' : 'Local only'}
-                            </span>
-                          </div>
-                          {f.size && (
-                            <div className='muted' style={{ fontSize: 12 }}>
-                              {(f.size / 1024).toFixed(1)} KB
+                              <input
+                                className='input'
+                                readOnly
+                                value={link}
+                                style={{ flex: 1 }}
+                                onFocus={(e) => e.target.select()}
+                              />
+                              <button
+                                className='btn ghost'
+                                title='Copy link'
+                                onClick={() => copyLink(link)}
+                              >
+                                📋
+                              </button>
                             </div>
                           )}
                         </div>
-
-                        <button className='btn ghost' onClick={() => alert(f.id)}>
-                          ID
-                        </button>
-
-                        <button
-                          className='btn ghost'
-                          onClick={() => deleteDatabaseFile(f)}
-                        >
-                          ???
-                        </button>
-                      </div>
-                    ))}
+                      )
+                    })}
 
                     {!combinedDatabase.length && (
                       <div className='muted'>No database files yet.</div>
