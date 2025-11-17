@@ -1,5 +1,6 @@
 import express from 'express';
 import path from 'path';
+import { promises as fs } from 'fs';
 import Platform from '../../models/Platform.js';
 import Agent from '../../models/Agent.js';
 import Chat from '../../models/Chat.js';
@@ -14,6 +15,83 @@ import {
 } from '../../services/sender.js';
 
 const router = express.Router();
+
+function decodeRef(value = '') {
+  try {
+    return decodeURIComponent(value);
+  } catch (err) {
+    return value;
+  }
+}
+
+function findDatabaseFileMention(text, agent) {
+  if (!text || !agent?.database?.length) return null;
+  const regex = /!\[([^\]]*)\]\(([^)]+)\)/g;
+  let match;
+  while ((match = regex.exec(text)) !== null) {
+    const altText = (match[1] || '').trim();
+    const rawRef = (match[2] || '').trim();
+    if (!rawRef) continue;
+    const decodedRef = decodeRef(rawRef);
+    const normalizedTargets = [rawRef, decodedRef].map((val) =>
+      (val || '').toLowerCase(),
+    );
+    const candidate = agent.database.find((file) => {
+      const aliases = [
+        file.storedName,
+        file.originalName,
+        file.id,
+      ]
+        .filter(Boolean)
+        .map((val) => val.toLowerCase());
+      return aliases.some((alias) =>
+        normalizedTargets.some((target) => target === alias || target.includes(alias)),
+      );
+    });
+    if (candidate) {
+      return { file: candidate, token: match[0], altText };
+    }
+  }
+  return null;
+}
+
+async function fetchTelegramFilePath(token, fileId) {
+  const resp = await fetch(
+    `https://api.telegram.org/bot${token}/getFile?file_id=${encodeURIComponent(fileId)}`,
+  );
+  const data = await resp.json();
+  if (!data.ok) {
+    throw new Error(`Telegram getFile failed: ${JSON.stringify(data)}`);
+  }
+  return data.result?.file_path;
+}
+
+async function saveTelegramFileLocally({
+  token,
+  fileId,
+  preferredName = '',
+}) {
+  const filePath = await fetchTelegramFilePath(token, fileId);
+  if (!filePath) throw new Error('Telegram file_path missing');
+  const fileUrl = `https://api.telegram.org/file/bot${token}/${filePath}`;
+  const downloadResp = await fetch(fileUrl);
+  if (!downloadResp.ok) {
+    throw new Error(`Download failed: ${downloadResp.status} ${downloadResp.statusText}`);
+  }
+  const buffer = Buffer.from(await downloadResp.arrayBuffer());
+  const originalBase =
+    preferredName ||
+    path.basename(filePath) ||
+    `telegram_file_${Date.now()}`;
+  const safeOriginal = originalBase.replace(/[\\/:*?"<>|]+/g, '_');
+  await fs.mkdir('uploads', { recursive: true });
+  const storedName = `${Date.now()}_${Math.random()
+    .toString(36)
+    .slice(2, 8)}_${safeOriginal}`;
+  const storedPath = path.resolve('uploads', storedName);
+  await fs.writeFile(storedPath, buffer);
+  return { storedName, originalName: safeOriginal };
+}
 
 router.post('/', async (req, res) => {
   res.sendStatus(200);
@@ -32,10 +110,11 @@ router.post('/', async (req, res) => {
       return;
     }
 
-    const text =
+    let text =
       update.message?.text ||
       update.edited_message?.text ||
       update.callback_query?.data ||
+      msgObj.caption ||
       '';
 
     const chatId = msgObj?.chat?.id;
@@ -49,6 +128,46 @@ router.post('/', async (req, res) => {
     if (!platform) {
       console.warn('[telegram] no platform/token found');
       return;
+    }
+
+    let incomingAttachment = null;
+    if (Array.isArray(msgObj.photo) && msgObj.photo.length > 0) {
+      const largestPhoto = msgObj.photo[msgObj.photo.length - 1];
+      try {
+        const saved = await saveTelegramFileLocally({
+          token: platform.token,
+          fileId: largestPhoto.file_id,
+          preferredName: `photo_${largestPhoto.file_unique_id || Date.now()}.jpg`,
+        });
+        incomingAttachment = {
+          url: `/files/${saved.storedName}`,
+          filename: saved.originalName,
+          storedName: saved.storedName,
+        };
+        if (!text) {
+          text = '[Foto dikirim]';
+        }
+      } catch (e) {
+        console.error('[telegram] Failed to store incoming photo:', e);
+      }
+    } else if (msgObj.document) {
+      try {
+        const saved = await saveTelegramFileLocally({
+          token: platform.token,
+          fileId: msgObj.document.file_id,
+          preferredName: msgObj.document.file_name || '',
+        });
+        incomingAttachment = {
+          url: `/files/${saved.storedName}`,
+          filename: saved.originalName,
+          storedName: saved.storedName,
+        };
+        if (!text) {
+          text = '[Dokumen dikirim]';
+        }
+      } catch (e) {
+        console.error('[telegram] Failed to store incoming document:', e);
+      }
     }
 
     let agent = await Agent.findOne({ platformId: platform._id });
@@ -103,12 +222,13 @@ router.post('/', async (req, res) => {
       await chat.save();
     }
 
-    if (text) {
+    if (text || incomingAttachment) {
       await Message.create({
         chatId: chat._id,
         workspaceId: platform.workspaceId,
         from: 'user',
-        text,
+        text: text || '[Attachment]',
+        attachment: incomingAttachment,
         createdAt: new Date(),
       });
       await Chat.updateOne(
@@ -215,9 +335,62 @@ router.post('/', async (req, res) => {
         reply = { text: `Echo: ${text}` };
       }
 
-      const replyText = typeof reply === 'string' ? reply : reply.text;
+      let replyText = typeof reply === 'string' ? reply : reply.text;
       const attachment =
         typeof reply === 'object' && reply.attachment ? reply.attachment : null;
+
+      const mention = findDatabaseFileMention(replyText, agent);
+      if (mention && mention.file?.storedName) {
+        const { file, token, altText } = mention;
+        const cleanedText = (replyText || '')
+          .replace(token, altText || '')
+          .trim();
+        const caption = cleanedText || altText || '';
+        const localFilePath = path.resolve('uploads', file.storedName);
+        let documentSent = false;
+        try {
+          await tgSendDocument(
+            platform.token,
+            chatId,
+            localFilePath,
+            caption || undefined,
+          );
+          documentSent = true;
+        } catch (e) {
+          console.error(
+            '[telegram] Failed to send document from markdown mention:',
+            e,
+          );
+          if (replyText) {
+            try {
+              await tgSend(platform.token, chatId, replyText);
+            } catch (innerError) {
+              console.error(
+                '[telegram] Fallback text send failed after markdown mention:',
+                innerError,
+              );
+            }
+          }
+        }
+
+        const savedText =
+          cleanedText || altText || replyText || 'Lampiran terkirim.';
+        await Message.create({
+          chatId: chat._id,
+          workspaceId: platform.workspaceId,
+          from: 'ai',
+          text: savedText,
+          attachment: documentSent
+            ? {
+                url: `/files/${file.storedName}`,
+                filename: file.originalName || file.storedName,
+              }
+            : null,
+          createdAt: new Date(),
+        });
+
+        if (documentSent) return;
+      }
 
       if (attachment && attachment.storedName) {
         const localFilePath = path.resolve('uploads', attachment.storedName);

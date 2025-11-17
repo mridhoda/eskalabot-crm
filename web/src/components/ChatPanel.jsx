@@ -202,14 +202,33 @@ export default function ChatPanel({ selected, reload, onChatUpdate }) {
               {m.text}
               {m.attachment && (
                 <div style={{ marginTop: 8 }}>
-                  <a 
-                    href={`${api.defaults.baseURL}${m.attachment.url}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className='btn ghost'
-                  >
-                    Download {m.attachment.filename}
-                  </a>
+                  {(() => {
+                    const filename = m.attachment.filename || '';
+                    const url =
+                      m.attachment.url && (m.attachment.url.startsWith('http://') || m.attachment.url.startsWith('https://'))
+                        ? m.attachment.url
+                        : `${api.defaults.baseURL}${m.attachment.url || ''}`;
+                    const isImage = /\.(png|jpe?g|gif|webp)$/i.test(filename);
+                    if (isImage) {
+                      return (
+                        <img
+                          src={url}
+                          alt={filename || 'attachment'}
+                          style={{ maxWidth: 220, borderRadius: 8, display: 'block' }}
+                        />
+                      );
+                    }
+                    return (
+                      <a
+                        href={url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className='btn ghost'
+                      >
+                        Download {filename || 'file'}
+                      </a>
+                    );
+                  })()}
                 </div>
               )}
             </div>
