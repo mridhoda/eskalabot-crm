@@ -29,7 +29,8 @@ export async function generateAIReply({ system, prompt, message, knowledge, agen
   }
 
   // --- 2. Normal Reply Generation ---
-  const contact = await Contact.findOne({ _id: chat.contactId });
+  const contactId = chat?.contactId;
+  const contact = contactId ? await Contact.findOne({ _id: contactId }) : null;
   const contactName = contact?.name ? ` The user's name is ${contact.name}.` : '';
 
   let knowledgeContent = '';
@@ -102,7 +103,7 @@ export async function generateAIReply({ system, prompt, message, knowledge, agen
     }
 
     // Check for follow-up triggers
-    if (agent && agent.followUps && agent.followUps.length > 0 && chat && !chat.state?.followUp) {
+    if (agent && agent.followUps && agent.followUps.length > 0 && chat?._id && !chat.state?.followUp) {
       const followUp = agent.followUps[0]; // Take the first follow-up
       if (followUp) {
         await Chat.updateOne({ _id: chat._id }, { $set: { 'state.followUp': { prompt: followUp.prompt, delay: followUp.delay, triggeredAt: new Date() } } });
@@ -110,13 +111,13 @@ export async function generateAIReply({ system, prompt, message, knowledge, agen
     }
 
     // Save name
-    if (!contact.name) {
+    if (contactId && !contact?.name) {
       const namePrompt = `Does the user reveal their name in this message? If so, what is it? If not, say "NO_NAME".\n\nUser: ${message}`;
       const model = geminiClient.getGenerativeModel({ model: 'gemini-pro' });
       const resp = await model.generateContent(namePrompt);
       const name = resp.response.text();
       if (name && name.trim().toUpperCase() !== 'NO_NAME') {
-        await Contact.updateOne({ _id: chat.contactId }, { $set: { name: name.trim() } });
+        await Contact.updateOne({ _id: contactId }, { $set: { name: name.trim() } });
       }
     }
 
@@ -130,47 +131,73 @@ export async function generateAIReply({ system, prompt, message, knowledge, agen
 
 export async function findAndSendFile({ agent, message, openaiClient, geminiClient }) {
   try {
-    if (agent.database && agent.database.length > 0 && agent.prompt) {
-      const instructions = agent.prompt.split('jika').slice(1);
+    if (agent.database && agent.database.length > 0) {
+      if (agent.prompt) {
+        const instructions = agent.prompt.split(/jika/i).slice(1);
 
-      for (const instruction of instructions) {
-        const match = instruction.match(/(.*?) maka kirim (.*)/);
-        if (match) {
-          const condition = match[1].trim();
-          const fileId = match[2].trim();
+        for (const instruction of instructions) {
+          const match = instruction.match(/(.*?) maka kirim (.*)/i);
+          if (match) {
+            const condition = match[1].trim();
+            const fileId = match[2].trim();
 
-          const prompt = `You are a helpful assistant. The user's message is: "${message}". The condition for sending a file is: "${condition}". Does the user's message match the condition? Please answer with "yes" or "no".`;
+            const prompt = `You are a helpful assistant. The user's message is: "${message}". The condition for sending a file is: "${condition}". Does the user's message match the condition? Please answer with "yes" or "no".`;
 
-          let answer = 'no';
-          if (openaiClient) {
-            const resp = await openaiClient.chat.completions.create({
-              model: 'gpt-4o-mini',
-              messages: [{ role: 'user', content: prompt }],
-              temperature: 0,
-            });
-            answer = resp.choices?.[0]?.message?.content || 'no';
-          } else if (geminiClient) {
-            const model = geminiClient.getGenerativeModel({ model: 'gemini-pro' });
-            const result = await model.generateContent(prompt);
-            answer = result.response.text();
-          }
+            let answer = 'no';
+            if (openaiClient) {
+              const resp = await openaiClient.chat.completions.create({
+                model: 'gpt-4o-mini',
+                messages: [{ role: 'user', content: prompt }],
+                temperature: 0,
+              });
+              answer = resp.choices?.[0]?.message?.content || 'no';
+            } else if (geminiClient) {
+              const model = geminiClient.getGenerativeModel({ model: 'gemini-pro' });
+              const result = await model.generateContent(prompt);
+              answer = result.response.text();
+            }
 
-          if (answer.toLowerCase().includes('yes')) {
-            const file = agent.database.find(f => f.id.includes(fileId));
-            if (file) {
-              console.log(`File found for user message based on prompt:`, file.originalName);
-              const serverUrl = process.env.PUBLIC_BASE_URL || 'http://localhost:5000';
-              return {
-                text: `Tentu, ini file ${file.originalName} yang Anda minta.`,
-                attachment: {
-                  url: `${serverUrl}/files/${file.storedName}`,
-                  filename: file.originalName,
-                  storedName: file.storedName,
-                }
-              };
+            if (answer.toLowerCase().includes('yes')) {
+              const file = agent.database.find(f => f.id.includes(fileId));
+              if (file) {
+                console.log(`File found for user message based on prompt:`, file.originalName);
+                const serverUrl = process.env.PUBLIC_BASE_URL || 'http://localhost:5000';
+                return {
+                  text: `Tentu, ini file ${file.originalName} yang Anda minta.`,
+                  attachment: {
+                    url: `${serverUrl}/files/${file.storedName}`,
+                    filename: file.originalName,
+                    storedName: file.storedName,
+                  }
+                };
+              }
             }
           }
         }
+      }
+
+      const lowerMsg = message.toLowerCase();
+      const simpleMatch = agent.database.find(file => {
+        const name = (file.originalName || '').toLowerCase();
+        const base = name.replace(/\.[^.]+$/, '');
+        return (
+          (name && lowerMsg.includes(name)) ||
+          (base && lowerMsg.includes(base)) ||
+          (file.id && lowerMsg.includes(file.id.toLowerCase()))
+        );
+      });
+
+      if (simpleMatch) {
+        console.log('Simple keyword match found for:', simpleMatch.originalName);
+        const serverUrl = process.env.PUBLIC_BASE_URL || 'http://localhost:5000';
+        return {
+          text: `Tentu, ini file ${simpleMatch.originalName} yang Anda minta.`,
+          attachment: {
+            url: `${serverUrl}/files/${simpleMatch.storedName}`,
+            filename: simpleMatch.originalName,
+            storedName: simpleMatch.storedName,
+          },
+        };
       }
     }
   } catch (e) {

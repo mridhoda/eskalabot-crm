@@ -6,7 +6,9 @@ import fs from 'fs';
 import Agent from '../models/Agent.js';
 import Knowledge from '../models/Knowledge.js';
 import { authRequired, attachUser } from '../middleware/auth.js'
-import { generateAIReply } from '../services/ai.js'
+import { generateAIReply, findAndSendFile } from '../services/ai.js'
+import { openaiClient, geminiClient } from '../services/aiClient.js';
+import { findDatabaseFileMention } from '../utils/fileMentions.js';
 
 const router = express.Router()
 
@@ -221,30 +223,69 @@ router.get('/knowledge/list', authRequired, attachUser, async (req, res) => {
 });
 
 // POST /agents/:id/test (Test UI)
-router.post('/:id/test', authRequired, attachUser, async (req, res) => {
-  try {
-    const { id } = req.params
-    const { message } = req.body || {}
+  router.post('/:id/test', authRequired, attachUser, async (req, res) => {
+    try {
+      const { id } = req.params
+    const { message, history: rawHistory } = req.body || {}
     if (!mongoose.Types.ObjectId.isValid(id)) return res.status(400).json({ error: 'Invalid agent id' })
     if (!message) return res.status(400).json({ error: 'Message required' })
+    const history =
+      Array.isArray(rawHistory) && rawHistory.length > 0
+        ? rawHistory
+            .filter((h) => h && typeof h.text === 'string')
+            .map((h) => ({
+              from: h.from === 'ai' ? 'ai' : 'user',
+              text: h.text,
+              createdAt: h.createdAt ? new Date(h.createdAt) : new Date(),
+            }))
+        : []
 
-    const agent = await Agent.findOne({ _id: id, workspaceId: req.me.workspaceId })
-    if (!agent) return res.status(404).json({ error: 'Agent not found' })
+      const agent = await Agent.findOne({ _id: id, workspaceId: req.me.workspaceId })
+      if (!agent) return res.status(404).json({ error: 'Agent not found' })
 
-    const system = agent.behavior || 'You are a helpful assistant.'
-    const reply = await generateAIReply({ 
-      system, 
-      prompt: agent.prompt, 
-      message, 
-      knowledge: agent.knowledge,
-      agent: agent,
-      chat: { workspaceId: req.me.workspaceId, contactId: null }, // Mock chat object
-    })
-    res.json({ reply })
-  } catch (err) {
-    console.error('POST /agents/:id/test error:', err)
-    res.status(500).json({ error: 'Test failed' })
-  }
-})
+      const fileResponse = await findAndSendFile({
+        agent,
+        message,
+        openaiClient,
+        geminiClient,
+      });
+
+      if (fileResponse) {
+        return res.json({ reply: fileResponse });
+      }
+
+      const system = agent.behavior || 'You are a helpful assistant.'
+      const reply = await generateAIReply({ 
+        system, 
+        prompt: agent.prompt, 
+        message, 
+        knowledge: agent.knowledge,
+        agent: agent,
+        chat: { workspaceId: req.me.workspaceId, contactId: null }, // Mock chat object
+        history,
+      })
+
+      let replyText = typeof reply === 'string' ? reply : reply.text
+      let attachment = typeof reply === 'object' && reply.attachment ? reply.attachment : null
+
+      if (!attachment) {
+        const mention = findDatabaseFileMention(replyText, agent)
+        if (mention && mention.file?.storedName) {
+          const cleanedText = (replyText || '').replace(mention.token, mention.altText || '').trim()
+          attachment = {
+            url: `/files/${mention.file.storedName}`,
+            filename: mention.file.originalName || mention.file.storedName,
+            storedName: mention.file.storedName,
+          }
+          replyText = cleanedText || mention.altText || replyText
+        }
+      }
+
+      res.json({ reply: attachment ? { text: replyText, attachment } : replyText })
+    } catch (err) {
+      console.error('POST /agents/:id/test error:', err)
+      res.status(500).json({ error: 'Test failed' })
+    }
+  })
 
 export default router

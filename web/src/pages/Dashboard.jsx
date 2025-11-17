@@ -1404,6 +1404,11 @@ function AgentDetail() {
     if (!testMsg.trim()) return
     setTesting(true)
 
+    const historyPayload = messages
+      .filter((m) => typeof m.text === 'string' && m.text.trim().length > 0)
+      .slice(-10)
+      .map((m) => ({ from: m.from, text: m.text }));
+
     const userMessage = { from: 'user', text: testMsg }
     let newMessages = [...messages, userMessage]
 
@@ -1422,7 +1427,7 @@ function AgentDetail() {
 
         try {
 
-          const r = await api.post(`/agents/${id}/test`, { message: testMsg })
+          const r = await api.post(`/agents/${id}/test`, { message: testMsg, history: historyPayload })
 
           const reply = r.data.reply;
 
