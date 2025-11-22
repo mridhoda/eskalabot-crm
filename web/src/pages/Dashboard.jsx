@@ -301,15 +301,15 @@ function Inbox() {
                       style={
                         c.takeoverBy
                           ? {
-                              color: '#007bff',
-                              backgroundColor: 'rgba(0, 123, 255, 0.25)',
-                              border: '1px solid rgba(0, 123, 255, 0.25)',
-                            }
+                            color: '#007bff',
+                            backgroundColor: 'rgba(0, 123, 255, 0.25)',
+                            border: '1px solid rgba(0, 123, 255, 0.25)',
+                          }
                           : {
-                              color: '#ffc107',
-                              backgroundColor: 'rgba(255, 193, 7, 0.25)',
-                              border: '1px solid rgba(255, 193, 7, 0.25)',
-                            }
+                            color: '#ffc107',
+                            backgroundColor: 'rgba(255, 193, 7, 0.25)',
+                            border: '1px solid rgba(255, 193, 7, 0.25)',
+                          }
                       }
                     >
                       {c.takeoverBy ? 'assign' : 'open'}
@@ -957,7 +957,7 @@ function Humans() {
     currentUser?.role === 'owner' || currentUser?.role === 'super'
 
   return (
-    <div style={{ maxWidth: 1150, margin: '0 auto' }}>
+    <div style={{ maxWidth: 1150, margin: '0 auto', height: '100%', overflowY: 'auto', width: '100%', padding: '0 20px' }}>
       <div
         className='row'
         style={{
@@ -978,7 +978,7 @@ function Humans() {
         </div>
       </div>
 
-      <div className='agent-grid'>
+      <div className='agent-grid-vertical'>
         {filtered.map((u) => (
           <div key={u._id} className='agent-card'>
             <div className='agent-avatar'>{initials(u.name)}</div>
@@ -1226,13 +1226,13 @@ function AgentDetail() {
 
   const generateLocalId = () =>
     typeof window !== 'undefined' &&
-    window.crypto &&
-    typeof window.crypto.randomUUID === 'function'
+      window.crypto &&
+      typeof window.crypto.randomUUID === 'function'
       ? window.crypto.randomUUID()
       : `${Date.now()}-${Math.random().toString(16).slice(2)}`
 
   useEffect(() => {
-    ;(async () => {
+    ; (async () => {
       try {
         const [a, p] = await Promise.all([
           api.get(`/agents/${id}`),
@@ -1425,1087 +1425,1087 @@ function AgentDetail() {
     setMessages(newMessages)
     setTestMsg('')
 
-        try {
+    try {
 
-          const r = await api.post(`/agents/${id}/test`, { message: testMsg, history: historyPayload })
+      const r = await api.post(`/agents/${id}/test`, { message: testMsg, history: historyPayload })
 
-          const reply = r.data.reply;
+      const reply = r.data.reply;
 
-          if (typeof reply === 'object' && reply.attachment) {
+      if (typeof reply === 'object' && reply.attachment) {
 
-            setMessages((prev) => [...prev, { from: 'ai', text: reply.text, attachment: reply.attachment }])
+        setMessages((prev) => [...prev, { from: 'ai', text: reply.text, attachment: reply.attachment }])
 
-          } else {
+      } else {
 
-            setMessages((prev) => [...prev, { from: 'ai', text: reply }])
-
-          }
-
-        } finally {
-
-          setTesting(false)
-
-        }
+        setMessages((prev) => [...prev, { from: 'ai', text: reply }])
 
       }
 
-    
+    } finally {
 
-      if (loading) return <div className='card'>Loading…</div>
+      setTesting(false)
 
-      if (!agent) return <div className='card'>Agent tidak ditemukan</div>
+    }
 
-    
+  }
 
-      return (
 
-        <div className='detail-wrap'>
 
-          <div
+  if (loading) return <div className='card'>Loading…</div>
 
-            className='row'
+  if (!agent) return <div className='card'>Agent tidak ditemukan</div>
 
-            style={{
 
-              alignItems: 'center',
 
-              justifyContent: 'space-between',
+  return (
 
-              marginBottom: 10,
+    <div className='detail-wrap'>
 
-            }}
+      <div
+
+        className='row'
+
+        style={{
+
+          alignItems: 'center',
+
+          justifyContent: 'space-between',
+
+          marginBottom: 10,
+
+        }}
+
+      >
+
+        <div className='row' style={{ alignItems: 'center', gap: 8 }}>
+
+          <button className='btn ghost' onClick={() => navigate(-1)}>
+
+            ← Back
+
+          </button>
+
+          <h2 style={{ margin: 0 }}>{name || agent.name}</h2>
+
+        </div>
+
+        <div className='row' style={{ gap: 8 }}>
+
+          <button
+
+            className='btn ghost'
+
+            onClick={() => window.location.reload()}
 
           >
 
-            <div className='row' style={{ alignItems: 'center', gap: 8 }}>
+            ↻
 
-              <button className='btn ghost' onClick={() => navigate(-1)}>
+          </button>
 
-                ← Back
+          <button className='btn' disabled={saving} onClick={save}>
 
-              </button>
+            {saving ? 'Saving…' : 'Save'}
 
-              <h2 style={{ margin: 0 }}>{name || agent.name}</h2>
+          </button>
 
-            </div>
+        </div>
 
-            <div className='row' style={{ gap: 8 }}>
+      </div>
 
-              <button
 
-                className='btn ghost'
 
-                onClick={() => window.location.reload()}
+      <div className='tabs'>
 
-              >
+        {[
 
-                ↻
+          'general',
 
-              </button>
+          'knowledge',
 
-              <button className='btn' disabled={saving} onClick={save}>
+          'integrations',
 
-                {saving ? 'Saving…' : 'Save'}
+          'followups',
 
-              </button>
+          'evaluation',
 
-            </div>
+          'database',
+
+        ].map((t) => (
+
+          <div
+
+            key={t}
+
+            className={`tab ${tab === t ? 'active' : ''}`}
+
+            onClick={() => setTab(t)}
+
+          >
+
+            {t[0].toUpperCase() + t.slice(1)}
 
           </div>
 
-    
+        ))}
 
-          <div className='tabs'>
+      </div>
 
-            {[
 
-              'general',
 
-              'knowledge',
+      <div className='split'>
 
-              'integrations',
+        {/* LEFT */}
 
-              'followups',
+        <div className='left col'>
 
-              'evaluation',
+          {tab === 'general' && (
 
-              'database',
+            <div className='col'>
 
-            ].map((t) => (
+              <div className='muted'>AI Agent Behavior</div>
+
+              <textarea
+
+                className='textarea'
+
+                rows={6}
+
+                value={behavior}
+
+                onChange={(e) => setBehavior(e.target.value)}
+
+              />
+
+
+
+              <div className='muted'>Welcome Message</div>
 
               <div
 
-                key={t}
+                className='muted'
 
-                className={`tab ${tab === t ? 'active' : ''}`}
+                style={{ color: 'blue', cursor: 'pointer' }}
 
-                onClick={() => setTab(t)}
+                onClick={() => document.getElementById('sticker-input').click()}
 
               >
 
-                {t[0].toUpperCase() + t.slice(1)}
+                upload gambar
 
               </div>
 
-            ))}
+              <input
 
-          </div>
+                type='file'
 
-    
+                id='sticker-input'
 
-          <div className='split'>
+                style={{ display: 'none' }}
 
-            {/* LEFT */}
+                onChange={(e) => handleStickerSelect(e.target.files[0])}
 
-            <div className='left col'>
+                accept='image/*'
 
-              {tab === 'general' && (
+              />
 
-                <div className='col'>
+              {stickerUrl && (
 
-                  <div className='muted'>AI Agent Behavior</div>
+                <div className='row' style={{ gap: 8, alignItems: 'center' }}>
 
-                  <textarea
+                  <img
 
-                    className='textarea'
+                    src={`${api.defaults.baseURL}${stickerUrl}`}
 
-                    rows={6}
+                    alt='sticker'
 
-                    value={behavior}
-
-                    onChange={(e) => setBehavior(e.target.value)}
+                    style={{ width: 50, height: 50 }}
 
                   />
 
-    
+                  <button
 
-                  <div className='muted'>Welcome Message</div>
+                    className='btn ghost'
 
-                  <div
-
-                    className='muted'
-
-                    style={{ color: 'blue', cursor: 'pointer' }}
-
-                    onClick={() => document.getElementById('sticker-input').click()}
+                    onClick={() => setStickerUrl('')}
 
                   >
 
-                    upload gambar
+                    Remove
 
-                  </div>
-
-                  <input
-
-                    type='file'
-
-                    id='sticker-input'
-
-                    style={{ display: 'none' }}
-
-                    onChange={(e) => handleStickerSelect(e.target.files[0])}
-
-                    accept='image/*'
-
-                  />
-
-                  {stickerUrl && (
-
-                    <div className='row' style={{ gap: 8, alignItems: 'center' }}>
-
-                      <img
-
-                        src={`${api.defaults.baseURL}${stickerUrl}`}
-
-                        alt='sticker'
-
-                        style={{ width: 50, height: 50 }}
-
-                      />
-
-                      <button
-
-                        className='btn ghost'
-
-                        onClick={() => setStickerUrl('')}
-
-                      >
-
-                        Remove
-
-                      </button>
-
-                    </div>
-
-                  )}
-
-                  <textarea
-
-                    className='textarea'
-
-                    rows={3}
-
-                    placeholder="Welcome message. You can use {{name}} to insert the user's name."
-
-                    value={welcomeMessage}
-
-                    onChange={(e) => setWelcomeMessage(e.target.value)}
-
-                  />
-
-    
-
-                  <div className='muted'>Prompt AI</div>
-
-                  <textarea
-
-                    className='textarea'
-
-                    rows={4}
-
-                    value={prompt}
-
-                    onChange={(e) => setPrompt(e.target.value)}
-
-                  />
+                  </button>
 
                 </div>
 
               )}
 
-    
+              <textarea
 
-                                          {tab === 'knowledge' && (
+                className='textarea'
 
-    
+                rows={3}
 
-                                            <div className='col'>
+                placeholder="Welcome message. You can use {{name}} to insert the user's name."
 
-    
+                value={welcomeMessage}
 
-                                              <div className='tabs'>
+                onChange={(e) => setWelcomeMessage(e.target.value)}
 
-    
+              />
 
-                                                <div className={`tab ${knowledgeTab === 'url' ? 'active' : ''}`} onClick={() => setKnowledgeTab('url')}>URL</div>
 
-    
 
-                                                <div className={`tab ${knowledgeTab === 'text' ? 'active' : ''}`} onClick={() => setKnowledgeTab('text')}>Text</div>
+              <div className='muted'>Prompt AI</div>
 
-    
+              <textarea
 
-                                                <div className={`tab ${knowledgeTab === 'file' ? 'active' : ''}`} onClick={() => setKnowledgeTab('file')}>File</div>
+                className='textarea'
 
-    
+                rows={4}
 
-                                                <div className={`tab ${knowledgeTab === 'qna' ? 'active' : ''}`} onClick={() => setKnowledgeTab('qna')}>Q&A</div>
+                value={prompt}
 
-    
+                onChange={(e) => setPrompt(e.target.value)}
 
-                                              </div>
-
-    
-
-                            
-
-    
-
-                                              <div
-
-    
-
-                                                className='row'
-
-    
-
-                                                style={{
-
-    
-
-                                                  justifyContent: 'space-between',
-
-    
-
-                                                  alignItems: 'center',
-
-    
-
-                                                  paddingTop: '16px'
-
-    
-
-                                                }}
-
-    
-
-                                              >
-
-    
-
-                                                <h3 style={{ margin: 0 }}>
-
-    
-
-                                                  Knowledge Sources: {knowledgeTab.toUpperCase()}
-
-    
-
-                                                </h3>
-
-    
-
-                                                <button
-
-    
-
-                                                  className='btn ghost'
-
-    
-
-                                                  onClick={() => addKnowledge(knowledgeTab === 'qna' ? { kind: 'qna', question: '', answer: '' } : { kind: knowledgeTab, value: '' })}
-
-    
-
-                                                >
-
-    
-
-                                                  + Add
-
-    
-
-                                                </button>
-
-    
-
-                                              </div>
-
-    
-
-                            
-
-    
-
-                                              <div className='list'>
-
-    
-
-                                                {knowledge
-
-    
-
-                                                  .map((k, i) => ({ ...k, originalIndex: i })) // Keep original index
-
-    
-
-                                                  .filter((k) => k.kind === knowledgeTab)
-
-    
-
-                                                  .map((k) => (
-
-    
-
-                                                    <div key={k.originalIndex} className='rowi'>
-
-    
-
-                                                      <div className='col' style={{ gap: 8, flex: 1 }}>
-
-    
-
-                                                        {k.kind === 'qna' ? (
-
-    
-
-                                                          <div className='col' style={{ gap: 8, flex: 1 }}>
-
-    
-
-                                                            <input
-
-    
-
-                                                              className='input'
-
-    
-
-                                                              placeholder='Question'
-
-    
-
-                                                              value={k.question}
-
-    
-
-                                                              onChange={(e) =>
-
-    
-
-                                                                updKnowledge(k.originalIndex, { question: e.target.value })
-
-    
-
-                                                              }
-
-    
-
-                                                            />
-
-    
-
-                                                            <textarea
-
-    
-
-                                                              className='textarea'
-
-    
-
-                                                              placeholder='Answer'
-
-    
-
-                                                              value={k.answer}
-
-    
-
-                                                              onChange={(e) =>
-
-    
-
-                                                                updKnowledge(k.originalIndex, { answer: e.target.value })
-
-    
-
-                                                              }
-
-    
-
-                                                            />
-
-    
-
-                                                          </div>
-
-    
-
-                                                        ) : k.kind === 'file' ? (
-
-    
-
-                                                          k.value ? (
-
-    
-
-                                                            <div
-
-    
-
-                                                              className='row'
-
-    
-
-                                                              style={{ gap: 8, alignItems: 'center' }}
-
-    
-
-                                                            >
-
-    
-
-                                                              <span>{k.originalName || k.value.split('/').pop()}</span>
-
-    
-
-                                                              <a
-
-    
-
-                                                                href={`${api.defaults.baseURL}${k.value}`}
-
-    
-
-                                                                target='_blank'
-
-    
-
-                                                                rel='noreferrer'
-
-    
-
-                                                              >
-
-    
-
-                                                                Open
-
-    
-
-                                                              </a>
-
-    
-
-                                                              <button
-
-    
-
-                                                                className='btn ghost'
-
-    
-
-                                                                onClick={() => updKnowledge(k.originalIndex, { value: '' })}
-
-    
-
-                                                              >
-
-    
-
-                                                                Remove
-
-    
-
-                                                              </button>
-
-    
-
-                                                            </div>
-
-    
-
-                                                          ) : (
-
-    
-
-                                                            <FileInput
-
-    
-
-                                                              onFileSelect={(file) => handleFileSelect(file, k.originalIndex)}
-
-    
-
-                                                            />
-
-    
-
-                                                          )
-
-    
-
-                                                        ) : (
-
-    
-
-                                                          <textarea
-
-    
-
-                                                            className='textarea'
-
-    
-
-                                                            placeholder={
-
-    
-
-                                                              k.kind === 'text'
-
-    
-
-                                                                ? 'Enter text…'
-
-    
-
-                                                                : 'Paste URL or file path…'
-
-    
-
-                                                            }
-
-    
-
-                                                            value={k.value}
-
-    
-
-                                                            onChange={(e) =>
-
-    
-
-                                                              updKnowledge(k.originalIndex, { value: e.target.value })
-
-    
-
-                                                            }
-
-    
-
-                                                          />
-
-    
-
-                                                        )}
-
-    
-
-                                                      </div>
-
-    
-
-                                                      <button
-
-    
-
-                                                        className='btn ghost'
-
-    
-
-                                                        onClick={() => delKnowledge(k.originalIndex)}
-
-    
-
-                                                      >
-
-    
-
-                                                        🗑️
-
-    
-
-                                                      </button>
-
-    
-
-                                                    </div>
-
-    
-
-                                                  ))}
-
-    
-
-                                                {!knowledge.filter((k) => k.kind === knowledgeTab).length && (
-
-    
-
-                                                  <div className='muted'>Belum ada sumber pengetahuan.</div>
-
-    
-
-                                                )}
-
-    
-
-                                              </div>
-
-    
-
-                                            </div>
-
-    
-
-                                          )}
-
-    
-
-              {tab === 'integrations' && (
-
-                <div className='col'>
-
-                  <h3>Integrations</h3>
-
-                  <div className='muted'>
-
-                    Hubungkan agent ke platform yang sudah terdaftar.
-
-                  </div>
-
-                  <div className='row' style={{ gap: 8, alignItems: 'center' }}>
-
-                    <BrandIcon
-
-                      type={
-
-                        platforms.find((p) => p._id === platformId)?.type ||
-
-                        'custom'
-
-                      }
-
-                      size={18}
-
-                    />
-
-                    <select
-
-                      className='select'
-
-                      value={platformId || ''}
-
-                      onChange={(e) => setPlatformId(e.target.value)}
-
-                    >
-
-                      <option value=''> (Tidak terhubung)</option>
-
-                      {platforms.map((p) => (
-
-                        <option key={p._id} value={p._id}>
-
-                          {p.label} ({p.type})
-
-                        </option>
-
-                      ))}
-
-                    </select>
-
-                  </div>
-
-                  <div className='muted' style={{ marginTop: 6 }}>
-
-                    Webhook URL umum: c
-
-                    <code>{`<PUBLIC_BASE_URL>/webhook/<platform>`}</code>
-
-                  </div>
-
-                </div>
-
-              )}
-
-    
-
-              {tab === 'followups' && (
-
-                <div className='col'>
-
-                  <div
-
-                    className='row'
-
-                    style={{
-
-                      justifyContent: 'space-between',
-
-                      alignItems: 'center',
-
-                    }}
-
-                  >
-
-                    <h3 style={{ margin: 0 }}>Follow-ups</h3>
-
-                    <button className='btn ghost' onClick={addFollowUp}>
-
-                      + Add
-
-                    </button>
-
-                  </div>
-
-                  <div className='list'>
-
-                    {followUps.map((f, i) => (
-
-                      <div key={i} className='rowi'>
-
-                        <div className='col' style={{ gap: 8, flex: 1 }}>
-
-                          <textarea
-
-                            className='textarea'
-
-                            placeholder='Follow-up instruction'
-
-                            value={f.prompt}
-
-                            onChange={(e) =>
-
-                              updFollowUp(i, { prompt: e.target.value })
-
-                            }
-
-                          />
-
-                          <div
-
-                            className='row'
-
-                            style={{ gap: 8, alignItems: 'center' }}
-
-                          >
-
-                            <input
-
-                              type='number'
-
-                              className='input'
-
-                              style={{ width: 100 }}
-
-                              value={f.delay}
-
-                              onChange={(e) =>
-
-                                updFollowUp(i, { delay: e.target.value })
-
-                              }
-
-                            />
-
-                            <div className='muted'>minutes after trigger</div>
-
-                          </div>
-
-                        </div>
-
-                        <button
-
-                          className='btn ghost'
-
-                          onClick={() => delFollowUp(i)}
-
-                        >
-
-                          🗑️
-
-                        </button>
-
-                      </div>
-
-                    ))}
-
-                    {!followUps.length && (
-
-                      <div className='muted'>No follow-ups configured.</div>
-
-                    )}
-
-                  </div>
-
-                </div>
-
-              )}
-
-    
-
-              {tab === 'evaluation' && (
-
-                <div className='col'>
-
-                  <h3>Evaluation</h3>
-
-                  <div className='muted'>Placeholder metrik evaluasi.</div>
-
-                </div>
-
-              )}
-
-
-
-              {tab === 'database' && (
-                <div className='col'>
-                  <div
-                    className='row'
-                    style={{
-                      justifyContent: 'space-between',
-                      alignItems: 'flex-start',
-                      gap: 16,
-                      flexWrap: 'wrap',
-                    }}
-                  >
-                    <h3 style={{ margin: 0 }}>Database Files</h3>
-                    <div
-                      className='col'
-                      style={{
-                        gap: 8,
-                        minWidth: 260,
-                        maxWidth: 340,
-                        flex: '0 0 auto',
-                      }}
-                    >
-                      <input
-                        id='custom-file-id'
-                        className='input'
-                        placeholder='Custom file ID (optional)'
-                        value={databaseCustomId}
-                        onChange={(e) => setDatabaseCustomId(e.target.value)}
-                      />
-                      <FileInput onFileSelect={handleDatabaseFileSelect} />
-                      {dbUploadStatus.status !== 'idle' && (
-                        <div className={`upload-status ${dbUploadStatus.status}`}>
-                          {dbUploadStatus.message}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className='list'>
-                    {combinedDatabase.map((f, i) => {
-                      const fileKey = f.id || f.storedName || `${f.originalName}-${i}`
-                      const link = getFileLink(f)
-                      return (
-                        <div key={fileKey} className='rowi' style={{ flexDirection: 'column', gap: 8 }}>
-                          <div className='row' style={{ width: '100%', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-                            <div className='col' style={{ gap: 4, flex: 1 }}>
-                              <div
-                                className='row'
-                                style={{
-                                  gap: 8,
-                                  alignItems: 'center',
-                                  flexWrap: 'wrap',
-                                }}
-                              >
-                                <span>{f.originalName}</span>
-                                {f.source === 'remote' && f.storedName ? (
-                                  <a
-                                    href={`${api.defaults.baseURL}/files/${f.storedName}`}
-                                    target='_blank'
-                                    rel='noreferrer'
-                                  >
-                                    Open
-                                  </a>
-                                ) : (
-                                  f.dataUrl && (
-                                    <a href={f.dataUrl} download={f.originalName}>
-                                      Download
-                                    </a>
-                                  )
-                                )}
-                                <span
-                                  className='badge'
-                                  style={{
-                                    background:
-                                      f.source === 'remote' ? '#ecfdf3' : '#e0f2fe',
-                                    color:
-                                      f.source === 'remote' ? '#047857' : '#0369a1',
-                                  }}
-                                >
-                                  {f.source === 'remote' ? 'Server' : 'Local only'}
-                                </span>
-                              </div>
-                              {f.size && (
-                                <div className='muted' style={{ fontSize: 12 }}>
-                                  {(f.size / 1024).toFixed(1)} KB
-                                </div>
-                              )}
-                            </div>
-
-                            <div className='row' style={{ gap: 6 }}>
-                              <button className='btn ghost' onClick={() => alert(f.id)}>
-                                ID
-                              </button>
-                              <button
-                                className='btn ghost'
-                                onClick={() => toggleLinkPanel(fileKey, f)}
-                              >
-                                Link
-                              </button>
-                              <button
-                                className='btn ghost'
-                                onClick={() => deleteDatabaseFile(f)}
-                              >
-                                ???
-                              </button>
-                            </div>
-                          </div>
-
-                          {activeLinkId === fileKey && link && (
-                            <div
-                              className='row'
-                              style={{
-                                width: '100%',
-                                gap: 8,
-                                alignItems: 'center',
-                                flexWrap: 'wrap',
-                              }}
-                            >
-                              <input
-                                className='input'
-                                readOnly
-                                value={link}
-                                style={{ flex: 1 }}
-                                onFocus={(e) => e.target.select()}
-                              />
-                              <button
-                                className='btn ghost'
-                                title='Copy link'
-                                onClick={() => copyLink(link)}
-                              >
-                                📋
-                              </button>
-                            </div>
-                          )}
-                        </div>
-                      )
-                    })}
-
-                    {!combinedDatabase.length && (
-                      <div className='muted'>No database files yet.</div>
-                    )}
-                  </div>
-                </div>
-              )}
+              />
 
             </div>
 
-    
+          )}
 
-            {/* RIGHT */}
 
-            {tab === 'general' ? (
 
-              <div className='right'>
+          {tab === 'knowledge' && (
 
-                <div className='card testbox'>
 
-                  <div className='testhead'>
 
-                    <div className='avatar'>AI</div>
+            <div className='col'>
 
-                    <div style={{ fontWeight: 700 }}>{name || agent.name}</div>
+
+
+              <div className='tabs'>
+
+
+
+                <div className={`tab ${knowledgeTab === 'url' ? 'active' : ''}`} onClick={() => setKnowledgeTab('url')}>URL</div>
+
+
+
+                <div className={`tab ${knowledgeTab === 'text' ? 'active' : ''}`} onClick={() => setKnowledgeTab('text')}>Text</div>
+
+
+
+                <div className={`tab ${knowledgeTab === 'file' ? 'active' : ''}`} onClick={() => setKnowledgeTab('file')}>File</div>
+
+
+
+                <div className={`tab ${knowledgeTab === 'qna' ? 'active' : ''}`} onClick={() => setKnowledgeTab('qna')}>Q&A</div>
+
+
+
+              </div>
+
+
+
+
+
+
+
+              <div
+
+
+
+                className='row'
+
+
+
+                style={{
+
+
+
+                  justifyContent: 'space-between',
+
+
+
+                  alignItems: 'center',
+
+
+
+                  paddingTop: '16px'
+
+
+
+                }}
+
+
+
+              >
+
+
+
+                <h3 style={{ margin: 0 }}>
+
+
+
+                  Knowledge Sources: {knowledgeTab.toUpperCase()}
+
+
+
+                </h3>
+
+
+
+                <button
+
+
+
+                  className='btn ghost'
+
+
+
+                  onClick={() => addKnowledge(knowledgeTab === 'qna' ? { kind: 'qna', question: '', answer: '' } : { kind: knowledgeTab, value: '' })}
+
+
+
+                >
+
+
+
+                  + Add
+
+
+
+                </button>
+
+
+
+              </div>
+
+
+
+
+
+
+
+              <div className='list'>
+
+
+
+                {knowledge
+
+
+
+                  .map((k, i) => ({ ...k, originalIndex: i })) // Keep original index
+
+
+
+                  .filter((k) => k.kind === knowledgeTab)
+
+
+
+                  .map((k) => (
+
+
+
+                    <div key={k.originalIndex} className='rowi'>
+
+
+
+                      <div className='col' style={{ gap: 8, flex: 1 }}>
+
+
+
+                        {k.kind === 'qna' ? (
+
+
+
+                          <div className='col' style={{ gap: 8, flex: 1 }}>
+
+
+
+                            <input
+
+
+
+                              className='input'
+
+
+
+                              placeholder='Question'
+
+
+
+                              value={k.question}
+
+
+
+                              onChange={(e) =>
+
+
+
+                                updKnowledge(k.originalIndex, { question: e.target.value })
+
+
+
+                              }
+
+
+
+                            />
+
+
+
+                            <textarea
+
+
+
+                              className='textarea'
+
+
+
+                              placeholder='Answer'
+
+
+
+                              value={k.answer}
+
+
+
+                              onChange={(e) =>
+
+
+
+                                updKnowledge(k.originalIndex, { answer: e.target.value })
+
+
+
+                              }
+
+
+
+                            />
+
+
+
+                          </div>
+
+
+
+                        ) : k.kind === 'file' ? (
+
+
+
+                          k.value ? (
+
+
+
+                            <div
+
+
+
+                              className='row'
+
+
+
+                              style={{ gap: 8, alignItems: 'center' }}
+
+
+
+                            >
+
+
+
+                              <span>{k.originalName || k.value.split('/').pop()}</span>
+
+
+
+                              <a
+
+
+
+                                href={`${api.defaults.baseURL}${k.value}`}
+
+
+
+                                target='_blank'
+
+
+
+                                rel='noreferrer'
+
+
+
+                              >
+
+
+
+                                Open
+
+
+
+                              </a>
+
+
+
+                              <button
+
+
+
+                                className='btn ghost'
+
+
+
+                                onClick={() => updKnowledge(k.originalIndex, { value: '' })}
+
+
+
+                              >
+
+
+
+                                Remove
+
+
+
+                              </button>
+
+
+
+                            </div>
+
+
+
+                          ) : (
+
+
+
+                            <FileInput
+
+
+
+                              onFileSelect={(file) => handleFileSelect(file, k.originalIndex)}
+
+
+
+                            />
+
+
+
+                          )
+
+
+
+                        ) : (
+
+
+
+                          <textarea
+
+
+
+                            className='textarea'
+
+
+
+                            placeholder={
+
+
+
+                              k.kind === 'text'
+
+
+
+                                ? 'Enter text…'
+
+
+
+                                : 'Paste URL or file path…'
+
+
+
+                            }
+
+
+
+                            value={k.value}
+
+
+
+                            onChange={(e) =>
+
+
+
+                              updKnowledge(k.originalIndex, { value: e.target.value })
+
+
+
+                            }
+
+
+
+                          />
+
+
+
+                        )}
+
+
+
+                      </div>
+
+
+
+                      <button
+
+
+
+                        className='btn ghost'
+
+
+
+                        onClick={() => delKnowledge(k.originalIndex)}
+
+
+
+                      >
+
+
+
+                        🗑️
+
+
+
+                      </button>
+
+
+
+                    </div>
+
+
+
+                  ))}
+
+
+
+                {!knowledge.filter((k) => k.kind === knowledgeTab).length && (
+
+
+
+                  <div className='muted'>Belum ada sumber pengetahuan.</div>
+
+
+
+                )}
+
+
+
+              </div>
+
+
+
+            </div>
+
+
+
+          )}
+
+
+
+          {tab === 'integrations' && (
+
+            <div className='col'>
+
+              <h3>Integrations</h3>
+
+              <div className='muted'>
+
+                Hubungkan agent ke platform yang sudah terdaftar.
+
+              </div>
+
+              <div className='row' style={{ gap: 8, alignItems: 'center' }}>
+
+                <BrandIcon
+
+                  type={
+
+                    platforms.find((p) => p._id === platformId)?.type ||
+
+                    'custom'
+
+                  }
+
+                  size={18}
+
+                />
+
+                <select
+
+                  className='select'
+
+                  value={platformId || ''}
+
+                  onChange={(e) => setPlatformId(e.target.value)}
+
+                >
+
+                  <option value=''> (Tidak terhubung)</option>
+
+                  {platforms.map((p) => (
+
+                    <option key={p._id} value={p._id}>
+
+                      {p.label} ({p.type})
+
+                    </option>
+
+                  ))}
+
+                </select>
+
+              </div>
+
+              <div className='muted' style={{ marginTop: 6 }}>
+
+                Webhook URL umum: c
+
+                <code>{`<PUBLIC_BASE_URL>/webhook/<platform>`}</code>
+
+              </div>
+
+            </div>
+
+          )}
+
+
+
+          {tab === 'followups' && (
+
+            <div className='col'>
+
+              <div
+
+                className='row'
+
+                style={{
+
+                  justifyContent: 'space-between',
+
+                  alignItems: 'center',
+
+                }}
+
+              >
+
+                <h3 style={{ margin: 0 }}>Follow-ups</h3>
+
+                <button className='btn ghost' onClick={addFollowUp}>
+
+                  + Add
+
+                </button>
+
+              </div>
+
+              <div className='list'>
+
+                {followUps.map((f, i) => (
+
+                  <div key={i} className='rowi'>
+
+                    <div className='col' style={{ gap: 8, flex: 1 }}>
+
+                      <textarea
+
+                        className='textarea'
+
+                        placeholder='Follow-up instruction'
+
+                        value={f.prompt}
+
+                        onChange={(e) =>
+
+                          updFollowUp(i, { prompt: e.target.value })
+
+                        }
+
+                      />
+
+                      <div
+
+                        className='row'
+
+                        style={{ gap: 8, alignItems: 'center' }}
+
+                      >
+
+                        <input
+
+                          type='number'
+
+                          className='input'
+
+                          style={{ width: 100 }}
+
+                          value={f.delay}
+
+                          onChange={(e) =>
+
+                            updFollowUp(i, { delay: e.target.value })
+
+                          }
+
+                        />
+
+                        <div className='muted'>minutes after trigger</div>
+
+                      </div>
+
+                    </div>
 
                     <button
 
                       className='btn ghost'
 
-                      style={{ marginLeft: 'auto' }}
-
-                      onClick={() => setMessages([])}
+                      onClick={() => delFollowUp(i)}
 
                     >
 
-                      ↻
+                      🗑️
 
                     </button>
 
                   </div>
 
-                  <div className='testmsgs'>
+                ))}
 
-                    {messages.map((m, idx) => (
+                {!followUps.length && (
 
-                      <div key={idx} className={`bbl ${m.from}`}>
+                  <div className='muted'>No follow-ups configured.</div>
 
-                        {m.text}
+                )}
 
-                        {m.sticker && (
+              </div>
 
-                          <img
+            </div>
 
-                            src={`${api.defaults.baseURL}${m.sticker}`}
+          )}
 
-                            alt='sticker'
 
-                            style={{ width: 100, height: 100 }}
 
+          {tab === 'evaluation' && (
+
+            <div className='col'>
+
+              <h3>Evaluation</h3>
+
+              <div className='muted'>Placeholder metrik evaluasi.</div>
+
+            </div>
+
+          )}
+
+
+
+          {tab === 'database' && (
+            <div className='col'>
+              <div
+                className='row'
+                style={{
+                  justifyContent: 'space-between',
+                  alignItems: 'flex-start',
+                  gap: 16,
+                  flexWrap: 'wrap',
+                }}
+              >
+                <h3 style={{ margin: 0 }}>Database Files</h3>
+                <div
+                  className='col'
+                  style={{
+                    gap: 8,
+                    minWidth: 260,
+                    maxWidth: 340,
+                    flex: '0 0 auto',
+                  }}
+                >
+                  <input
+                    id='custom-file-id'
+                    className='input'
+                    placeholder='Custom file ID (optional)'
+                    value={databaseCustomId}
+                    onChange={(e) => setDatabaseCustomId(e.target.value)}
+                  />
+                  <FileInput onFileSelect={handleDatabaseFileSelect} />
+                  {dbUploadStatus.status !== 'idle' && (
+                    <div className={`upload-status ${dbUploadStatus.status}`}>
+                      {dbUploadStatus.message}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className='list'>
+                {combinedDatabase.map((f, i) => {
+                  const fileKey = f.id || f.storedName || `${f.originalName}-${i}`
+                  const link = getFileLink(f)
+                  return (
+                    <div key={fileKey} className='rowi' style={{ flexDirection: 'column', gap: 8 }}>
+                      <div className='row' style={{ width: '100%', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+                        <div className='col' style={{ gap: 4, flex: 1 }}>
+                          <div
+                            className='row'
+                            style={{
+                              gap: 8,
+                              alignItems: 'center',
+                              flexWrap: 'wrap',
+                            }}
+                          >
+                            <span>{f.originalName}</span>
+                            {f.source === 'remote' && f.storedName ? (
+                              <a
+                                href={`${api.defaults.baseURL}/files/${f.storedName}`}
+                                target='_blank'
+                                rel='noreferrer'
+                              >
+                                Open
+                              </a>
+                            ) : (
+                              f.dataUrl && (
+                                <a href={f.dataUrl} download={f.originalName}>
+                                  Download
+                                </a>
+                              )
+                            )}
+                            <span
+                              className='badge'
+                              style={{
+                                background:
+                                  f.source === 'remote' ? '#ecfdf3' : '#e0f2fe',
+                                color:
+                                  f.source === 'remote' ? '#047857' : '#0369a1',
+                              }}
+                            >
+                              {f.source === 'remote' ? 'Server' : 'Local only'}
+                            </span>
+                          </div>
+                          {f.size && (
+                            <div className='muted' style={{ fontSize: 12 }}>
+                              {(f.size / 1024).toFixed(1)} KB
+                            </div>
+                          )}
+                        </div>
+
+                        <div className='row' style={{ gap: 6 }}>
+                          <button className='btn ghost' onClick={() => alert(f.id)}>
+                            ID
+                          </button>
+                          <button
+                            className='btn ghost'
+                            onClick={() => toggleLinkPanel(fileKey, f)}
+                          >
+                            Link
+                          </button>
+                          <button
+                            className='btn ghost'
+                            onClick={() => deleteDatabaseFile(f)}
+                          >
+                            ???
+                          </button>
+                        </div>
+                      </div>
+
+                      {activeLinkId === fileKey && link && (
+                        <div
+                          className='row'
+                          style={{
+                            width: '100%',
+                            gap: 8,
+                            alignItems: 'center',
+                            flexWrap: 'wrap',
+                          }}
+                        >
+                          <input
+                            className='input'
+                            readOnly
+                            value={link}
+                            style={{ flex: 1 }}
+                            onFocus={(e) => e.target.select()}
                           />
+                          <button
+                            className='btn ghost'
+                            title='Copy link'
+                            onClick={() => copyLink(link)}
+                          >
+                            📋
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
 
-                        )}
+                {!combinedDatabase.length && (
+                  <div className='muted'>No database files yet.</div>
+                )}
+              </div>
+            </div>
+          )}
+
+        </div>
+
+
+
+        {/* RIGHT */}
+
+        {tab === 'general' ? (
+
+          <div className='right'>
+
+            <div className='card testbox'>
+
+              <div className='testhead'>
+
+                <div className='avatar'>AI</div>
+
+                <div style={{ fontWeight: 700 }}>{name || agent.name}</div>
+
+                <button
+
+                  className='btn ghost'
+
+                  style={{ marginLeft: 'auto' }}
+
+                  onClick={() => setMessages([])}
+
+                >
+
+                  ↻
+
+                </button>
+
+              </div>
+
+              <div className='testmsgs'>
+
+                {messages.map((m, idx) => (
+
+                  <div key={idx} className={`bbl ${m.from}`}>
+
+                    {m.text}
+
+                    {m.sticker && (
+
+                      <img
+
+                        src={`${api.defaults.baseURL}${m.sticker}`}
+
+                        alt='sticker'
+
+                        style={{ width: 100, height: 100 }}
+
+                      />
+
+                    )}
 
                     {m.attachment && (
 
@@ -2545,7 +2545,7 @@ function AgentDetail() {
 
                           return (
 
-                            <a 
+                            <a
 
                               href={url}
 
@@ -2569,55 +2569,55 @@ function AgentDetail() {
 
                     )}
 
-                      </div>
-
-                    ))}
-
                   </div>
 
-                  <div className='row'>
-
-                    <input
-
-                      className='input'
-
-                      placeholder='Ketik pesan uji…'
-
-                      value={testMsg}
-
-                      onChange={(e) => setTestMsg(e.target.value)}
-
-                      onKeyDown={(e) => e.key === 'Enter' && sendTest()}
-
-                    />
-
-                    <button className='btn' onClick={sendTest} disabled={testing}>
-
-                      {testing ? '...' : 'Kirim'}
-
-                    </button>
-
-                  </div>
-
-                  <div className='muted' style={{ marginTop: 6 }}>
-
-                    Tanpa API key, balasan akan berupa “Echo: &lt;pesan&gt;”.
-
-                  </div>
-
-                </div>
+                ))}
 
               </div>
 
-            ) : (
+              <div className='row'>
 
-              <div className='right'></div>
+                <input
 
-            )}
+                  className='input'
+
+                  placeholder='Ketik pesan uji…'
+
+                  value={testMsg}
+
+                  onChange={(e) => setTestMsg(e.target.value)}
+
+                  onKeyDown={(e) => e.key === 'Enter' && sendTest()}
+
+                />
+
+                <button className='btn' onClick={sendTest} disabled={testing}>
+
+                  {testing ? '...' : 'Kirim'}
+
+                </button>
+
+              </div>
+
+              <div className='muted' style={{ marginTop: 6 }}>
+
+                Tanpa API key, balasan akan berupa “Echo: &lt;pesan&gt;”.
+
+              </div>
+
+            </div>
 
           </div>
 
-        </div>
+        ) : (
+
+          <div className='right'></div>
+
+        )}
+
+      </div>
+
+    </div>
   )
 }
 

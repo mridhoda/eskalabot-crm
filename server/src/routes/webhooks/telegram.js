@@ -55,7 +55,7 @@ async function saveTelegramFileLocally({
   return { storedName, originalName: safeOriginal };
 }
 
-router.post('/', async (req, res) => {
+router.post('/:token?', async (req, res) => {
   res.sendStatus(200);
 
   try {
@@ -82,10 +82,24 @@ router.post('/', async (req, res) => {
     const chatId = msgObj?.chat?.id;
     if (!chatId) return;
 
-    const platform = await Platform.findOne({
-      type: 'telegram',
-      token: { $exists: true, $ne: '' },
-    }).sort({ createdAt: -1 });
+    const tokenParam = req.params.token;
+    let platform;
+
+    if (tokenParam) {
+      platform = await Platform.findOne({
+        type: 'telegram',
+        token: tokenParam,
+      });
+      if (!platform) {
+        console.warn(`[telegram] no platform found for token: ${tokenParam}`);
+        return;
+      }
+    } else {
+      platform = await Platform.findOne({
+        type: 'telegram',
+        token: { $exists: true, $ne: '' },
+      }).sort({ createdAt: -1 });
+    }
 
     if (!platform) {
       console.warn('[telegram] no platform/token found');
@@ -344,9 +358,9 @@ router.post('/', async (req, res) => {
           text: savedText,
           attachment: documentSent
             ? {
-                url: `/files/${file.storedName}`,
-                filename: file.originalName || file.storedName,
-              }
+              url: `/files/${file.storedName}`,
+              filename: file.originalName || file.storedName,
+            }
             : null,
           createdAt: new Date(),
         });

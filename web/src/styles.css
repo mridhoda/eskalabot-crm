@@ -764,6 +764,12 @@ a:hover {
   align-items: stretch;
   scroll-snap-type: x proximity;
 }
+.agent-grid-vertical {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 16px;
+  padding: 4px 8px 14px;
+}
 .agent-grid::-webkit-scrollbar {
   height: 6px;
 }
