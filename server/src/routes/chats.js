@@ -2,6 +2,7 @@ import express from 'express';
 import path from 'path';
 import Chat from '../models/Chat.js';
 import Message from '../models/Message.js';
+import Contact from '../models/Contact.js';
 import { authRequired, attachUser } from '../middleware/auth.js';
 import { tgSend, waSend, tgSendDocument, waSendDocument } from '../services/sender.js';
 
@@ -187,12 +188,27 @@ router.post('/:chatId/resolve', authRequired, attachUser, async (req, res) => {
 
 router.delete('/:chatId', authRequired, attachUser, async (req, res) => {
   const { chatId } = req.params;
-  const chat = await Chat.findOneAndDelete({ _id: chatId, workspaceId: req.me.workspaceId });
+  
+  // 1. Find the chat to get the contactId
+  const chat = await Chat.findOne({ _id: chatId, workspaceId: req.me.workspaceId });
   if (!chat) {
     return res.status(404).json({ error: 'Chat not found' });
   }
-  await Message.deleteMany({ chatId, workspaceId: req.me.workspaceId });
-  res.json({ success: true });
+
+  const contactId = chat.contactId;
+
+  // 2. Delete all associated messages
+  await Message.deleteMany({ chatId: chat._id, workspaceId: req.me.workspaceId });
+
+  // 3. Delete the chat itself
+  await Chat.deleteOne({ _id: chat._id, workspaceId: req.me.workspaceId });
+
+  // 4. Delete the contact, if it exists
+  if (contactId) {
+    await Contact.deleteOne({ _id: contactId, workspaceId: req.me.workspaceId });
+  }
+
+  res.json({ success: true, message: 'Chat, messages, and contact deleted.' });
 });
 
 export default router;

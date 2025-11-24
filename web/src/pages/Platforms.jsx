@@ -19,7 +19,6 @@ export default function Platforms() {
   const [label, setLabel] = useState('')
   const [token, setToken] = useState('')
   const [accountId, setAccountId] = useState('')
-  const [webhookSecret, setWebhookSecret] = useState('')
   const [appId, setAppId] = useState('')
   const [appSecret, setAppSecret] = useState('')
   const [phoneNumberId, setPhoneNumberId] = useState('')
@@ -86,7 +85,6 @@ export default function Platforms() {
     setLabel('')
     setToken('')
     setAccountId('')
-    setWebhookSecret('')
     setAppId('')
     setAppSecret('')
     setPhoneNumberId('')
@@ -102,7 +100,6 @@ export default function Platforms() {
     setLabel(sel.label || '')
     setToken(sel.token || '')
     setAccountId(sel.accountId || '')
-    setWebhookSecret(sel.webhookSecret || '')
     setAppId(sel.appId || '')
     setAppSecret(sel.appSecret || '')
     setPhoneNumberId(sel.phoneNumberId || '')
@@ -123,7 +120,6 @@ export default function Platforms() {
             token,
             accountId,
             phoneNumberId,
-            webhookSecret,
             appId,
             appSecret,
           })
@@ -138,7 +134,6 @@ export default function Platforms() {
             token,
             accountId,
             phoneNumberId,
-            webhookSecret,
             appId,
             appSecret,
           })
@@ -157,7 +152,6 @@ export default function Platforms() {
       token,
       accountId,
       phoneNumberId,
-      webhookSecret,
       appId,
       appSecret,
     ]
@@ -211,7 +205,6 @@ export default function Platforms() {
       setLabel(`${ptype.charAt(0).toUpperCase() + ptype.slice(1)} #${next}`)
       setToken('')
       setAccountId('')
-      setWebhookSecret('')
       setAppId('')
       setAppSecret('')
       setPhoneNumberId('')
@@ -296,23 +289,7 @@ export default function Platforms() {
                 <span className='badge'>{sel.type}</span>
               </div>
               <div className='row' style={{ gap: 8 }}>
-                {sel?.type === 'telegram' && (
-                  <button
-                    className='btn ghost'
-                    onClick={async () => {
-                      try {
-                        await api.post(
-                          `/integrations/telegram/${sel._id}/setWebhook`
-                        )
-                        alert('Webhook Telegram terset ✔')
-                      } catch {
-                        alert('Gagal set webhook')
-                      }
-                    }}
-                  >
-                    Auto Set Webhook
-                  </button>
-                )}
+
                 {sel?.type === 'instagram' && (
                   <button
                     className='btn ghost'
@@ -516,12 +493,7 @@ export default function Platforms() {
                     value={accountId}
                     onChange={(e) => setAccountId(e.target.value)}
                   />
-                  <input
-                    className='input'
-                    placeholder='Webhook Secret (opsional)'
-                    value={webhookSecret}
-                    onChange={(e) => setWebhookSecret(e.target.value)}
-                  />
+
                   <input
                     className='input'
                     placeholder='App ID (opsional)'

@@ -96,6 +96,8 @@ async function saveTelegramFileLocally({
 router.post('/', async (req, res) => {
   res.sendStatus(200);
 
+  const serverUrl = process.env.PUBLIC_BASE_URL || 'http://localhost:5000';
+
   try {
     const update = req.body || {};
     console.log('[telegram] update:', JSON.stringify(update));
@@ -140,7 +142,7 @@ router.post('/', async (req, res) => {
           preferredName: `photo_${largestPhoto.file_unique_id || Date.now()}.jpg`,
         });
         incomingAttachment = {
-          url: `/files/${saved.storedName}`,
+          url: `${serverUrl}/files/${saved.storedName}`,
           filename: saved.originalName,
           storedName: saved.storedName,
         };
@@ -158,7 +160,7 @@ router.post('/', async (req, res) => {
           preferredName: msgObj.document.file_name || '',
         });
         incomingAttachment = {
-          url: `/files/${saved.storedName}`,
+          url: `${serverUrl}/files/${saved.storedName}`,
           filename: saved.originalName,
           storedName: saved.storedName,
         };
@@ -217,7 +219,7 @@ router.post('/', async (req, res) => {
         agentId: agent?._id || null,
         lastMessageAt: new Date(),
       });
-    } else if (!chat.agentId && agent) {
+    } else if (agent && String(chat.agentId) !== String(agent._id)) {
       chat.agentId = agent._id;
       await chat.save();
     }
@@ -315,106 +317,102 @@ router.post('/', async (req, res) => {
         return;
       }
 
-      let reply;
+      let aiReply;
       try {
         const history = await Message.find({ chatId: chat._id })
           .sort({ createdAt: -1 })
           .limit(10);
         history.reverse();
-        reply = await generateAIReply({
+
+        // Correct historical relative URLs before sending to AI
+        const correctedHistory = history.map(msg => {
+          if (msg.attachment?.url && msg.attachment.url.startsWith('/')) {
+            // Create a new object to avoid mutating the original from DB cache
+            const newMsg = JSON.parse(JSON.stringify(msg));
+            newMsg.attachment.url = `${serverUrl}${newMsg.attachment.url}`;
+            return newMsg;
+          }
+          return msg;
+        });
+
+        aiReply = await generateAIReply({
           system,
           prompt,
           message: text,
+          attachment: incomingAttachment,
           knowledge: agent?.knowledge,
           agent,
           chat,
-          history,
+          history: correctedHistory,
         });
+
+        if (!aiReply || !aiReply.replies || aiReply.replies.length === 0) {
+          throw new Error('AI reply was empty or malformed');
+        }
       } catch (e) {
         console.error('[telegram] AI error:', e);
-        reply = { text: `Echo: ${text}` };
+        aiReply = { replies: ['Maaf, AI sedang mengalami gangguan. Silakan coba beberapa saat lagi.'] };
       }
 
-      let replyText = typeof reply === 'string' ? reply : reply.text;
-      const attachment =
-        typeof reply === 'object' && reply.attachment ? reply.attachment : null;
+      const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 
-      const mention = findDatabaseFileMention(replyText, agent);
-      if (mention && mention.file?.storedName) {
-        const { file, token, altText } = mention;
-        const cleanedText = (replyText || '')
-          .replace(token, altText || '')
-          .trim();
-        const caption = cleanedText || altText || '';
-        const localFilePath = path.resolve('uploads', file.storedName);
-        let documentSent = false;
-        try {
-          await tgSendDocument(
-            platform.token,
-            chatId,
-            localFilePath,
-            caption || undefined,
-          );
-          documentSent = true;
-        } catch (e) {
-          console.error(
-            '[telegram] Failed to send document from markdown mention:',
-            e,
-          );
-          if (replyText) {
+      for (const replyText of aiReply.replies) {
+        if (!replyText) continue;
+
+        const mention = findDatabaseFileMention(replyText, agent);
+
+        if (mention && mention.file?.storedName) {
+          const { file, token, altText } = mention;
+          const cleanedText = (replyText || '').replace(token, altText || '').trim();
+          const caption = cleanedText || altText || '';
+          const localFilePath = path.resolve('uploads', file.storedName);
+          let documentSent = false;
+
+          try {
+            await tgSendDocument(platform.token, chatId, localFilePath, caption || undefined);
+            documentSent = true;
+          } catch (e) {
+            console.error('[telegram] Failed to send document from markdown mention:', e);
+            // As a fallback, send the original text if document fails
             try {
               await tgSend(platform.token, chatId, replyText);
             } catch (innerError) {
-              console.error(
-                '[telegram] Fallback text send failed after markdown mention:',
-                innerError,
-              );
+              console.error('[telegram] Fallback text send failed after markdown mention:', innerError);
             }
           }
+
+          await Message.create({
+            chatId: chat._id,
+            workspaceId: platform.workspaceId,
+            from: 'ai',
+            text: caption || replyText,
+            attachment: documentSent ? {
+              url: `/files/${file.storedName}`,
+              filename: file.originalName || file.storedName,
+              storedName: file.storedName,
+            } : null,
+            createdAt: new Date(),
+          });
+
+        } else {
+          // Standard text message
+          try {
+            await tgSend(platform.token, chatId, replyText);
+            await Message.create({
+              chatId: chat._id,
+              workspaceId: platform.workspaceId,
+              from: 'ai',
+              text: replyText,
+              attachment: null,
+              createdAt: new Date(),
+            });
+          } catch (e) {
+            console.error('[telegram] Failed to send text reply:', e);
+          }
         }
-
-        const savedText =
-          cleanedText || altText || replyText || 'Lampiran terkirim.';
-        await Message.create({
-          chatId: chat._id,
-          workspaceId: platform.workspaceId,
-          from: 'ai',
-          text: savedText,
-          attachment: documentSent
-            ? {
-                url: `/files/${file.storedName}`,
-                filename: file.originalName || file.storedName,
-              }
-            : null,
-          createdAt: new Date(),
-        });
-
-        if (documentSent) return;
+        // Wait before sending the next message
+        await delay(1500);
       }
-
-      if (attachment && attachment.storedName) {
-        const localFilePath = path.resolve('uploads', attachment.storedName);
-        try {
-          await tgSendDocument(platform.token, chatId, localFilePath, replyText);
-        } catch (e) {
-          console.error('[telegram] Failed to send document reply:', e);
-        }
-      } else if (replyText) {
-        try {
-          await tgSend(platform.token, chatId, replyText);
-        } catch (e) {
-          console.error('[telegram] Failed to send text reply:', e);
-        }
-      }
-
-      await Message.create({
-        chatId: chat._id,
-        workspaceId: platform.workspaceId,
-        from: 'ai',
-        text: replyText,
-        attachment,
-        createdAt: new Date(),
-      });
     }
   } catch (err) {
     console.error('Webhook /telegram error:', err);

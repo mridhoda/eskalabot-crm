@@ -34,6 +34,30 @@ export async function waSend(token, fromPhoneNumberId, to, text) {
   return j;
 }
 
+export async function waGetMediaUrl(mediaId, token) {
+  const url = `https://graph.facebook.com/v19.0/${mediaId}`;
+  const r = await fetch(url, {
+    headers: {
+      'Authorization': `Bearer ${token}`,
+    },
+  });
+  const j = await r.json();
+  if (j.error) throw new Error(`WhatsApp getMediaUrl failed: ${JSON.stringify(j.error)}`);
+  return j.url;
+}
+
+export async function igGetMediaUrl(mediaId, token) {
+  const url = `https://graph.facebook.com/v19.0/${mediaId}?fields=media_url`;
+  const r = await fetch(url, {
+    headers: {
+      'Authorization': `Bearer ${token}`,
+    },
+  });
+  const j = await r.json();
+  if (j.error) throw new Error(`Instagram getMediaUrl failed: ${JSON.stringify(j.error)}`);
+  return j.media_url;
+}
+
 export async function waSendDocument(token, fromPhoneNumberId, to, documentUrl, filename) {
   const url = `https://graph.facebook.com/v19.0/${fromPhoneNumberId}/messages`;
   const body = {

@@ -1,0 +1,1212 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prism Dashboard - AI Bot Editor</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+        rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
+        /* Hide scrollbar for horizontal nav but keep functionality */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        /* Animations */
+        @keyframes float {
+            0% {
+                transform: translateY(0px);
+            }
+
+            50% {
+                transform: translateY(-5px);
+            }
+
+            100% {
+                transform: translateY(0px);
+            }
+        }
+
+        .animate-float {
+            animation: float 3s ease-in-out infinite;
+        }
+
+        .typing-dot {
+            animation: typing 1.4s infinite ease-in-out both;
+        }
+
+        .typing-dot:nth-child(1) {
+            animation-delay: -0.32s;
+        }
+
+        .typing-dot:nth-child(2) {
+            animation-delay: -0.16s;
+        }
+
+        @keyframes typing {
+
+            0%,
+            80%,
+            100% {
+                transform: scale(0);
+            }
+
+            40% {
+                transform: scale(1);
+            }
+        }
+
+        /* Simple Slide Up Animation for Integration Card */
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .animate-slide-up {
+            animation: slideUp 0.4s ease-out forwards;
+        }
+    </style>
+</head>
+
+<body class="bg-slate-50 text-slate-800 min-h-screen p-4 md:p-6">
+
+    <!-- MAIN CONTAINER -->
+    <div class="max-w-7xl mx-auto">
+
+        <!-- HEADER -->
+        <header class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+            <div>
+                <div class="flex items-center text-sm text-slate-500 mb-1">
+                    <span class="hover:text-orange-500 cursor-pointer transition">My Bots</span>
+                    <i class="fa-solid fa-chevron-right text-xs mx-2"></i>
+                    <span class="text-slate-800 font-semibold">Editing</span>
+                </div>
+                <div class="flex items-center gap-3 group">
+                    <!-- Editable Title Input -->
+                    <input type="text" id="bot-name-input" value="Sales Assistant"
+                        class="text-3xl font-bold bg-transparent border-b-2 border-transparent hover:border-slate-200 focus:border-orange-500 focus:outline-none bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-600 w-full md:w-auto transition-colors">
+                    <i
+                        class="fa-solid fa-pen-to-square text-slate-300 group-hover:text-orange-400 transition cursor-pointer"></i>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-3">
+                <span id="auto-save-indicator"
+                    class="text-xs font-medium text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-100 transition-opacity duration-500">
+                    <i class="fa-solid fa-check mr-1"></i> Auto-saved
+                </span>
+                <button onclick="resetForm()"
+                    class="bg-white text-slate-600 px-5 py-2.5 rounded-full font-semibold text-sm border border-slate-200 shadow-sm hover:bg-slate-50 transition">
+                    <i class="fa-solid fa-rotate-right mr-2"></i> Reset
+                </button>
+                <button onclick="saveChanges()"
+                    class="bg-slate-900 text-white px-6 py-2.5 rounded-full font-bold text-sm shadow-lg shadow-slate-900/20 hover:bg-slate-800 hover:scale-[1.02] transition-all active:scale-95">
+                    Save Changes
+                </button>
+            </div>
+        </header>
+
+        <!-- NAVIGATION TABS -->
+        <nav class="flex overflow-x-auto pb-4 mb-4 gap-2 no-scrollbar" id="tab-container">
+            <button data-tab="general"
+                class="tab-btn active flex items-center gap-2 bg-white text-slate-900 px-5 py-2.5 rounded-xl shadow-md font-semibold text-sm border border-slate-100 min-w-max transition-all">
+                <i class="fa-solid fa-sliders text-orange-500"></i> General
+            </button>
+            <button data-tab="knowledge"
+                class="tab-btn flex items-center gap-2 bg-transparent text-slate-500 px-5 py-2.5 rounded-xl font-medium text-sm hover:bg-white hover:text-slate-700 transition min-w-max">
+                <i class="fa-solid fa-book-open opacity-50"></i> Knowledge
+            </button>
+            <button data-tab="integrations"
+                class="tab-btn flex items-center gap-2 bg-transparent text-slate-500 px-5 py-2.5 rounded-xl font-medium text-sm hover:bg-white hover:text-slate-700 transition min-w-max">
+                <i class="fa-solid fa-plug opacity-50"></i> Integrations
+            </button>
+            <button data-tab="followups"
+                class="tab-btn flex items-center gap-2 bg-transparent text-slate-500 px-5 py-2.5 rounded-xl font-medium text-sm hover:bg-white hover:text-slate-700 transition min-w-max">
+                <i class="fa-regular fa-clock opacity-50"></i> Follow-ups
+            </button>
+            <!-- NEW: Database Tab Button -->
+            <button data-tab="database"
+                class="tab-btn flex items-center gap-2 bg-transparent text-slate-500 px-5 py-2.5 rounded-xl font-medium text-sm hover:bg-white hover:text-slate-700 transition min-w-max">
+                <i class="fa-solid fa-database opacity-50"></i> Database
+            </button>
+            <button data-tab="analytics"
+                class="tab-btn flex items-center gap-2 bg-transparent text-slate-500 px-5 py-2.5 rounded-xl font-medium text-sm hover:bg-white hover:text-slate-700 transition min-w-max">
+                <i class="fa-solid fa-chart-pie opacity-50"></i> Analytics
+            </button>
+        </nav>
+
+        <!-- CONTENT GRID -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+
+            <!-- LEFT COLUMN: EDITOR (8 Cols) -->
+            <main class="lg:col-span-7 xl:col-span-8">
+
+                <!-- Tab Content: General -->
+                <div id="content-general" class="flex flex-col gap-6 tab-content">
+
+                    <!-- Card: AI Persona -->
+                    <div
+                        class="bg-white rounded-2xl p-6 shadow-xl shadow-slate-200/60 border border-slate-100 transition hover:shadow-2xl hover:shadow-slate-200/80">
+                        <div class="flex justify-between items-center mb-4">
+                            <label
+                                class="text-sm font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
+                                <i class="fa-solid fa-fingerprint text-orange-400"></i> AI Agent Persona
+                            </label>
+                            <span
+                                class="text-xs text-slate-500 bg-slate-100 px-2 py-1 rounded border border-slate-200">System
+                                Prompt</span>
+                        </div>
+
+                        <div class="relative group">
+                            <textarea id="input-persona"
+                                class="w-full h-32 bg-slate-50 border border-slate-200 rounded-xl p-4 text-slate-700 text-sm focus:ring-2 focus:ring-orange-100 focus:border-orange-400 outline-none transition resize-none leading-relaxed"
+                                placeholder="Describe precisely how the AI should behave...">You are a helpful sales assistant.</textarea>
+                            <!-- Magic Wand Button -->
+                            <button onclick="generatePersona()"
+                                class="absolute bottom-3 right-3 bg-white text-indigo-600 hover:bg-indigo-50 border border-indigo-100 px-3 py-1.5 rounded-lg text-xs font-semibold shadow-sm transition flex items-center gap-2 group/btn">
+                                <i class="fa-solid fa-wand-magic-sparkles group-hover/btn:animate-pulse"></i> Improve
+                                with AI
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Card: Welcome Message -->
+                    <div class="bg-white rounded-2xl p-6 shadow-xl shadow-slate-200/60 border border-slate-100">
+                        <label
+                            class="text-sm font-bold text-slate-800 uppercase tracking-wider mb-4 block flex items-center gap-2">
+                            <i class="fa-regular fa-message text-orange-400"></i> Welcome Message
+                        </label>
+
+                        <!-- Image Upload Zone -->
+                        <input type="file" id="image-upload-input" class="hidden" accept="image/*">
+                        <div onclick="document.getElementById('image-upload-input').click()" id="drop-zone"
+                            class="mb-4 border-2 border-dashed border-slate-200 rounded-xl p-6 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-slate-50 hover:border-orange-300 transition group relative overflow-hidden">
+                            <div
+                                class="bg-orange-50 text-orange-500 p-3 rounded-full mb-2 group-hover:scale-110 transition z-10">
+                                <i class="fa-solid fa-cloud-arrow-up text-xl"></i>
+                            </div>
+                            <p id="upload-text" class="text-sm font-medium text-slate-700 z-10">Click to upload an image
+                            </p>
+                            <p id="upload-subtext" class="text-xs text-slate-400 mt-1 z-10">SVG, PNG, JPG or GIF (max.
+                                3MB)</p>
+                            <!-- Preview Background (Hidden initially) -->
+                            <div id="upload-preview-bg" class="absolute inset-0 bg-cover bg-center opacity-20 hidden">
+                            </div>
+                        </div>
+
+                        <div class="relative">
+                            <textarea id="input-welcome"
+                                class="w-full h-24 bg-slate-50 border border-slate-200 rounded-xl p-4 text-slate-700 text-sm focus:ring-2 focus:ring-orange-100 focus:border-orange-400 outline-none transition resize-none leading-relaxed">Hi there! 👋 I'm here to help you find the perfect tech solution. What are you looking for today?</textarea>
+                        </div>
+                    </div>
+
+                    <!-- Card: Fallback / Prompt -->
+                    <div
+                        class="bg-white rounded-2xl p-6 shadow-xl shadow-slate-200/60 border border-slate-100 opacity-90 hover:opacity-100 transition">
+                        <label
+                            class="text-sm font-bold text-slate-800 uppercase tracking-wider mb-4 block flex items-center gap-2">
+                            <i class="fa-solid fa-brain text-orange-400"></i> Knowledge Context
+                        </label>
+                        <div class="relative">
+                            <textarea
+                                class="w-full h-24 bg-slate-50 border border-slate-200 rounded-xl p-4 text-slate-700 text-sm focus:ring-2 focus:ring-orange-100 focus:border-orange-400 outline-none transition resize-none leading-relaxed">Our latest products include the Phone 14, Laptop Pro, and Earbuds X...</textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Knowledge Tab Content -->
+                <div id="content-knowledge" class="tab-content hidden flex flex-col gap-6">
+
+                    <!-- Sub-Navigation for Knowledge -->
+                    <div class="bg-white rounded-xl p-1.5 flex gap-1 w-max shadow-sm border border-slate-100">
+                        <button onclick="switchKnowledgeSubTab('url')" id="sub-tab-url"
+                            class="knowledge-sub-tab active bg-slate-100 text-slate-900 px-4 py-1.5 rounded-lg text-sm font-semibold shadow-sm transition hover:bg-slate-200">
+                            <i class="fa-solid fa-link text-orange-500 mr-1.5"></i> URL
+                        </button>
+                        <button onclick="switchKnowledgeSubTab('text')" id="sub-tab-text"
+                            class="knowledge-sub-tab text-slate-500 px-4 py-1.5 rounded-lg text-sm font-medium transition hover:bg-slate-50 hover:text-slate-700">
+                            <i class="fa-regular fa-file-lines mr-1.5"></i> Text
+                        </button>
+                        <button onclick="switchKnowledgeSubTab('file')" id="sub-tab-file"
+                            class="knowledge-sub-tab text-slate-500 px-4 py-1.5 rounded-lg text-sm font-medium transition hover:bg-slate-50 hover:text-slate-700">
+                            <i class="fa-regular fa-folder-open mr-1.5"></i> File
+                        </button>
+                        <button onclick="switchKnowledgeSubTab('qa')" id="sub-tab-qa"
+                            class="knowledge-sub-tab text-slate-500 px-4 py-1.5 rounded-lg text-sm font-medium transition hover:bg-slate-50 hover:text-slate-700">
+                            <i class="fa-regular fa-comments mr-1.5"></i> Q&A
+                        </button>
+                    </div>
+
+                    <!-- 1. URL Knowledge Card -->
+                    <div id="knowledge-sub-url"
+                        class="knowledge-sub-content bg-white rounded-2xl p-8 shadow-xl shadow-slate-200/60 border border-slate-100 min-h-[400px]">
+
+                        <div class="flex justify-between items-center mb-8">
+                            <div>
+                                <h2 class="text-xl font-bold text-slate-800">Website Sources</h2>
+                                <p class="text-sm text-slate-500 mt-1">Train your bot on specific websites.</p>
+                            </div>
+                            <button
+                                class="bg-gradient-to-r from-orange-500 to-pink-500 text-white pl-4 pr-5 py-2.5 rounded-full font-bold text-sm shadow-lg shadow-orange-500/30 hover:shadow-orange-500/50 hover:scale-[1.02] transition flex items-center gap-2">
+                                <i class="fa-solid fa-plus"></i> Add Source
+                            </button>
+                        </div>
+
+                        <div class="flex gap-3 mb-8">
+                            <input type="text" placeholder="https://example.com/pricing"
+                                class="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-orange-100 focus:border-orange-400 outline-none transition">
+                            <button
+                                class="bg-white border border-slate-200 text-slate-700 font-semibold px-6 rounded-xl hover:bg-slate-50 transition">Crawl</button>
+                        </div>
+
+                        <div class="space-y-3">
+                            <!-- Example Active Source -->
+                            <div
+                                class="group flex items-center justify-between p-4 bg-white border border-slate-100 rounded-xl hover:border-orange-200 hover:shadow-md transition cursor-pointer">
+                                <div class="flex items-center gap-4">
+                                    <div
+                                        class="w-10 h-10 rounded-lg bg-orange-50 flex items-center justify-center text-orange-500">
+                                        <i class="fa-solid fa-globe"></i>
+                                    </div>
+                                    <div>
+                                        <h4 class="text-sm font-bold text-slate-800">Product Documentation</h4>
+                                        <p class="text-xs text-slate-400">docs.mysite.com • Last synced 2m ago</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-center gap-3">
+                                    <span
+                                        class="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded border border-emerald-100 uppercase tracking-wide">Active</span>
+                                    <button
+                                        class="w-8 h-8 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-400 hover:text-red-500 transition">
+                                        <i class="fa-regular fa-trash-can"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 2. Text Knowledge Card -->
+                    <div id="knowledge-sub-text"
+                        class="knowledge-sub-content hidden bg-white rounded-2xl p-8 shadow-xl shadow-slate-200/60 border border-slate-100 min-h-[400px]">
+                        <div class="flex justify-between items-center mb-6">
+                            <div>
+                                <h2 class="text-xl font-bold text-slate-800">Custom Text</h2>
+                                <p class="text-sm text-slate-500 mt-1">Paste raw text for the bot to memorize.</p>
+                            </div>
+                            <button class="text-slate-400 hover:text-red-500 transition text-sm font-semibold"><i
+                                    class="fa-solid fa-trash-can mr-1"></i> Clear</button>
+                        </div>
+
+                        <div class="relative group h-[300px]">
+                            <textarea
+                                class="w-full h-full bg-slate-50 border border-slate-200 rounded-xl p-5 text-slate-700 text-sm focus:ring-2 focus:ring-orange-100 focus:border-orange-400 outline-none transition resize-none leading-relaxed font-mono"
+                                placeholder="Paste policies, product descriptions, or any text data here...">Refund Policy:
+Customers are entitled to a full refund within 30 days of purchase if the product is defective. Please contact support@example.com with your order ID.
+
+Shipping:
+We ship globally. Standard shipping takes 5-7 business days.</textarea>
+                            <!-- Magic Wand Button -->
+                            <button
+                                class="absolute bottom-4 right-4 bg-white text-indigo-600 hover:bg-indigo-50 border border-indigo-100 px-3 py-1.5 rounded-lg text-xs font-semibold shadow-sm transition flex items-center gap-2 group/btn">
+                                <i class="fa-solid fa-wand-magic-sparkles group-hover/btn:animate-pulse"></i> Clean &
+                                Format
+                            </button>
+                        </div>
+                        <div class="mt-4 flex justify-end">
+                            <button
+                                class="bg-slate-900 text-white px-6 py-2.5 rounded-full font-bold text-sm shadow-lg shadow-slate-900/20 hover:bg-slate-800 hover:scale-[1.02] transition">
+                                Save Text
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 3. File Knowledge Card -->
+                    <div id="knowledge-sub-file"
+                        class="knowledge-sub-content hidden bg-white rounded-2xl p-8 shadow-xl shadow-slate-200/60 border border-slate-100 min-h-[400px]">
+                        <div class="flex justify-between items-center mb-6">
+                            <div>
+                                <h2 class="text-xl font-bold text-slate-800">Document Upload</h2>
+                                <p class="text-sm text-slate-500 mt-1">Support PDF, DOCX, TXT (Max 10MB).</p>
+                            </div>
+                        </div>
+
+                        <!-- Big Dropzone -->
+                        <div
+                            class="border-2 border-dashed border-slate-200 rounded-2xl p-10 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-orange-50/50 hover:border-orange-300 transition group mb-8">
+                            <div
+                                class="w-16 h-16 bg-orange-50 text-orange-500 rounded-full flex items-center justify-center text-2xl mb-4 group-hover:scale-110 transition shadow-sm">
+                                <i class="fa-solid fa-file-arrow-up"></i>
+                            </div>
+                            <p class="text-base font-bold text-slate-700">Click to upload or drag and drop</p>
+                            <p class="text-sm text-slate-400 mt-1">PDF, DOCX, or TXT documents</p>
+                        </div>
+
+                        <!-- File List -->
+                        <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Uploaded Files (2)
+                        </h4>
+                        <div class="space-y-3">
+                            <div
+                                class="flex items-center justify-between p-4 bg-slate-50 border border-slate-200 rounded-xl">
+                                <div class="flex items-center gap-4">
+                                    <div
+                                        class="w-10 h-10 rounded-lg bg-red-50 flex items-center justify-center text-red-500">
+                                        <i class="fa-solid fa-file-pdf"></i>
+                                    </div>
+                                    <div>
+                                        <h4 class="text-sm font-bold text-slate-800">2024_Annual_Report.pdf</h4>
+                                        <p class="text-xs text-slate-400">2.4 MB • Uploaded just now</p>
+                                    </div>
+                                </div>
+                                <button class="text-slate-400 hover:text-red-500 transition"><i
+                                        class="fa-solid fa-xmark"></i></button>
+                            </div>
+                            <div
+                                class="flex items-center justify-between p-4 bg-slate-50 border border-slate-200 rounded-xl">
+                                <div class="flex items-center gap-4">
+                                    <div
+                                        class="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center text-blue-500">
+                                        <i class="fa-solid fa-file-word"></i>
+                                    </div>
+                                    <div>
+                                        <h4 class="text-sm font-bold text-slate-800">Employee_Handbook_v2.docx</h4>
+                                        <p class="text-xs text-slate-400">1.1 MB • Uploaded 2 days ago</p>
+                                    </div>
+                                </div>
+                                <button class="text-slate-400 hover:text-red-500 transition"><i
+                                        class="fa-solid fa-xmark"></i></button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 4. Q&A Knowledge Card -->
+                    <div id="knowledge-sub-qa"
+                        class="knowledge-sub-content hidden bg-white rounded-2xl p-8 shadow-xl shadow-slate-200/60 border border-slate-100 min-h-[400px]">
+                        <div class="flex justify-between items-center mb-6">
+                            <div>
+                                <h2 class="text-xl font-bold text-slate-800">Q&A Training</h2>
+                                <p class="text-sm text-slate-500 mt-1">Explicitly teach the bot how to answer specific
+                                    questions.</p>
+                            </div>
+                        </div>
+
+                        <!-- Add New Q&A -->
+                        <div class="bg-slate-50 rounded-xl p-5 border border-slate-200 mb-8">
+                            <div class="grid gap-4">
+                                <div>
+                                    <label
+                                        class="text-xs font-bold text-slate-500 uppercase tracking-wide mb-1 block">Question</label>
+                                    <input type="text" placeholder="e.g. What are your opening hours?"
+                                        class="w-full bg-white border border-slate-200 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-orange-100 focus:border-orange-400 outline-none transition">
+                                </div>
+                                <div>
+                                    <label
+                                        class="text-xs font-bold text-slate-500 uppercase tracking-wide mb-1 block">Answer</label>
+                                    <textarea placeholder="e.g. We are open Mon-Fri from 9am to 5pm."
+                                        class="w-full bg-white border border-slate-200 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-orange-100 focus:border-orange-400 outline-none transition resize-none h-20"></textarea>
+                                </div>
+                                <div class="flex justify-end">
+                                    <button
+                                        class="bg-white text-slate-700 px-4 py-2 rounded-lg font-bold text-xs border border-slate-200 hover:bg-slate-100 mr-2">Cancel</button>
+                                    <button
+                                        class="bg-orange-500 text-white px-4 py-2 rounded-lg font-bold text-xs shadow-md shadow-orange-200 hover:bg-orange-600">Add
+                                        Pair</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Q&A List -->
+                        <div class="space-y-3">
+                            <div
+                                class="p-4 bg-white border border-slate-100 rounded-xl hover:shadow-md transition group relative">
+                                <div class="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition">
+                                    <button class="text-slate-400 hover:text-orange-500 mr-2"><i
+                                            class="fa-solid fa-pen"></i></button>
+                                    <button class="text-slate-400 hover:text-red-500"><i
+                                            class="fa-solid fa-trash-can"></i></button>
+                                </div>
+                                <h4 class="text-sm font-bold text-slate-800 mb-1"><span
+                                        class="text-orange-500 mr-2">Q:</span>How do I reset my password?</h4>
+                                <p class="text-sm text-slate-600"><span
+                                        class="text-slate-400 font-bold mr-2">A:</span>You can reset your password by
+                                    clicking 'Forgot Password' on the login page.</p>
+                            </div>
+                            <div
+                                class="p-4 bg-white border border-slate-100 rounded-xl hover:shadow-md transition group relative">
+                                <div class="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition">
+                                    <button class="text-slate-400 hover:text-orange-500 mr-2"><i
+                                            class="fa-solid fa-pen"></i></button>
+                                    <button class="text-slate-400 hover:text-red-500"><i
+                                            class="fa-solid fa-trash-can"></i></button>
+                                </div>
+                                <h4 class="text-sm font-bold text-slate-800 mb-1"><span
+                                        class="text-orange-500 mr-2">Q:</span>Is there a free trial?</h4>
+                                <p class="text-sm text-slate-600"><span
+                                        class="text-slate-400 font-bold mr-2">A:</span>Yes, we offer a 14-day free trial
+                                    for all new users.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Integrations Tab Content -->
+                <div id="content-integrations" class="tab-content hidden flex flex-col gap-6">
+
+                    <!-- Dropdown Section -->
+                    <div>
+                        <h2 class="text-xl font-bold text-slate-800 mb-2">Integrations</h2>
+                        <p class="text-sm text-slate-500 mb-6">Connect your agent to platforms.</p>
+
+                        <div class="relative max-w-md">
+                            <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                <i class="fa-solid fa-link text-slate-400"></i>
+                            </div>
+                            <select id="integration-select" onchange="handleIntegrationChange()"
+                                class="w-full bg-white border border-slate-200 rounded-xl pl-10 pr-10 py-3 text-slate-700 font-medium focus:ring-2 focus:ring-orange-100 focus:border-orange-400 outline-none transition appearance-none cursor-pointer shadow-sm">
+                                <option value="" disabled selected>Select a platform to connect...</option>
+                                <option value="telegram">Telegram Rido (telegram)</option>
+                                <option value="whatsapp">WhatsApp Business</option>
+                                <option value="slack">Slack Workspace</option>
+                            </select>
+                            <div class="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
+                                <i class="fa-solid fa-chevron-down text-slate-400 text-xs"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Telegram Integration Card (Hidden by default) -->
+                    <div id="integration-telegram" class="hidden">
+                        <div
+                            class="bg-white rounded-2xl p-8 shadow-xl shadow-slate-200/60 border border-slate-100 animate-slide-up">
+                            <div class="flex items-start justify-between mb-6">
+                                <div class="flex items-center gap-4">
+                                    <div
+                                        class="w-14 h-14 bg-sky-50 rounded-2xl flex items-center justify-center shadow-sm">
+                                        <i class="fa-brands fa-telegram text-3xl text-sky-500"></i>
+                                    </div>
+                                    <div>
+                                        <h2 class="text-xl font-bold text-slate-800">Telegram</h2>
+                                        <p class="text-sm text-slate-500 flex items-center gap-2">
+                                            Connected as <span class="font-semibold text-slate-700">Telegram Rido</span>
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <!-- Status Column (Green Filled) -->
+                                <div class="flex flex-col items-end gap-1">
+                                    <div
+                                        class="bg-emerald-500 text-white px-4 py-1.5 rounded-lg shadow-md shadow-emerald-200 flex items-center gap-2">
+                                        <span class="w-2 h-2 bg-white rounded-full animate-pulse"></span>
+                                        <span class="text-xs font-bold uppercase tracking-wide">Online</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="bg-slate-50 rounded-xl p-5 border border-slate-200">
+                                <label
+                                    class="text-xs font-bold text-slate-500 uppercase tracking-wide mb-2 block">Webhook
+                                    URL</label>
+                                <div class="flex gap-2">
+                                    <code
+                                        class="flex-1 bg-white border border-slate-200 rounded-lg px-4 py-2.5 text-sm font-mono text-slate-600 overflow-x-auto whitespace-nowrap flex items-center">
+                                        https://api.prism-bot.com/webhook/telegram/bot12345
+                                    </code>
+                                    <button
+                                        class="bg-white text-slate-600 border border-slate-200 px-4 rounded-lg hover:bg-slate-100 transition hover:text-orange-500"
+                                        title="Copy">
+                                        <i class="fa-regular fa-copy"></i>
+                                    </button>
+                                </div>
+                                <p class="text-xs text-slate-400 mt-2">Webhook URL umum:
+                                    &lt;PUBLIC_BASE_URL&gt;/webhook/&lt;platform&gt;</p>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Followups Tab Content -->
+                <div id="content-followups" class="tab-content hidden flex flex-col gap-6">
+
+                    <!-- Header Section -->
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <h2 class="text-xl font-bold text-slate-800">Automated Follow-ups</h2>
+                            <p class="text-sm text-slate-500 mt-1">Re-engage users if they stop responding.</p>
+                        </div>
+                        <button
+                            class="bg-gradient-to-r from-orange-500 to-pink-500 text-white pl-4 pr-5 py-2.5 rounded-full font-bold text-sm shadow-lg shadow-orange-500/30 hover:shadow-orange-500/50 hover:scale-[1.02] transition flex items-center gap-2">
+                            <i class="fa-solid fa-plus"></i> Add Follow-up
+                        </button>
+                    </div>
+
+                    <!-- Follow-up Card (Item 1) -->
+                    <div
+                        class="bg-white rounded-2xl p-6 shadow-xl shadow-slate-200/60 border border-slate-100 relative overflow-hidden group hover:shadow-2xl hover:shadow-slate-200/80 transition-all">
+                        <!-- Decorative Side Bar -->
+                        <div class="absolute left-0 top-0 bottom-0 w-1.5 bg-gradient-to-b from-orange-400 to-pink-500">
+                        </div>
+
+                        <div class="flex flex-col md:flex-row gap-6 items-start">
+
+                            <!-- Time Setting -->
+                            <div class="w-full md:w-48 shrink-0">
+                                <label
+                                    class="text-xs font-bold text-slate-500 uppercase tracking-wide mb-2 block flex items-center gap-1">
+                                    <i class="fa-regular fa-hourglass text-orange-400"></i> Trigger Delay
+                                </label>
+                                <div class="relative">
+                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                        <i class="fa-regular fa-clock text-slate-400"></i>
+                                    </div>
+                                    <input type="number" value="60"
+                                        class="pl-10 pr-12 py-3 w-full bg-slate-50 border border-slate-200 rounded-xl text-slate-700 font-bold focus:ring-2 focus:ring-orange-100 focus:border-orange-400 outline-none transition">
+                                    <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                                        <span class="text-xs text-slate-400 font-medium">mins</span>
+                                    </div>
+                                </div>
+                                <p class="text-[10px] text-slate-400 mt-2">Triggers after last user message.</p>
+                            </div>
+
+                            <!-- Instruction/Message -->
+                            <div class="flex-1 w-full">
+                                <div class="flex justify-between items-center mb-2">
+                                    <label class="text-xs font-bold text-slate-500 uppercase tracking-wide">Follow-up
+                                        Instruction</label>
+                                    <button
+                                        class="text-slate-300 hover:text-red-500 transition text-sm w-8 h-8 rounded-full hover:bg-red-50 flex items-center justify-center"><i
+                                            class="fa-regular fa-trash-can"></i></button>
+                                </div>
+                                <div class="relative">
+                                    <textarea
+                                        class="w-full h-32 bg-slate-50 border border-slate-200 rounded-xl p-4 text-slate-700 text-sm focus:ring-2 focus:ring-orange-100 focus:border-orange-400 outline-none transition resize-none leading-relaxed"
+                                        placeholder="e.g. Ask the user if they are still interested...">Follow-up instruction: Check if the user needs more help with the pricing plan.</textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Empty State / Add New Placeholder -->
+                    <button
+                        class="border-2 border-dashed border-slate-200 rounded-2xl p-8 flex flex-col items-center justify-center text-center hover:bg-slate-50 hover:border-orange-200 transition group">
+                        <div
+                            class="w-12 h-12 bg-slate-100 text-slate-400 rounded-full flex items-center justify-center mb-3 group-hover:bg-orange-50 group-hover:text-orange-500 transition">
+                            <i class="fa-solid fa-plus text-lg"></i>
+                        </div>
+                        <p class="text-sm font-bold text-slate-600 group-hover:text-orange-500 transition">Add another
+                            follow-up</p>
+                    </button>
+
+                </div>
+
+                <!-- UPDATED: Database Tab Content (Refactored to File Storage) -->
+                <div id="content-database" class="tab-content hidden flex flex-col gap-6">
+
+                    <!-- Header Section -->
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <h2 class="text-xl font-bold text-slate-800">File Storage</h2>
+                            <p class="text-sm text-slate-500 mt-1">Manage documents, images, and media assets for your
+                                bot.</p>
+                        </div>
+                        <div class="flex gap-2">
+                            <div class="relative">
+                                <input type="text" placeholder="Search files..."
+                                    class="bg-white border border-slate-200 rounded-lg pl-9 pr-4 py-2 text-sm focus:ring-2 focus:ring-orange-100 focus:border-orange-400 outline-none transition">
+                                <i
+                                    class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-400 text-xs"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Upload Card -->
+                    <div class="bg-white rounded-2xl p-8 shadow-xl shadow-slate-200/60 border border-slate-100">
+
+                        <div class="mb-6">
+                            <label class="text-xs font-bold text-slate-500 uppercase tracking-wide mb-2 block">Custom
+                                File ID (Optional)</label>
+                            <input type="text" placeholder="e.g. welcome-banner-img"
+                                class="w-full md:w-1/2 bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-orange-100 focus:border-orange-400 outline-none transition">
+                        </div>
+
+                        <!-- Big Dropzone -->
+                        <div
+                            class="border-2 border-dashed border-slate-200 rounded-2xl p-12 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-orange-50/50 hover:border-orange-300 transition group relative overflow-hidden">
+                            <div
+                                class="w-20 h-20 bg-indigo-50 text-indigo-500 rounded-full flex items-center justify-center text-3xl mb-4 group-hover:scale-110 transition shadow-sm z-10">
+                                <i class="fa-solid fa-folder-plus"></i>
+                            </div>
+                            <h3 class="text-lg font-bold text-slate-700 z-10">Upload Documents & Media</h3>
+                            <p class="text-sm text-slate-400 mt-1 max-w-sm mx-auto z-10">Support for Images (JPG, PNG),
+                                Documents (PDF, DOCX), and other assets. Max 25MB.</p>
+                        </div>
+                    </div>
+
+                    <!-- File List -->
+                    <div>
+                        <div class="flex justify-between items-end mb-3">
+                            <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Stored Files (3)</h4>
+                            <div class="flex gap-2 text-xs">
+                                <button class="text-slate-500 font-semibold hover:text-orange-500">All</button>
+                                <button class="text-slate-400 hover:text-orange-500">Images</button>
+                                <button class="text-slate-400 hover:text-orange-500">Docs</button>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 gap-3">
+                            <!-- File Item 1 (Image) -->
+                            <div
+                                class="flex items-center justify-between p-4 bg-white border border-slate-100 rounded-xl hover:shadow-md transition group">
+                                <div class="flex items-center gap-4">
+                                    <div
+                                        class="w-12 h-12 rounded-xl bg-purple-50 flex items-center justify-center text-purple-500 text-xl relative overflow-hidden">
+                                        <!-- Preview thumbnail simulation -->
+                                        <i class="fa-regular fa-image z-10"></i>
+                                        <div class="absolute inset-0 bg-purple-100 opacity-50"></div>
+                                    </div>
+                                    <div>
+                                        <h4 class="text-sm font-bold text-slate-800">promo_banner_v1.png</h4>
+                                        <div class="flex items-center gap-3 mt-1">
+                                            <span class="text-xs text-slate-400 font-mono">ID: img-promo-01</span>
+                                            <span class="w-1 h-1 rounded-full bg-slate-300"></span>
+                                            <span class="text-[10px] font-bold text-slate-500">1.2 MB</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="flex items-center gap-3">
+                                    <button
+                                        class="text-slate-400 hover:text-sky-500 transition p-2 rounded-full hover:bg-slate-50"
+                                        title="Preview"><i class="fa-regular fa-eye"></i></button>
+                                    <button
+                                        class="text-slate-400 hover:text-orange-500 transition p-2 rounded-full hover:bg-slate-50"
+                                        title="Copy Link"><i class="fa-solid fa-link"></i></button>
+                                    <button
+                                        class="text-slate-400 hover:text-red-500 transition p-2 rounded-full hover:bg-slate-50"><i
+                                            class="fa-regular fa-trash-can"></i></button>
+                                </div>
+                            </div>
+
+                            <!-- File Item 2 (PDF) -->
+                            <div
+                                class="flex items-center justify-between p-4 bg-white border border-slate-100 rounded-xl hover:shadow-md transition group">
+                                <div class="flex items-center gap-4">
+                                    <div
+                                        class="w-12 h-12 rounded-xl bg-red-50 flex items-center justify-center text-red-500 text-xl">
+                                        <i class="fa-regular fa-file-pdf"></i>
+                                    </div>
+                                    <div>
+                                        <h4 class="text-sm font-bold text-slate-800">Product_Brochure_2024.pdf</h4>
+                                        <div class="flex items-center gap-3 mt-1">
+                                            <span class="text-xs text-slate-400 font-mono">ID: doc-brochure-24</span>
+                                            <span class="w-1 h-1 rounded-full bg-slate-300"></span>
+                                            <span class="text-[10px] font-bold text-slate-500">4.5 MB</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="flex items-center gap-3">
+                                    <button
+                                        class="text-slate-400 hover:text-sky-500 transition p-2 rounded-full hover:bg-slate-50"
+                                        title="Download"><i class="fa-solid fa-download"></i></button>
+                                    <button
+                                        class="text-slate-400 hover:text-orange-500 transition p-2 rounded-full hover:bg-slate-50"
+                                        title="Copy Link"><i class="fa-solid fa-link"></i></button>
+                                    <button
+                                        class="text-slate-400 hover:text-red-500 transition p-2 rounded-full hover:bg-slate-50"><i
+                                            class="fa-regular fa-trash-can"></i></button>
+                                </div>
+                            </div>
+
+                            <!-- File Item 3 (Doc) -->
+                            <div
+                                class="flex items-center justify-between p-4 bg-white border border-slate-100 rounded-xl hover:shadow-md transition group">
+                                <div class="flex items-center gap-4">
+                                    <div
+                                        class="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center text-blue-500 text-xl">
+                                        <i class="fa-regular fa-file-word"></i>
+                                    </div>
+                                    <div>
+                                        <h4 class="text-sm font-bold text-slate-800">Terms_of_Service.docx</h4>
+                                        <div class="flex items-center gap-3 mt-1">
+                                            <span class="text-xs text-slate-400 font-mono">ID: legal-tos</span>
+                                            <span class="w-1 h-1 rounded-full bg-slate-300"></span>
+                                            <span class="text-[10px] font-bold text-slate-500">0.8 MB</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="flex items-center gap-3">
+                                    <button
+                                        class="text-slate-400 hover:text-sky-500 transition p-2 rounded-full hover:bg-slate-50"
+                                        title="Download"><i class="fa-solid fa-download"></i></button>
+                                    <button
+                                        class="text-slate-400 hover:text-orange-500 transition p-2 rounded-full hover:bg-slate-50"
+                                        title="Copy Link"><i class="fa-solid fa-link"></i></button>
+                                    <button
+                                        class="text-slate-400 hover:text-red-500 transition p-2 rounded-full hover:bg-slate-50"><i
+                                            class="fa-regular fa-trash-can"></i></button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Placeholder for other tabs -->
+                <div id="content-analytics" class="tab-content hidden text-center py-20">
+                    <div class="bg-white rounded-2xl p-10 shadow-xl border border-slate-100 inline-block">
+                        <i class="fa-solid fa-chart-pie text-4xl text-slate-300 mb-4"></i>
+                        <h3 class="text-lg font-bold text-slate-700">Analytics</h3>
+                        <p class="text-slate-500 mt-2">View bot performance metrics.</p>
+                    </div>
+                </div>
+
+            </main>
+
+            <!-- RIGHT COLUMN: PREVIEW (4 Cols) -->
+            <aside class="lg:col-span-5 xl:col-span-4 relative">
+                <div class="sticky top-8">
+
+                    <!-- Live Preview Header -->
+                    <div class="flex justify-between items-center mb-4 px-2">
+                        <h3 class="font-bold text-slate-700 flex items-center gap-2 text-lg">
+                            <i class="fa-solid fa-eye text-orange-500"></i> Live Preview
+                        </h3>
+                        <button onclick="resetChat()"
+                            class="text-xs font-medium text-slate-500 hover:text-orange-500 transition flex items-center gap-1">
+                            <i class="fa-solid fa-rotate-right"></i> Refresh
+                        </button>
+                    </div>
+
+                    <!-- Background Decoration -->
+                    <div
+                        class="absolute -inset-4 bg-gradient-to-tr from-orange-100 via-pink-50 to-white rounded-[3rem] blur-xl opacity-70 -z-10">
+                    </div>
+
+                    <!-- WIDGET CARD START -->
+                    <div
+                        class="bg-white rounded-[2.5rem] shadow-2xl shadow-orange-900/10 overflow-hidden border border-slate-100 h-[640px] flex flex-col relative transform transition hover:scale-[1.01] duration-500">
+
+                        <!-- Header -->
+                        <div class="px-6 py-5 border-b border-slate-50 flex justify-between items-center bg-white z-10">
+                            <div class="flex items-center gap-4">
+                                <div class="relative group cursor-pointer">
+                                    <!-- Avatar -->
+                                    <div
+                                        class="w-12 h-12 rounded-full bg-slate-100 border border-slate-100 overflow-hidden flex items-center justify-center group-hover:shadow-md transition">
+                                        <i class="fa-solid fa-robot text-slate-600 text-xl"></i>
+                                    </div>
+                                    <!-- Online Dot -->
+                                    <div
+                                        class="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 border-[3px] border-white rounded-full">
+                                    </div>
+                                </div>
+                                <div>
+                                    <h3 id="preview-bot-name" class="font-bold text-slate-800 text-lg leading-tight">
+                                        Sales Assistant</h3>
+                                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">
+                                        ACTIVE NOW</p>
+                                </div>
+                            </div>
+                            <div class="flex gap-1 text-slate-400">
+                                <button
+                                    class="w-8 h-8 hover:bg-slate-50 rounded-full flex items-center justify-center transition hover:text-orange-500">
+                                    <i class="fa-solid fa-ellipsis-vertical text-sm"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Chat Area -->
+                        <div id="chat-container" class="flex-1 bg-white p-6 overflow-y-auto space-y-6 scroll-smooth">
+
+                            <!-- Bot Message -->
+                            <div class="flex items-start gap-3 group">
+                                <div
+                                    class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center shrink-0 mt-1 text-slate-500">
+                                    <i class="fa-solid fa-robot text-xs"></i>
+                                </div>
+                                <div class="flex flex-col gap-2 max-w-[85%]">
+                                    <div
+                                        class="bg-white border border-slate-100 shadow-sm text-slate-600 p-4 rounded-2xl rounded-tl-none text-[15px] leading-relaxed group-hover:shadow-md transition-shadow duration-300">
+                                        <p id="preview-welcome-msg">Hi there! 👋 I'm here to help you find the perfect
+                                            tech solution. What are you looking for today?</p>
+                                    </div>
+                                    <!-- Image Preview Container (Hidden by default) -->
+                                    <div id="preview-image-container"
+                                        class="hidden rounded-xl overflow-hidden border border-slate-100 shadow-sm">
+                                        <!-- Image inserted via JS -->
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Typing Indicator (Hidden by default) -->
+                            <div id="typing-indicator" class="hidden flex items-start gap-3">
+                                <div
+                                    class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center shrink-0 mt-1 text-slate-500">
+                                    <i class="fa-solid fa-robot text-xs"></i>
+                                </div>
+                                <div
+                                    class="bg-white border border-slate-100 shadow-sm px-4 py-3 rounded-2xl rounded-tl-none">
+                                    <div class="flex gap-1">
+                                        <div class="w-1.5 h-1.5 bg-slate-400 rounded-full typing-dot"></div>
+                                        <div class="w-1.5 h-1.5 bg-slate-400 rounded-full typing-dot"></div>
+                                        <div class="w-1.5 h-1.5 bg-slate-400 rounded-full typing-dot"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+
+                        <!-- Input Area -->
+                        <div class="p-6 pt-2 bg-white pb-8">
+                            <div class="relative group">
+                                <input id="phone-input" type="text" placeholder="Type a message..."
+                                    class="w-full bg-slate-50 text-slate-600 placeholder-slate-400 rounded-2xl pl-5 pr-14 py-4 focus:outline-none focus:bg-white focus:ring-2 focus:ring-orange-100 transition shadow-inner text-sm font-medium">
+
+                                <!-- Send Button -->
+                                <button onclick="handleUserSend()"
+                                    class="absolute right-2 top-2 bottom-2 aspect-square bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 text-white rounded-xl flex items-center justify-center shadow-lg shadow-orange-200 transition transform active:scale-95 group-focus-within:shadow-orange-300">
+                                    <i class="fa-solid fa-paper-plane text-sm"></i>
+                                </button>
+                            </div>
+                            <div class="text-center mt-4">
+                                <p class="text-[10px] text-slate-300 font-bold uppercase tracking-widest">Powered by
+                                    Gemini 2.5</p>
+                            </div>
+                        </div>
+
+                    </div>
+                    <!-- WIDGET CARD END -->
+
+                </div>
+            </aside>
+
+        </div>
+    </div>
+
+    <!-- JavaScript Logic -->
+    <script>
+        // --- DOM Elements ---
+        const inputWelcome = document.getElementById('input-welcome');
+        const previewWelcomeMsg = document.getElementById('preview-welcome-msg');
+
+        const inputBotName = document.getElementById('bot-name-input');
+        const previewBotName = document.getElementById('preview-bot-name');
+
+        const inputPersona = document.getElementById('input-persona');
+
+        const chatContainer = document.getElementById('chat-container');
+        const phoneInput = document.getElementById('phone-input');
+        const typingIndicator = document.getElementById('typing-indicator');
+
+        const tabButtons = document.querySelectorAll('.tab-btn');
+        const tabContents = document.querySelectorAll('.tab-content');
+
+        const imageInput = document.getElementById('image-upload-input');
+        const previewImageContainer = document.getElementById('preview-image-container');
+        const dropZone = document.getElementById('drop-zone');
+        const uploadPreviewBg = document.getElementById('upload-preview-bg');
+
+        // --- 1. Sync Logic ---
+
+        // Sync Welcome Message
+        inputWelcome.addEventListener('input', (e) => {
+            previewWelcomeMsg.textContent = e.target.value;
+            triggerAutoSave();
+        });
+
+        // Sync Bot Name
+        inputBotName.addEventListener('input', (e) => {
+            previewBotName.textContent = e.target.value;
+            triggerAutoSave();
+        });
+
+        // --- 2. Tab Navigation (Main Tabs) ---
+        tabButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                // Remove active class from all buttons
+                tabButtons.forEach(b => {
+                    b.classList.remove('active', 'bg-white', 'shadow-md', 'border-slate-100', 'text-slate-900');
+                    b.classList.add('bg-transparent', 'text-slate-500');
+                    const icon = b.querySelector('i');
+                    if (icon) icon.classList.add('opacity-50');
+                    if (icon) icon.classList.remove('text-orange-500');
+                });
+
+                // Add active class to clicked button
+                btn.classList.add('active', 'bg-white', 'shadow-md', 'border-slate-100', 'text-slate-900');
+                btn.classList.remove('bg-transparent', 'text-slate-500');
+                const activeIcon = btn.querySelector('i');
+                if (activeIcon) activeIcon.classList.remove('opacity-50');
+                if (activeIcon) activeIcon.classList.add('text-orange-500');
+
+                // Show corresponding content
+                const targetTab = btn.dataset.tab;
+                tabContents.forEach(content => {
+                    content.classList.add('hidden');
+                    if (content.id === `content-${targetTab}`) {
+                        content.classList.remove('hidden');
+                    }
+                });
+            });
+        });
+
+        // --- 2.1 Knowledge Sub-Tab Navigation ---
+        function switchKnowledgeSubTab(tabName) {
+            // 1. Reset Buttons
+            const buttons = document.querySelectorAll('.knowledge-sub-tab');
+            buttons.forEach(btn => {
+                btn.classList.remove('active', 'bg-slate-100', 'text-slate-900', 'shadow-sm');
+                btn.classList.add('text-slate-500', 'hover:bg-slate-50');
+                // Reset icon colors inside
+                const icon = btn.querySelector('i');
+                if (icon) icon.classList.remove('text-orange-500');
+            });
+
+            // 2. Activate Clicked Button
+            const activeBtn = document.getElementById(`sub-tab-${tabName}`);
+            activeBtn.classList.add('active', 'bg-slate-100', 'text-slate-900', 'shadow-sm');
+            activeBtn.classList.remove('text-slate-500', 'hover:bg-slate-50');
+            const activeIcon = activeBtn.querySelector('i');
+            if (activeIcon) activeIcon.classList.add('text-orange-500');
+
+            // 3. Show Content
+            const contents = document.querySelectorAll('.knowledge-sub-content');
+            contents.forEach(c => c.classList.add('hidden'));
+            document.getElementById(`knowledge-sub-${tabName}`).classList.remove('hidden');
+        }
+
+        // --- 2.2 Integration Dropdown Logic (NEW) ---
+        function handleIntegrationChange() {
+            const select = document.getElementById('integration-select');
+            const telegramView = document.getElementById('integration-telegram');
+
+            // Reset views
+            telegramView.classList.add('hidden');
+
+            // Show selected
+            if (select.value === 'telegram') {
+                telegramView.classList.remove('hidden');
+            }
+        }
+
+
+        // --- 3. Image Upload Simulation ---
+        imageInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    // Update Editor UI
+                    document.getElementById('upload-text').textContent = "Image Uploaded!";
+                    document.getElementById('upload-subtext').textContent = file.name;
+                    uploadPreviewBg.style.backgroundImage = `url(${e.target.result})`;
+                    uploadPreviewBg.classList.remove('hidden');
+
+                    // Update Phone Preview
+                    previewImageContainer.innerHTML = `<img src="${e.target.result}" class="w-full h-auto object-cover">`;
+                    previewImageContainer.classList.remove('hidden');
+                }
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // --- 4. Chat Simulation Logic ---
+
+        function handleUserSend() {
+            const text = phoneInput.value.trim();
+            if (!text) return;
+
+            // 1. Add User Message
+            addUserMessage(text);
+            phoneInput.value = '';
+
+            // 2. Show Typing Indicator
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+            typingIndicator.classList.remove('hidden');
+            chatContainer.appendChild(typingIndicator); // Move to bottom
+
+            // 3. Simulate Bot Delay & Reply
+            setTimeout(() => {
+                typingIndicator.classList.add('hidden');
+                const reply = generateBotReply(text);
+                addBotMessage(reply);
+            }, 1500);
+        }
+
+        // Allow "Enter" key to send
+        phoneInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') handleUserSend();
+        });
+
+        function addUserMessage(text) {
+            const msgDiv = document.createElement('div');
+            msgDiv.className = 'flex items-end gap-2 flex-row-reverse animate-float';
+            msgDiv.style.animationDuration = '0.5s'; // Quick entrance
+            // User message style updated to match Orange theme
+            msgDiv.innerHTML = `
+                <div class="bg-gradient-to-r from-orange-500 to-pink-500 text-white px-5 py-3 rounded-2xl rounded-br-none shadow-md shadow-orange-200/50 max-w-[85%]">
+                    <p class="text-[15px] leading-relaxed">${text}</p>
+                </div>
+            `;
+            chatContainer.insertBefore(msgDiv, typingIndicator);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        function addBotMessage(text) {
+            const msgDiv = document.createElement('div');
+            msgDiv.className = 'flex items-start gap-3';
+            // Bot message style updated to match white card theme
+            msgDiv.innerHTML = `
+                 <div class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center shrink-0 mt-1 text-slate-500">
+                     <i class="fa-solid fa-robot text-xs"></i>
+                </div>
+                <div class="bg-white border border-slate-100 shadow-sm text-slate-600 p-4 rounded-2xl rounded-tl-none max-w-[85%] text-[15px] leading-relaxed">
+                    <p>${text}</p>
+                </div>
+            `;
+            chatContainer.insertBefore(msgDiv, typingIndicator);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        function generateBotReply(userText) {
+            const lower = userText.toLowerCase();
+            if (lower.includes('price') || lower.includes('cost')) return "Our plans start at $10/month for the Basic tier. Would you like to see the full price list?";
+            if (lower.includes('hello') || lower.includes('hi')) return "Hello! 👋 Great to see you. How can I help you today?";
+            if (lower.includes('help')) return "I can help you with account settings, billing, or technical support. Just ask!";
+            return "That's interesting! Could you tell me a bit more about " + userText + "?";
+        }
+
+        function resetChat() {
+            // Clear chat but keep initial
+            chatContainer.innerHTML = '';
+
+            // Re-create initial greeting structure
+            const initialWrapper = document.createElement('div');
+            initialWrapper.className = 'flex items-start gap-3 group';
+            initialWrapper.innerHTML = `
+                <div class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center shrink-0 mt-1 text-slate-500">
+                     <i class="fa-solid fa-robot text-xs"></i>
+                </div>
+                <div class="flex flex-col gap-2 max-w-[85%]">
+                    <div class="bg-white border border-slate-100 shadow-sm text-slate-600 p-4 rounded-2xl rounded-tl-none text-[15px] leading-relaxed group-hover:shadow-md transition-shadow duration-300">
+                        <p id="preview-welcome-msg-reset">${inputWelcome.value}</p>
+                    </div>
+                    <div id="preview-image-container-reset" class="hidden rounded-xl overflow-hidden border border-slate-100 shadow-sm">
+                        <!-- Image inserted via JS -->
+                    </div>
+                </div>
+            `;
+
+            chatContainer.appendChild(initialWrapper);
+            chatContainer.appendChild(typingIndicator);
+
+            // Re-bind listener for the new DOM element
+            const newMsg = document.getElementById('preview-welcome-msg-reset');
+            // We need to update the global listener reference or just add a new one
+            // Simplest way for this demo:
+            inputWelcome.oninput = (e) => {
+                newMsg.textContent = e.target.value;
+                triggerAutoSave();
+            };
+
+            // Restore image if present
+            if (!previewImageContainer.classList.contains('hidden')) {
+                const imgContainer = document.getElementById('preview-image-container-reset');
+                imgContainer.innerHTML = previewImageContainer.innerHTML;
+                imgContainer.classList.remove('hidden');
+            }
+        }
+
+        // --- 5. Magic Wand (AI Generator Simulation) ---
+        function generatePersona() {
+            const phrases = "You are an empathetic customer support agent for a tech startup. You are concise, friendly, and use emojis occasionally. You prioritize solving the user's issue in the first response.";
+
+            inputPersona.value = "";
+            let i = 0;
+            inputPersona.focus();
+
+            const interval = setInterval(() => {
+                inputPersona.value += phrases.charAt(i);
+                i++;
+                if (i >= phrases.length) clearInterval(interval);
+            }, 30);
+        }
+
+        // --- 6. Auto Save Simulation ---
+        let saveTimeout;
+        function triggerAutoSave() {
+            const indicator = document.getElementById('auto-save-indicator');
+            indicator.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> Saving...';
+            indicator.classList.remove('text-emerald-600', 'bg-emerald-50', 'border-emerald-100');
+            indicator.classList.add('text-orange-500', 'bg-orange-50', 'border-orange-100');
+
+            clearTimeout(saveTimeout);
+            saveTimeout = setTimeout(() => {
+                indicator.innerHTML = '<i class="fa-solid fa-check mr-1"></i> Auto-saved';
+                indicator.classList.add('text-emerald-600', 'bg-emerald-50', 'border-emerald-100');
+                indicator.classList.remove('text-orange-500', 'bg-orange-50', 'border-orange-100');
+            }, 1000);
+        }
+
+        function saveChanges() {
+            const btn = document.querySelector('button[onclick="saveChanges()"]');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin mr-2"></i> Saving';
+            setTimeout(() => {
+                btn.innerHTML = '<i class="fa-solid fa-check mr-2"></i> Saved!';
+                setTimeout(() => {
+                    btn.innerHTML = originalText;
+                }, 2000);
+            }, 1000);
+        }
+
+        function resetForm() {
+            if (confirm('Are you sure you want to reset changes?')) {
+                inputWelcome.value = "Hi there! 👋 I'm here to help you find the perfect tech solution. What are you looking for today?";
+                previewWelcomeMsg.textContent = inputWelcome.value;
+                inputPersona.value = "You are a helpful sales assistant.";
+                inputBotName.value = "Sales Assistant";
+                previewBotName.textContent = "Sales Assistant";
+            }
+        }
+
+    </script>
+</body>
+
+</html>

@@ -1,7 +1,8 @@
 import express from 'express'
 import mongoose from 'mongoose'
 import { authRequired, attachUser } from '../middleware/auth.js'
-import Platform from '../models/Platform.js' // asumsi model sudah ada
+import Platform from '../models/Platform.js'
+import { setTelegramWebhook } from '../services/telegramService.js'
 
 const router = express.Router()
 
@@ -38,17 +39,22 @@ router.post('/', authRequired, attachUser, async (req, res) => {
     console.log('req.me object:', req.me); // for debugging
     if (!req.me.workspaceId) return res.status(400).json({ error: 'User does not have a workspace' })
 
-  const platform = await Platform.create({
-    userId: req.me._id,
-    workspaceId: req.me.workspaceId,
-    type,
-    label,
-    token,
-    accountId,
-    webhookSecret,
-    appId,
-    appSecret,
-  });
+    const platform = await Platform.create({
+      userId: req.me._id,
+      workspaceId: req.me.workspaceId,
+      type,
+      label,
+      token,
+      accountId,
+      webhookSecret,
+      appId,
+      appSecret,
+    });
+
+    if (platform.type === 'telegram' && platform.token) {
+      await setTelegramWebhook(platform._id, platform.token);
+    }
+
     res.json(platform)
   } catch (err) {
     console.error('POST /platforms error:', err)
@@ -63,12 +69,27 @@ router.put('/:id', authRequired, attachUser, async (req, res) => {
     if (!mongoose.Types.ObjectId.isValid(id)) return res.status(400).json({ error: 'Invalid platform id' })
     const update = req.body || {}
     if (update.type) update.type = String(update.type).toLowerCase()
+
+    const oldPlatform = await Platform.findOne({ _id: id, workspaceId: req.me.workspaceId });
+    if (!oldPlatform) return res.status(404).json({ error: 'Platform not found' });
+
     const row = await Platform.findOneAndUpdate(
       { _id: id, workspaceId: req.me.workspaceId },
       { $set: update },
       { new: true }
     )
     if (!row) return res.status(404).json({ error: 'Platform not found' })
+
+    // Automatically set webhook if Telegram token is updated
+    if (
+      row.type === 'telegram' &&
+      row.token &&
+      update.token &&
+      update.token !== oldPlatform.token
+    ) {
+      await setTelegramWebhook(row._id, row.token);
+    }
+
     res.json(row)
   } catch (err) {
     console.error('PUT /platforms/:id error:', err)
@@ -81,7 +102,7 @@ router.delete('/:id', authRequired, attachUser, async (req, res) => {
   try {
     const { id } = req.params
     if (!mongoose.Types.ObjectId.isValid(id)) return res.status(400).json({ error: 'Invalid platform id' })
-  const result = await Platform.deleteOne({ _id: id, workspaceId: req.me.workspaceId });
+    const result = await Platform.deleteOne({ _id: id, workspaceId: req.me.workspaceId });
     if (result.deletedCount === 0) return res.status(404).json({ error: 'Platform not found' });
     res.json({ ok: true })
   } catch (err) {

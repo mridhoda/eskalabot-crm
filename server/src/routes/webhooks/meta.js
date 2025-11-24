@@ -11,6 +11,7 @@ import {
   igSendDocument,
   waSend,
   waSendDocument,
+  waGetMediaUrl,
 } from '../../services/sender.js';
 
 const router = express.Router();
@@ -85,10 +86,31 @@ async function handleWhatsapp(data) {
       const welcome = agent?.welcomeMessage || 'Halo! Ada yang bisa saya bantu?';
 
       for (const message of value.messages) {
-        if (message.type !== 'text') continue;
+        // MODIFICATION START: Handle different message types
+        let text = '';
+        let attachment = null;
+
+        if (message.type === 'text') {
+          text = message.text?.body ?? '';
+        } else if (message.type === 'image') {
+          text = message.image?.caption ?? ''; // Caption for the image
+          if (platform.token && message.image?.id) {
+            try {
+              const imageUrl = await waGetMediaUrl(message.image.id, platform.token);
+              attachment = { url: imageUrl, filename: 'whatsapp_image.jpg' };
+              console.log(`[meta] received image from whatsapp: ${imageUrl}`);
+            } catch(e) {
+              console.error('[meta] failed to get whatsapp media url:', e);
+            }
+          }
+        } else {
+          // Optional: handle other message types or ignore
+          console.log(`[meta] skipping whatsapp message of type ${message.type}`);
+          continue;
+        }
 
         const from = message.from;
-        const text = message.text?.body ?? '';
+        // MODIFICATION END
 
         let contact = await Contact.findOne({
           userId: platform.userId,
@@ -123,7 +145,7 @@ async function handleWhatsapp(data) {
             agentId: agent?._id || null,
             lastMessageAt: new Date(),
           });
-        } else if (!chat.agentId && agent) {
+        } else if (agent && String(chat.agentId) !== String(agent._id)) {
           chat.agentId = agent._id;
           await chat.save();
         }
@@ -133,6 +155,7 @@ async function handleWhatsapp(data) {
           workspaceId: platform.workspaceId,
           from: 'user',
           text,
+          attachment, // Save attachment URL to DB
           createdAt: new Date(),
         });
         await Chat.updateOne(
@@ -158,8 +181,9 @@ async function handleWhatsapp(data) {
             createdAt: new Date(),
           });
         }
-
-        if (text && (!isNewChat || text.toLowerCase() !== '/start')) {
+        
+        // Let AI reply if there is text OR an attachment
+        if (text || attachment) {
           let reply;
           try {
             const history = await Message.find({ chatId: chat._id })
@@ -170,6 +194,7 @@ async function handleWhatsapp(data) {
               system,
               prompt,
               message: text,
+              attachment, // Pass attachment to AI
               knowledge: agent?.knowledge,
               agent,
               chat,
@@ -181,23 +206,23 @@ async function handleWhatsapp(data) {
           }
 
           const replyText = typeof reply === 'string' ? reply : reply.text;
-          const attachment =
+          const replyAttachment =
             typeof reply === 'object' && reply.attachment
               ? reply.attachment
               : null;
 
-          if (attachment && attachment.url) {
+          if (replyAttachment && replyAttachment.url) {
             await waSendDocument(
               platform.token,
               fromPhoneNumberId,
               from,
-              attachment.url,
-              attachment.filename,
+              replyAttachment.url,
+              replyAttachment.filename,
             );
             if (replyText) {
               await waSend(platform.token, fromPhoneNumberId, from, replyText);
             }
-          } else {
+          } else if (replyText) { // Ensure replyText is not empty
             await waSend(platform.token, fromPhoneNumberId, from, replyText);
           }
 
@@ -206,7 +231,7 @@ async function handleWhatsapp(data) {
             workspaceId: platform.workspaceId,
             from: 'ai',
             text: replyText,
-            attachment,
+            attachment: replyAttachment,
             createdAt: new Date(),
           });
         }
@@ -256,7 +281,22 @@ async function handleInstagram(data) {
         continue;
       }
 
-      const text = message.message?.text;
+      // MODIFICATION START: Handle image attachments
+      const text = message.message?.text ?? '';
+      let attachment = null;
+
+      if (message.message?.attachments) {
+        for (const att of message.message.attachments) {
+          if (att.type === 'image' && att.payload?.url) {
+            attachment = { url: att.payload.url, filename: 'instagram_image.jpg' };
+            console.log(`[meta] received image from instagram: ${attachment.url}`);
+            // Typically, Instagram sends one image attachment per message, so we break after finding one.
+            break;
+          }
+        }
+      }
+      // MODIFICATION END
+
       const from = message.sender?.id;
       if (!from) {
         console.warn(
@@ -303,7 +343,7 @@ async function handleInstagram(data) {
 
       if (!contact) {
         let name = `Instagram User ${from}`;
-        if (hasToken && text) {
+        if (hasToken && (text || attachment)) { // Check token if there is any content
           try {
             const profile = await igGetUserProfile(from, platform.token);
             if (profile?.name) {
@@ -351,17 +391,18 @@ async function handleInstagram(data) {
           agentId: agent?._id || null,
           lastMessageAt: new Date(),
         });
-      } else if (!chat.agentId && agent) {
+      } else if (agent && String(chat.agentId) !== String(agent._id)) {
         chat.agentId = agent._id;
         await chat.save();
       }
 
-      if (text) {
+      if (text || attachment) { // Save message if there's text OR an attachment
         await Message.create({
           chatId: chat._id,
           workspaceId: platform.workspaceId,
           from: 'user',
           text,
+          attachment,
           createdAt: new Date(),
         });
         await Chat.updateOne(
@@ -377,11 +418,10 @@ async function handleInstagram(data) {
         continue;
       }
 
-      if (isNewChat && text) {
+      if (isNewChat && (text || attachment)) { // Send welcome on first contentful message
         const processedWelcome = welcome.replace('{{name}}', contact.name);
         await igSend(
           platform.token,
-          platform.accountId,
           from,
           processedWelcome,
         );
@@ -394,7 +434,7 @@ async function handleInstagram(data) {
         });
       }
 
-      if (text && (!isNewChat || text.toLowerCase() !== '/start')) {
+      if ((text || attachment) && (!isNewChat || text.toLowerCase() !== '/start')) {
         let reply;
         try {
           const history = await Message.find({ chatId: chat._id })
@@ -405,6 +445,7 @@ async function handleInstagram(data) {
             system,
             prompt,
             message: text,
+            attachment, // Pass attachment to AI
             knowledge: agent?.knowledge,
             agent,
             chat,
@@ -416,23 +457,21 @@ async function handleInstagram(data) {
         }
 
         const replyText = typeof reply === 'string' ? reply : reply.text;
-        const attachment =
+        const replyAttachment =
           typeof reply === 'object' && reply.attachment
             ? reply.attachment
             : null;
 
-        if (attachment && attachment.url) {
+        if (replyAttachment && replyAttachment.url) {
           await igSendDocument(
             platform.token,
-            platform.accountId,
             from,
-            attachment.url,
+            replyAttachment.url,
             replyText,
           );
         } else if (replyText) {
           await igSend(
             platform.token,
-            platform.accountId,
             from,
             replyText,
           );
@@ -443,7 +482,7 @@ async function handleInstagram(data) {
           workspaceId: platform.workspaceId,
           from: 'ai',
           text: replyText,
-          attachment,
+          attachment: replyAttachment,
           createdAt: new Date(),
         });
       }
