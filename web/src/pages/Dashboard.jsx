@@ -12,7 +12,46 @@ import Platforms from './Platforms'
 import * as XLSX from 'xlsx'
 import { Line, Pie, Bar } from 'react-chartjs-2'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faMagnifyingGlass, faSliders, faEnvelopeOpen } from '@fortawesome/free-solid-svg-icons'
+import {
+  faMagnifyingGlass,
+  faSliders,
+  faEnvelopeOpen,
+  faBookOpen,
+  faPlug,
+  faClock,
+  faDatabase,
+  faChartPie,
+  faBrain,
+  faChevronRight,
+  faPenToSquare,
+  faCheck,
+  faRotateRight,
+  faFingerprint,
+  faWandMagicSparkles,
+  faMessage,
+  faCloudArrowUp,
+  faXmark,
+  faLink,
+  faFileLines,
+  faFolderOpen,
+  faComments,
+  faGlobe,
+  faPlus,
+  faTrashCan,
+  faFileArrowUp,
+  faFilePdf,
+  faPen,
+  faChevronDown,
+  faCopy,
+  faHourglass,
+  faFolderPlus,
+  faFileWord,
+  faEye,
+  faRobot,
+  faEllipsisVertical,
+  faPaperPlane
+} from '@fortawesome/free-solid-svg-icons';
+import { faTelegram } from '@fortawesome/free-brands-svg-icons';
 import {
   Chart as ChartJS,
   ArcElement,
@@ -155,17 +194,6 @@ function Inbox() {
 
   return (
     <>
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: '320px 1fr 280px',
-          gap: 16,
-          alignItems: 'stretch',
-          height: panelHeight,
-        }}
-      >
-        {/* Left Column */}
-        <div className='col' style={{ minHeight: 0 }}>
           <div
             className='card col inbox-panel'
             style={{
@@ -1454,215 +1482,253 @@ function AgentDetail() {
 
       return (
 
-        <div className='detail-wrap'>
+              <div class="max-w-7xl mx-auto">
 
-          <div
+                <header class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
 
-            className='row'
+                                  <div>
 
-            style={{
+                                      <div class="flex items-center text-sm text-slate-500 mb-1">
 
-              alignItems: 'center',
+                                          <span
 
-              justifyContent: 'space-between',
+                                              class="hover:text-orange-500 cursor-pointer transition"
 
-              marginBottom: 10,
+                                              onClick={() => navigate(-1)}
 
-            }}
+                                          >
 
-          >
+                                              My Bots
 
-            <div className='row' style={{ alignItems: 'center', gap: 8 }}>
+                                          </span>
 
-              <button className='btn ghost' onClick={() => navigate(-1)}>
+                                          <i class="fa-solid fa-chevron-right text-xs mx-2"></i>
 
-                ← Back
+                                          <span class="text-slate-800 font-semibold">Editing</span>
 
-              </button>
+                                      </div>
 
-              <h2 style={{ margin: 0 }}>{name || agent.name}</h2>
+                                      <div class="flex items-center gap-3 group">
 
-            </div>
+                                          <input
 
-            <div className='row' style={{ gap: 8 }}>
+                                              type="text"
 
-              <button
+                                              id="bot-name-input"
 
-                className='btn ghost'
+                                              value={name}
 
-                onClick={() => window.location.reload()}
+                                              onChange={(e) => setName(e.target.value)}
 
-              >
+                                              class="text-3xl font-bold bg-transparent border-b-2 border-transparent hover:border-slate-200 focus:border-orange-500 focus:outline-none bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-600 w-full md:w-auto transition-colors"
 
-                ↻
+                                          />
 
-              </button>
+                                          <i class="fa-solid fa-pen-to-square text-slate-300 group-hover:text-orange-400 transition cursor-pointer"></i>
 
-              <button className='btn' disabled={saving} onClick={save}>
+                                      </div>
 
-                {saving ? 'Saving…' : 'Save'}
+                                  </div>
 
-              </button>
+                                    <div class="flex items-center gap-3">
 
-            </div>
+                                        <span id="auto-save-indicator"
+
+                                            class="text-xs font-medium text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-100 transition-opacity duration-500">
+
+                                            <i class="fa-solid fa-check mr-1"></i> Auto-saved
+
+                                        </span>
+
+                                        <button
+
+                                            onClick={() => window.location.reload()}
+
+                                            class="bg-white text-slate-600 px-5 py-2.5 rounded-full font-semibold text-sm border border-slate-200 shadow-sm hover:bg-slate-50 transition">
+
+                                            <i class="fa-solid fa-rotate-right mr-2"></i> Reset
+
+                                        </button>
+
+                                        <button
+
+                                            onClick={save}
+
+                                            disabled={saving}
+
+                                            class="bg-slate-900 text-white px-6 py-2.5 rounded-full font-bold text-sm shadow-lg shadow-slate-900/20 hover:bg-slate-800 hover:scale-[1.02] transition-all active:scale-95">
+
+                                            {saving ? 'Saving…' : 'Save Changes'}
+
+                                        </button>
+
+                                    </div>
+
+                      </header>
+
+            
+
+                      <nav class="flex overflow-x-auto pb-4 mb-4 gap-2 no-scrollbar" id="tab-container">
+
+                        {[
+
+                          {tabs.map((t) => (
+
+                            <button
+
+                              key={t.key}
+
+                              data-tab={t.key}
+
+                              className={`tab-btn flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm min-w-max transition-all ${
+
+                                tab === t.key
+
+                                  ? 'active bg-white text-slate-900 shadow-md border border-slate-100'
+
+                                  : 'bg-transparent text-slate-500 hover:bg-white hover:text-slate-700'
+
+                              }`}
+
+                              onClick={() => setTab(t.key)}
+
+                            >
+
+                              {t.icon} {t.label}
+
+                            </button>
+
+                          ))}
 
           </div>
 
     
 
-          <div className='tabs'>
-
-            {[
-
-              'general',
-
-              'knowledge',
-
-              'integrations',
-
-              'followups',
-
-              'evaluation',
-
-              'database',
-
-            ].map((t) => (
-
-              <div
-
-                key={t}
-
-                className={`tab ${tab === t ? 'active' : ''}`}
-
-                onClick={() => setTab(t)}
-
-              >
-
-                {t[0].toUpperCase() + t.slice(1)}
-
-              </div>
-
-            ))}
-
-          </div>
-
-    
-
-          <div className='split'>
+  const tabs = [
+    { key: 'general', label: 'General', icon: <FontAwesomeIcon icon={faSliders} className='text-orange-500' /> },
+    { key: 'knowledge', label: 'Knowledge', icon: <FontAwesomeIcon icon={faBookOpen} className='opacity-50' /> },
+    { key: 'integrations', label: 'Integrations', icon: <FontAwesomeIcon icon={faPlug} className='opacity-50' /> },
+    { key: 'followups', label: 'Follow-ups', icon: <FontAwesomeIcon icon={faClock} className='opacity-50' /> },
+    { key: 'database', label: 'Database', icon: <FontAwesomeIcon icon={faDatabase} className='opacity-50' /> },
+    { key: 'analytics', label: 'Analytics', icon: <FontAwesomeIcon icon={faChartPie} className='opacity-50' /> },
+    { key: 'evaluation', label: 'Evaluation', icon: <FontAwesomeIcon icon={faBrain} className='opacity-50' /> }, // Using brain icon for now
+  ];
 
             {/* LEFT */}
 
             <div className='left col'>
 
-              {tab === 'general' && (
+                              <div id="content-general" class="flex flex-col gap-6 tab-content">
 
-                <div className='col'>
+                    <div
+                        class="bg-white rounded-2xl p-6 shadow-xl shadow-slate-200/60 border border-slate-100 transition hover:shadow-2xl hover:shadow-slate-200/80">
+                        <div class="flex justify-between items-center mb-4">
+                            <label
+                                class="text-sm font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
+                                <i class="fa-solid fa-fingerprint text-orange-400"></i> AI Agent Persona
+                            </label>
+                            <span
+                                class="text-xs text-slate-500 bg-slate-100 px-2 py-1 rounded-full border border-slate-200">System
+                                Prompt</span>
+                        </div>
 
-                  <div className='muted'>AI Agent Behavior</div>
-
-                  <textarea
-
-                    className='textarea'
-
-                    rows={6}
-
-                    value={behavior}
-
-                    onChange={(e) => setBehavior(e.target.value)}
-
-                  />
-
-    
-
-                  <div className='muted'>Welcome Message</div>
-
-                  <div
-
-                    className='muted'
-
-                    style={{ color: 'blue', cursor: 'pointer' }}
-
-                    onClick={() => document.getElementById('sticker-input').click()}
-
-                  >
-
-                    upload gambar
-
-                  </div>
-
-                  <input
-
-                    type='file'
-
-                    id='sticker-input'
-
-                    style={{ display: 'none' }}
-
-                    onChange={(e) => handleStickerSelect(e.target.files[0])}
-
-                    accept='image/*'
-
-                  />
-
-                  {stickerUrl && (
-
-                    <div className='row' style={{ gap: 8, alignItems: 'center' }}>
-
-                      <img
-
-                        src={`${api.defaults.baseURL}${stickerUrl}`}
-
-                        alt='sticker'
-
-                        style={{ width: 50, height: 50 }}
-
-                      />
-
-                      <button
-
-                        className='btn ghost'
-
-                        onClick={() => setStickerUrl('')}
-
-                      >
-
-                        Remove
-
-                      </button>
-
+                        <div class="relative group">
+                            <textarea
+                                id="input-persona"
+                                class="w-full h-32 bg-slate-50 border border-slate-200 rounded-xl p-4 text-slate-700 text-sm focus:ring-2 focus:ring-orange-100 focus:border-orange-400 outline-none transition resize-none leading-relaxed"
+                                placeholder="Describe precisely how the AI should behave..."
+                                value={behavior}
+                                onChange={(e) => setBehavior(e.target.value)}
+                            ></textarea>
+                            <button
+                                // onclick="generatePersona()"
+                                class="absolute bottom-3 right-3 bg-white text-indigo-600 hover:bg-indigo-50 border border-indigo-100 px-3 py-1.5 rounded-lg text-xs font-semibold shadow-sm transition flex items-center gap-2 group/btn">
+                                <i class="fa-solid fa-wand-magic-sparkles group-hover/btn:animate-pulse"></i> Improve
+                                with AI
+                            </button>
+                        </div>
                     </div>
 
-                  )}
+    
 
-                  <textarea
+                    <div class="bg-white rounded-2xl p-6 shadow-xl shadow-slate-200/60 border border-slate-100">
+                        <label
+                            class="text-sm font-bold text-slate-800 uppercase tracking-wider mb-4 block flex items-center gap-2">
+                            <i class="fa-regular fa-message text-orange-400"></i> Welcome Message
+                        </label>
 
-                    className='textarea'
+                        {/* Image Upload Zone */}
+                        <input
+                            type="file"
+                            id="image-upload-input"
+                            class="hidden"
+                            accept="image/*"
+                            onChange={(e) => handleStickerSelect(e.target.files[0])}
+                        />
+                        <div
+                            onClick={() => document.getElementById('image-upload-input').click()}
+                            id="drop-zone"
+                            class="mb-4 border-2 border-dashed border-slate-200 rounded-xl p-6 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-slate-50 hover:border-orange-300 transition group relative overflow-hidden"
+                        >
+                            {stickerUrl ? (
+                                <div className="relative w-full h-24 flex items-center justify-center">
+                                    <img
+                                        src={`${api.defaults.baseURL}${stickerUrl}`}
+                                        alt='sticker'
+                                        className="max-h-full max-w-full object-contain"
+                                    />
+                                    <button
+                                        className="absolute top-1 right-1 bg-white rounded-full p-1 shadow-md text-red-500 hover:scale-110 transition"
+                                        onClick={(e) => { e.stopPropagation(); setStickerUrl(''); }}
+                                    >
+                                        <i className="fa-solid fa-xmark"></i>
+                                    </button>
+                                </div>
+                            ) : (
+                                <>
+                                    <div
+                                        class="bg-orange-50 text-orange-500 p-3 rounded-full mb-2 group-hover:scale-110 transition z-10"
+                                    >
+                                        <i class="fa-solid fa-cloud-arrow-up text-xl"></i>
+                                    </div>
+                                    <p id="upload-text" class="text-sm font-medium text-slate-700 z-10">
+                                        Click to upload an image
+                                    </p>
+                                    <p id="upload-subtext" class="text-xs text-slate-400 mt-1 z-10">
+                                        SVG, PNG, JPG or GIF (max. 3MB)
+                                    </p>
+                                </>
+                            )}
+                        </div>
 
-                    rows={3}
-
-                    placeholder="Welcome message. You can use {{name}} to insert the user's name."
-
-                    value={welcomeMessage}
-
-                    onChange={(e) => setWelcomeMessage(e.target.value)}
-
-                  />
+                        <div class="relative">
+                            <textarea
+                                id="input-welcome"
+                                class="w-full h-24 bg-slate-50 border border-slate-200 rounded-xl p-4 text-slate-700 text-sm focus:ring-2 focus:ring-orange-100 focus:border-orange-400 outline-none transition resize-none leading-relaxed"
+                                placeholder="Welcome message. You can use {{name}} to insert the user's name."
+                                value={welcomeMessage}
+                                onChange={(e) => setWelcomeMessage(e.target.value)}
+                            ></textarea>
+                        </div>
+                    </div>
 
     
 
-                  <div className='muted'>Prompt AI</div>
-
-                  <textarea
-
-                    className='textarea'
-
-                    rows={4}
-
-                    value={prompt}
-
-                    onChange={(e) => setPrompt(e.target.value)}
-
-                  />
+                    <div
+                        class="bg-white rounded-2xl p-6 shadow-xl shadow-slate-200/60 border border-slate-100 opacity-90 hover:opacity-100 transition">
+                        <label
+                            class="text-sm font-bold text-slate-800 uppercase tracking-wider mb-4 block flex items-center gap-2">
+                            <i class="fa-solid fa-brain text-orange-400"></i> Knowledge Context
+                        </label>
+                        <div class="relative">
+                            <textarea
+                                class="w-full h-24 bg-slate-50 border border-slate-200 rounded-xl p-4 text-slate-700 text-sm focus:ring-2 focus:ring-orange-100 focus:border-orange-400 outline-none transition resize-none leading-relaxed"
+                                placeholder="Our latest products include the Phone 14, Laptop Pro, and Earbuds X..."
+                                value={prompt}
+                                onChange={(e) => setPrompt(e.target.value)}
+                            ></textarea>
+                        </div>
+                    </div>
 
                 </div>
 
@@ -1674,107 +1740,79 @@ function AgentDetail() {
 
     
 
-                                            <div className='col'>
+                  <div id="content-knowledge" class="tab-content hidden flex flex-col gap-6">
 
     
 
-                                              <div className='tabs'>
+                                                                  <div class="bg-white rounded-xl p-1.5 flex gap-1 w-max shadow-sm border border-slate-100">
 
     
 
-                                                <div className={`tab ${knowledgeTab === 'url' ? 'active' : ''}`} onClick={() => setKnowledgeTab('url')}>URL</div>
+                                                                      <button onClick={() => setKnowledgeTab('url')} id="sub-tab-url"
 
     
 
-                                                <div className={`tab ${knowledgeTab === 'text' ? 'active' : ''}`} onClick={() => setKnowledgeTab('text')}>Text</div>
+                                                                          class={`knowledge-sub-tab ${knowledgeTab === 'url' ? 'active bg-slate-100 text-slate-900 px-4 py-1.5 rounded-lg text-sm font-semibold shadow-sm transition hover:bg-slate-200' : 'text-slate-500 px-4 py-1.5 rounded-lg text-sm font-medium transition hover:bg-slate-50 hover:text-slate-700'}`}>
 
     
 
-                                                <div className={`tab ${knowledgeTab === 'file' ? 'active' : ''}`} onClick={() => setKnowledgeTab('file')}>File</div>
+                                                                          <i class="fa-solid fa-link text-orange-500 mr-1.5"></i> URL
 
     
 
-                                                <div className={`tab ${knowledgeTab === 'qna' ? 'active' : ''}`} onClick={() => setKnowledgeTab('qna')}>Q&A</div>
+                                                                      </button>
 
     
 
-                                              </div>
+                                                                      <button onClick={() => setKnowledgeTab('text')} id="sub-tab-text"
 
     
 
-                            
+                                                                          class={`knowledge-sub-tab ${knowledgeTab === 'text' ? 'active bg-slate-100 text-slate-900 px-4 py-1.5 rounded-lg text-sm font-semibold shadow-sm transition hover:bg-slate-200' : 'text-slate-500 px-4 py-1.5 rounded-lg text-sm font-medium transition hover:bg-slate-50 hover:text-slate-700'}`}>
 
     
 
-                                              <div
+                                                                          <i class="fa-regular fa-file-lines mr-1.5"></i> Text
 
     
 
-                                                className='row'
+                                                                      </button>
 
     
 
-                                                style={{
+                                                                      <button onClick={() => setKnowledgeTab('file')} id="sub-tab-file"
 
     
 
-                                                  justifyContent: 'space-between',
+                                                                          class={`knowledge-sub-tab ${knowledgeTab === 'file' ? 'active bg-slate-100 text-slate-900 px-4 py-1.5 rounded-lg text-sm font-semibold shadow-sm transition hover:bg-slate-200' : 'text-slate-500 px-4 py-1.5 rounded-lg text-sm font-medium transition hover:bg-slate-50 hover:text-slate-700'}`}>
 
     
 
-                                                  alignItems: 'center',
+                                                                          <i class="fa-regular fa-folder-open mr-1.5"></i> File
 
     
 
-                                                  paddingTop: '16px'
+                                                                      </button>
 
     
 
-                                                }}
+                                                                      <button onClick={() => setKnowledgeTab('qna')} id="sub-tab-qa"
 
     
 
-                                              >
+                                                                          class={`knowledge-sub-tab ${knowledgeTab === 'qna' ? 'active bg-slate-100 text-slate-900 px-4 py-1.5 rounded-lg text-sm font-semibold shadow-sm transition hover:bg-slate-200' : 'text-slate-500 px-4 py-1.5 rounded-lg text-sm font-medium transition hover:bg-slate-50 hover:text-slate-700'}`}>
 
     
 
-                                                <h3 style={{ margin: 0 }}>
+                                                                          <i class="fa-regular fa-comments mr-1.5"></i> Q&A
 
     
 
-                                                  Knowledge Sources: {knowledgeTab.toUpperCase()}
+                                                                      </button>
 
     
 
-                                                </h3>
-
-    
-
-                                                <button
-
-    
-
-                                                  className='btn ghost'
-
-    
-
-                                                  onClick={() => addKnowledge(knowledgeTab === 'qna' ? { kind: 'qna', question: '', answer: '' } : { kind: knowledgeTab, value: '' })}
-
-    
-
-                                                >
-
-    
-
-                                                  + Add
-
-    
-
-                                                </button>
-
-    
-
-                                              </div>
+                                                                  </div>
 
     
 
@@ -1782,319 +1820,1919 @@ function AgentDetail() {
 
     
 
-                                              <div className='list'>
+                                                                  <div class="flex justify-between items-center mb-8">
 
     
 
-                                                {knowledge
+                            
 
     
 
-                                                  .map((k, i) => ({ ...k, originalIndex: i })) // Keep original index
+                                                                      <div>
 
     
 
-                                                  .filter((k) => k.kind === knowledgeTab)
+                            
 
     
 
-                                                  .map((k) => (
+                                                                          <h2 class="text-xl font-bold text-slate-800">Website Sources</h2>
 
     
 
-                                                    <div key={k.originalIndex} className='rowi'>
+                            
 
     
 
-                                                      <div className='col' style={{ gap: 8, flex: 1 }}>
+                                                                          <p class="text-sm text-slate-500 mt-1">Train your bot on specific websites.</p>
 
     
 
-                                                        {k.kind === 'qna' ? (
+                            
 
     
 
-                                                          <div className='col' style={{ gap: 8, flex: 1 }}>
+                                                                      </div>
 
     
 
-                                                            <input
+                            
 
     
 
-                                                              className='input'
+                                                                      <button
 
     
 
-                                                              placeholder='Question'
+                            
 
     
 
-                                                              value={k.question}
+                                                                          class="bg-gradient-to-r from-orange-500 to-pink-500 text-white pl-4 pr-5 py-2.5 rounded-full font-bold text-sm shadow-lg shadow-orange-500/30 hover:shadow-orange-500/50 hover:scale-[1.02] transition flex items-center gap-2"
 
     
 
-                                                              onChange={(e) =>
+                            
 
     
 
-                                                                updKnowledge(k.originalIndex, { question: e.target.value })
+                                                                          onClick={() => addKnowledge(knowledgeTab === 'qna' ? { kind: 'qna', question: '', answer: '' } : { kind: knowledgeTab, value: '' })}>
 
     
 
-                                                              }
+                            
 
     
 
-                                                            />
+                                                                          <i class="fa-solid fa-plus"></i> Add Source
 
     
 
-                                                            <textarea
+                            
 
     
 
-                                                              className='textarea'
+                                                                      </button>
 
     
 
-                                                              placeholder='Answer'
+                            
 
     
 
-                                                              value={k.answer}
+                                                                  </div>
 
     
 
-                                                              onChange={(e) =>
+                            
 
     
 
-                                                                updKnowledge(k.originalIndex, { answer: e.target.value })
+                                                                  {knowledgeTab === 'url' && (
 
     
 
-                                                              }
+                            
 
     
 
-                                                            />
+                                                                      <div id="knowledge-sub-url"
 
     
 
-                                                          </div>
+                            
 
     
 
-                                                        ) : k.kind === 'file' ? (
+                                                                          class="knowledge-sub-content bg-white rounded-2xl p-8 shadow-xl shadow-slate-200/60 border border-slate-100 min-h-[400px]">
 
     
 
-                                                          k.value ? (
+                            
 
     
 
-                                                            <div
+                                              
 
     
 
-                                                              className='row'
+                            
 
     
 
-                                                              style={{ gap: 8, alignItems: 'center' }}
+                                                                          <div class="flex gap-3 mb-8">
 
     
 
-                                                            >
+                            
 
     
 
-                                                              <span>{k.originalName || k.value.split('/').pop()}</span>
+                                                                              <input type="text" placeholder="https://example.com/pricing"
 
     
 
-                                                              <a
+                            
 
     
 
-                                                                href={`${api.defaults.baseURL}${k.value}`}
+                                                                                  class="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-orange-100 focus:border-orange-400 outline-none transition"
 
     
 
-                                                                target='_blank'
+                            
 
     
 
-                                                                rel='noreferrer'
+                                                                                  value={knowledge.filter(k => k.kind === 'url')[0]?.value || ''}
 
     
 
-                                                              >
+                            
 
     
 
-                                                                Open
+                                                                                  onChange={(e) => {
 
     
 
-                                                              </a>
+                            
 
     
 
-                                                              <button
+                                                                                      const urlIndex = knowledge.findIndex(k => k.kind === 'url');
 
     
 
-                                                                className='btn ghost'
+                            
 
     
 
-                                                                onClick={() => updKnowledge(k.originalIndex, { value: '' })}
+                                                                                      if (urlIndex > -1) {
 
     
 
-                                                              >
+                            
 
     
 
-                                                                Remove
+                                                                                          updKnowledge(urlIndex, { value: e.target.value });
 
     
 
-                                                              </button>
+                            
 
     
 
-                                                            </div>
+                                                                                      } else {
 
     
 
-                                                          ) : (
+                            
 
     
 
-                                                            <FileInput
+                                                                                          addKnowledge({ kind: 'url', value: e.target.value });
 
     
 
-                                                              onFileSelect={(file) => handleFileSelect(file, k.originalIndex)}
+                            
 
     
 
-                                                            />
+                                                                                      }
 
     
 
-                                                          )
+                            
 
     
 
-                                                        ) : (
+                                                                                  }}
 
     
 
-                                                          <textarea
+                            
 
     
 
-                                                            className='textarea'
+                                                                              />
 
     
 
-                                                            placeholder={
+                            
 
     
 
-                                                              k.kind === 'text'
+                                                                              <button
 
     
 
-                                                                ? 'Enter text…'
+                            
 
     
 
-                                                                : 'Paste URL or file path…'
+                                                                                  class="bg-white border border-slate-200 text-slate-700 font-semibold px-6 rounded-xl hover:bg-slate-50 transition">Crawl</button>
 
     
 
-                                                            }
+                            
 
     
 
-                                                            value={k.value}
+                                                                          </div>
 
     
 
-                                                            onChange={(e) =>
+                            
 
     
 
-                                                              updKnowledge(k.originalIndex, { value: e.target.value })
+                                              
 
     
 
-                                                            }
+                            
 
     
 
-                                                          />
+                                                                          <div class="space-y-3">
 
     
 
-                                                        )}
+                            
 
     
 
-                                                      </div>
+                                                                              {knowledge.filter(k => k.kind === 'url').map((k, i) => (
 
     
 
-                                                      <button
+                            
 
     
 
-                                                        className='btn ghost'
+                                                                                  <div key={i}
 
     
 
-                                                        onClick={() => delKnowledge(k.originalIndex)}
+                            
 
     
 
-                                                      >
+                                                                                      class="group flex items-center justify-between p-4 bg-white border border-slate-100 rounded-xl hover:border-orange-200 hover:shadow-md transition cursor-pointer">
 
     
 
-                                                        🗑️
+                            
 
     
 
-                                                      </button>
+                                                                                      <div class="flex items-center gap-4">
 
     
 
-                                                    </div>
+                            
 
     
 
-                                                  ))}
+                                                                                          <div
 
     
 
-                                                {!knowledge.filter((k) => k.kind === knowledgeTab).length && (
+                            
 
     
 
-                                                  <div className='muted'>Belum ada sumber pengetahuan.</div>
+                                                                                              class="w-10 h-10 rounded-lg bg-orange-50 flex items-center justify-center text-orange-500">
 
     
 
-                                                )}
+                            
 
     
 
-                                              </div>
+                                                                                              <i class="fa-solid fa-globe"></i>
+
+    
+
+                            
+
+    
+
+                                                                                          </div>
+
+    
+
+                            
+
+    
+
+                                                                                          <div>
+
+    
+
+                            
+
+    
+
+                                                                                              <h4 class="text-sm font-bold text-slate-800">
+
+    
+
+                            
+
+    
+
+                                                                                                  {k.value.length > 50 ? k.value.substring(0, 50) + '...' : k.value}
+
+    
+
+                            
+
+    
+
+                                                                                              </h4>
+
+    
+
+                            
+
+    
+
+                                                                                              <p class="text-xs text-slate-400">URL Source • Last synced 2m ago</p>
+
+    
+
+                            
+
+    
+
+                                                                                          </div>
+
+    
+
+                            
+
+    
+
+                                                                                      </div>
+
+    
+
+                            
+
+    
+
+                                                                                      <div class="flex items-center gap-3">
+
+    
+
+                            
+
+    
+
+                                                                                          <span
+
+    
+
+                            
+
+    
+
+                                                                                              class="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded border border-emerald-100 uppercase tracking-wide">Active</span>
+
+    
+
+                            
+
+    
+
+                                                                                          <button
+
+    
+
+                            
+
+    
+
+                                                                                              class="w-8 h-8 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-400 hover:text-red-500 transition"
+
+    
+
+                            
+
+    
+
+                                                                                              onClick={() => delKnowledge(knowledge.indexOf(k))}>
+
+    
+
+                            
+
+    
+
+                                                                                              <i class="fa-regular fa-trash-can"></i>
+
+    
+
+                            
+
+    
+
+                                                                                          </button>
+
+    
+
+                            
+
+    
+
+                                                                                      </div>
+
+    
+
+                            
+
+    
+
+                                                                                  </div>
+
+    
+
+                            
+
+    
+
+                                                                              ))}
+
+    
+
+                            
+
+    
+
+                                                                              {!knowledge.filter(k => k.kind === 'url').length && (
+
+    
+
+                            
+
+    
+
+                                                                                  <div className='muted'>No URL sources yet.</div>
+
+    
+
+                            
+
+    
+
+                                                                              )}
+
+    
+
+                            
+
+    
+
+                                                                          </div>
+
+    
+
+                            
+
+    
+
+                                                                      </div>
+
+    
+
+                            
+
+    
+
+                                                                  )}
+
+    
+
+                            
+
+    
+
+                                              
+
+    
+
+                            
+
+    
+
+                                                                  {knowledgeTab === 'text' && (
+
+    
+
+                            
+
+    
+
+                                                                      <div id="knowledge-sub-text"
+
+    
+
+                            
+
+    
+
+                                                                          class="knowledge-sub-content bg-white rounded-2xl p-8 shadow-xl shadow-slate-200/60 border border-slate-100 min-h-[400px]">
+
+    
+
+                            
+
+    
+
+                                                                          <div class="flex justify-between items-center mb-6">
+
+    
+
+                            
+
+    
+
+                                                                              <div>
+
+    
+
+                            
+
+    
+
+                                                                                  <h2 class="text-xl font-bold text-slate-800">Custom Text</h2>
+
+    
+
+                            
+
+    
+
+                                                                                  <p class="text-sm text-slate-500 mt-1">Paste raw text for the bot to memorize.</p>
+
+    
+
+                            
+
+    
+
+                                                                              </div>
+
+    
+
+                            
+
+    
+
+                                                                              <button class="text-slate-400 hover:text-red-500 transition text-sm font-semibold"
+
+    
+
+                            
+
+    
+
+                                                                                  onClick={() => setKnowledge(knowledge.filter(k => k.kind !== 'text'))}><i
+
+    
+
+                            
+
+    
+
+                                                                                      class="fa-solid fa-trash-can mr-1"></i> Clear</button>
+
+    
+
+                            
+
+    
+
+                                                                          </div>
+
+    
+
+                            
+
+    
+
+                                              
+
+    
+
+                            
+
+    
+
+                                                                          <div class="relative group h-[300px]">
+
+    
+
+                            
+
+    
+
+                                                                              <textarea
+
+    
+
+                            
+
+    
+
+                                                                                  class="w-full h-full bg-slate-50 border border-slate-200 rounded-xl p-5 text-slate-700 text-sm focus:ring-2 focus:ring-orange-100 focus:border-orange-400 outline-none transition resize-none leading-relaxed font-mono"
+
+    
+
+                            
+
+    
+
+                                                                                  placeholder="Paste policies, product descriptions, or any text data here..."
+
+    
+
+                            
+
+    
+
+                                                                                  value={knowledge.filter(k => k.kind === 'text')[0]?.value || ''}
+
+    
+
+                            
+
+    
+
+                                                                                  onChange={(e) => {
+
+    
+
+                            
+
+    
+
+                                                                                      const textIndex = knowledge.findIndex(k => k.kind === 'text');
+
+    
+
+                            
+
+    
+
+                                                                                      if (textIndex > -1) {
+
+    
+
+                            
+
+    
+
+                                                                                          updKnowledge(textIndex, { value: e.target.value });
+
+    
+
+                            
+
+    
+
+                                                                                      } else {
+
+    
+
+                            
+
+    
+
+                                                                                          addKnowledge({ kind: 'text', value: e.target.value });
+
+    
+
+                            
+
+    
+
+                                                                                      }
+
+    
+
+                            
+
+    
+
+                                                                                  }}
+
+    
+
+                            
+
+    
+
+                                                                              ></textarea>
+
+    
+
+                            
+
+    
+
+                                                                              <button
+
+    
+
+                            
+
+    
+
+                                                                                  class="absolute bottom-4 right-4 bg-white text-indigo-600 hover:bg-indigo-50 border border-indigo-100 px-3 py-1.5 rounded-lg text-xs font-semibold shadow-sm transition flex items-center gap-2 group/btn">
+
+    
+
+                            
+
+    
+
+                                                                                  <i class="fa-solid fa-wand-magic-sparkles group-hover/btn:animate-pulse"></i> Clean &
+
+    
+
+                            
+
+    
+
+                                                                                  Format
+
+    
+
+                            
+
+    
+
+                                                                              </button>
+
+    
+
+                            
+
+    
+
+                                                                          </div>
+
+    
+
+                            
+
+    
+
+                                                                          <div class="mt-4 flex justify-end">
+
+    
+
+                            
+
+    
+
+                                                                              <button
+
+    
+
+                            
+
+    
+
+                                                                                  class="bg-slate-900 text-white px-6 py-2.5 rounded-full font-bold text-sm shadow-lg shadow-slate-900/20 hover:bg-slate-800 hover:scale-[1.02] transition">
+
+    
+
+                            
+
+    
+
+                                                                                  Save Text
+
+    
+
+                            
+
+    
+
+                                                                              </button>
+
+    
+
+                            
+
+    
+
+                                                                          </div>
+
+    
+
+                            
+
+    
+
+                                                                      </div>
+
+    
+
+                            
+
+    
+
+                                                                  )}
+
+    
+
+                            
+
+    
+
+                                              
+
+    
+
+                            
+
+    
+
+                                                                  {knowledgeTab === 'file' && (
+
+    
+
+                            
+
+    
+
+                                                                      <div id="knowledge-sub-file"
+
+    
+
+                            
+
+    
+
+                                                                          class="knowledge-sub-content bg-white rounded-2xl p-8 shadow-xl shadow-slate-200/60 border border-slate-100 min-h-[400px]">
+
+    
+
+                            
+
+    
+
+                                                                          <div class="flex justify-between items-center mb-6">
+
+    
+
+                            
+
+    
+
+                                                                              <div>
+
+    
+
+                            
+
+    
+
+                                                                                  <h2 class="text-xl font-bold text-slate-800">Document Upload</h2>
+
+    
+
+                            
+
+    
+
+                                                                                  <p class="text-sm text-slate-500 mt-1">Support PDF, DOCX, TXT (Max 10MB).</p>
+
+    
+
+                            
+
+    
+
+                                                                              </div>
+
+    
+
+                            
+
+    
+
+                                                                          </div>
+
+    
+
+                            
+
+    
+
+                                              
+
+    
+
+                            
+
+    
+
+                                                                          {/* Big Dropzone */}
+
+    
+
+                            
+
+    
+
+                                                                          <div
+
+    
+
+                            
+
+    
+
+                                                                              class="border-2 border-dashed border-slate-200 rounded-2xl p-10 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-orange-50/50 hover:border-orange-300 transition group mb-8">
+
+    
+
+                            
+
+    
+
+                                                                              <div
+
+    
+
+                            
+
+    
+
+                                                                                  class="w-16 h-16 bg-orange-50 text-orange-500 rounded-full flex items-center justify-center text-2xl mb-4 group-hover:scale-110 transition shadow-sm">
+
+    
+
+                            
+
+    
+
+                                                                                  <i class="fa-solid fa-file-arrow-up"></i>
+
+    
+
+                            
+
+    
+
+                                                                              </div>
+
+    
+
+                            
+
+    
+
+                                                                              <p class="text-base font-bold text-slate-700">Click to upload or drag and drop</p>
+
+    
+
+                            
+
+    
+
+                                                                              <p class="text-sm text-slate-400 mt-1">PDF, DOCX, or TXT documents</p>
+
+    
+
+                            
+
+    
+
+                                                                              <input
+
+    
+
+                            
+
+    
+
+                                                                                  type="file"
+
+    
+
+                            
+
+    
+
+                                                                                  id="knowledge-file-upload-input"
+
+    
+
+                            
+
+    
+
+                                                                                  class="hidden"
+
+    
+
+                            
+
+    
+
+                                                                                  onChange={(e) => handleFileSelect(e.target.files[0], knowledge.length)}
+
+    
+
+                            
+
+    
+
+                                                                                  accept=".pdf,.docx,.txt"
+
+    
+
+                            
+
+    
+
+                                                                              />
+
+    
+
+                            
+
+    
+
+                                                                          </div>
+
+    
+
+                            
+
+    
+
+                                              
+
+    
+
+                            
+
+    
+
+                                                                          {/* File List */}
+
+    
+
+                            
+
+    
+
+                                                                          <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Uploaded Files ({knowledge.filter(k => k.kind === 'file').length})
+
+    
+
+                            
+
+    
+
+                                                                          </h4>
+
+    
+
+                            
+
+    
+
+                                                                          <div class="space-y-3">
+
+    
+
+                            
+
+    
+
+                                                                              {knowledge.filter(k => k.kind === 'file').map((k, i) => (
+
+    
+
+                            
+
+    
+
+                                                                                  <div key={i}
+
+    
+
+                            
+
+    
+
+                                                                                      class="flex items-center justify-between p-4 bg-white border border-slate-100 rounded-xl">
+
+    
+
+                            
+
+    
+
+                                                                                      <div class="flex items-center gap-4">
+
+    
+
+                            
+
+    
+
+                                                                                          <div
+
+    
+
+                            
+
+    
+
+                                                                                              class="w-10 h-10 rounded-lg bg-red-50 flex items-center justify-center text-red-500">
+
+    
+
+                            
+
+    
+
+                                                                                              <i class="fa-solid fa-file-pdf"></i>
+
+    
+
+                            
+
+    
+
+                                                                                          </div>
+
+    
+
+                            
+
+    
+
+                                                                                          <div>
+
+    
+
+                            
+
+    
+
+                                                                                              <h4 class="text-sm font-bold text-slate-800">{k.originalName || k.value.split('/').pop()}</h4>
+
+    
+
+                            
+
+    
+
+                                                                                              <p class="text-xs text-slate-400">Uploaded just now</p>
+
+    
+
+                            
+
+    
+
+                                                                                          </div>
+
+    
+
+                            
+
+    
+
+                                                                                      </div>
+
+    
+
+                            
+
+    
+
+                                                                                      <button class="text-slate-400 hover:text-red-500 transition"
+
+    
+
+                            
+
+    
+
+                                                                                          onClick={() => delKnowledge(knowledge.indexOf(k))}><i
+
+    
+
+                            
+
+    
+
+                                                                                              class="fa-solid fa-xmark"></i></button>
+
+    
+
+                            
+
+    
+
+                                                                                  </div>
+
+    
+
+                            
+
+    
+
+                                                                              ))}
+
+    
+
+                            
+
+    
+
+                                                                              {!knowledge.filter(k => k.kind === 'file').length && (
+
+    
+
+                            
+
+    
+
+                                                                                  <div className='muted'>No files uploaded yet.</div>
+
+    
+
+                            
+
+    
+
+                                                                              )}
+
+    
+
+                            
+
+    
+
+                                                                          </div>
+
+    
+
+                            
+
+    
+
+                                                                      </div>
+
+    
+
+                            
+
+    
+
+                                                                  )}
+
+    
+
+                            
+
+    
+
+                                              
+
+    
+
+                            
+
+    
+
+                                                                  {knowledgeTab === 'qna' && (
+
+    
+
+                            
+
+    
+
+                                                                      <div id="knowledge-sub-qa"
+
+    
+
+                            
+
+    
+
+                                                                          class="knowledge-sub-content bg-white rounded-2xl p-8 shadow-xl shadow-slate-200/60 border border-slate-100 min-h-[400px]">
+
+    
+
+                            
+
+    
+
+                                                                          <div class="flex justify-between items-center mb-6">
+
+    
+
+                            
+
+    
+
+                                                                              <div>
+
+    
+
+                            
+
+    
+
+                                                                                  <h2 class="text-xl font-bold text-slate-800">Q&A Training</h2>
+
+    
+
+                            
+
+    
+
+                                                                                  <p class="text-sm text-slate-500 mt-1">Explicitly teach the bot how to answer specific
+
+    
+
+                            
+
+    
+
+                                                                                      questions.</p>
+
+    
+
+                            
+
+    
+
+                                                                              </div>
+
+    
+
+                            
+
+    
+
+                                                                          </div>
+
+    
+
+                            
+
+    
+
+                                              
+
+    
+
+                            
+
+    
+
+                                                                          {/* Add New Q&A */}
+
+    
+
+                            
+
+    
+
+                                                                          <div class="bg-slate-50 rounded-xl p-5 border border-slate-200 mb-8">
+
+    
+
+                            
+
+    
+
+                                                                              <div class="grid gap-4">
+
+    
+
+                            
+
+    
+
+                                                                                  <div>
+
+    
+
+                            
+
+    
+
+                                                                                      <label
+
+    
+
+                            
+
+    
+
+                                                                                          class="text-xs font-bold text-slate-500 uppercase tracking-wide mb-1 block">Question</label>
+
+    
+
+                            
+
+    
+
+                                                                                      <input type="text" placeholder="e.g. What are your opening hours?"
+
+    
+
+                            
+
+    
+
+                                                                                          class="w-full bg-white border border-slate-200 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-orange-100 focus:border-orange-400 outline-none transition"
+
+    
+
+                            
+
+    
+
+                                                                                          id="qna-question-input"
+
+    
+
+                            
+
+    
+
+                                                                                      />
+
+    
+
+                            
+
+    
+
+                                                                                  </div>
+
+    
+
+                            
+
+    
+
+                                                                                  <div>
+
+    
+
+                            
+
+    
+
+                                                                                      <label
+
+    
+
+                            
+
+    
+
+                                                                                          class="text-xs font-bold text-slate-500 uppercase tracking-wide mb-1 block">Answer</label>
+
+    
+
+                            
+
+    
+
+                                                                                      <textarea placeholder="e.g. We are open Mon-Fri from 9am to 5pm."
+
+    
+
+                            
+
+    
+
+                                                                                          class="w-full bg-white border border-slate-200 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-orange-100 focus:focus:border-orange-400 outline-none transition resize-none h-20"
+
+    
+
+                            
+
+    
+
+                                                                                          id="qna-answer-input"
+
+    
+
+                            
+
+    
+
+                                                                                      ></textarea>
+
+    
+
+                            
+
+    
+
+                                                                                  </div>
+
+    
+
+                            
+
+    
+
+                                                                                  <div class="flex justify-end">
+
+    
+
+                            
+
+    
+
+                                                                                      <button
+
+    
+
+                            
+
+    
+
+                                                                                          class="bg-white text-slate-700 px-4 py-2 rounded-lg font-bold text-xs border border-slate-200 hover:bg-slate-100 mr-2">Cancel</button>
+
+    
+
+                            
+
+    
+
+                                                                                      <button
+
+    
+
+                            
+
+    
+
+                                                                                          class="bg-orange-500 text-white px-4 py-2 rounded-lg font-bold text-xs shadow-md shadow-orange-200 hover:bg-orange-600"
+
+    
+
+                            
+
+    
+
+                                                                                          onClick={() => {
+
+    
+
+                            
+
+    
+
+                                                                                              const question = document.getElementById('qna-question-input').value;
+
+    
+
+                            
+
+    
+
+                                                                                              const answer = document.getElementById('qna-answer-input').value;
+
+    
+
+                            
+
+    
+
+                                                                                              if (question && answer) {
+
+    
+
+                            
+
+    
+
+                                                                                                  addKnowledge({ kind: 'qna', question, answer });
+
+    
+
+                            
+
+    
+
+                                                                                                  document.getElementById('qna-question-input').value = '';
+
+    
+
+                            
+
+    
+
+                                                                                                  document.getElementById('qna-answer-input').value = '';
+
+    
+
+                            
+
+    
+
+                                                                                              }
+
+    
+
+                            
+
+    
+
+                                                                                          }}
+
+    
+
+                            
+
+    
+
+                                                                                      >
+
+    
+
+                            
+
+    
+
+                                                                                          Add Pair
+
+    
+
+                            
+
+    
+
+                                                                                      </button>
+
+    
+
+                            
+
+    
+
+                                                                                  </div>
+
+    
+
+                            
+
+    
+
+                                                                              </div>
+
+    
+
+                            
+
+    
+
+                                                                          </div>
+
+    
+
+                            
+
+    
+
+                                              
+
+    
+
+                            
+
+    
+
+                                                                          {/* Q&A List */}
+
+    
+
+                            
+
+    
+
+                                                                          <div class="space-y-3">
+
+    
+
+                            
+
+    
+
+                                                                              {knowledge.filter(k => k.kind === 'qna').map((k, i) => (
+
+    
+
+                            
+
+    
+
+                                                                                  <div key={i}
+
+    
+
+                            
+
+    
+
+                                                                                      class="p-4 bg-white border border-slate-100 rounded-xl hover:shadow-md transition group relative">
+
+    
+
+                            
+
+    
+
+                                                                                      <div class="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition">
+
+    
+
+                            
+
+    
+
+                                                                                          <button class="text-slate-400 hover:text-orange-500 mr-2"><i
+
+    
+
+                            
+
+    
+
+                                                                                                  class="fa-solid fa-pen"></i></button>
+
+    
+
+                            
+
+    
+
+                                                                                          <button class="text-slate-400 hover:text-red-500"
+
+    
+
+                            
+
+    
+
+                                                                                              onClick={() => delKnowledge(knowledge.indexOf(k))}><i
+
+    
+
+                            
+
+    
+
+                                                                                                  class="fa-solid fa-trash-can"></i></button>
+
+    
+
+                            
+
+    
+
+                                                                                      </div>
+
+    
+
+                            
+
+    
+
+                                                                                      <h4 class="text-sm font-bold text-slate-800 mb-1"><span
+
+    
+
+                            
+
+    
+
+                                                                                              class="text-orange-500 mr-2">Q:</span>{k.question}</h4>
+
+    
+
+                            
+
+    
+
+                                                                                      <p class="text-sm text-slate-600"><span
+
+    
+
+                            
+
+    
+
+                                                                                              class="text-slate-400 font-bold mr-2">A:</span>{k.answer}</p>
+
+    
+
+                            
+
+    
+
+                                                                                  </div>
+
+    
+
+                            
+
+    
+
+                                                                              ))}
+
+    
+
+                            
+
+    
+
+                                                                              {!knowledge.filter(k => k.kind === 'qna').length && (
+
+    
+
+                            
+
+    
+
+                                                                                  <div className='muted'>No Q&A pairs yet.</div>
+
+    
+
+                            
+
+    
+
+                                                                              )}
+
+    
+
+                            
+
+    
+
+                                                                          </div>
+
+    
+
+                            
+
+    
+
+                                                                      </div>
+
+    
+
+                            
+
+    
+
+                                                                  )}
 
     
 
@@ -2106,67 +3744,165 @@ function AgentDetail() {
 
     
 
-              {tab === 'integrations' && (
+                            {tab === 'integrations' && (
 
-                <div className='col'>
+    
 
-                  <h3>Integrations</h3>
+                              <div id="content-integrations" class="tab-content hidden flex flex-col gap-6">
 
-                  <div className='muted'>
+                                      {/* Dropdown Section */}
 
-                    Hubungkan agent ke platform yang sudah terdaftar.
+                                      <div>
 
-                  </div>
+                                          <h2 class="text-xl font-bold text-slate-800 mb-2">Integrations</h2>
 
-                  <div className='row' style={{ gap: 8, alignItems: 'center' }}>
+                                          <p class="text-sm text-slate-500 mb-6">Connect your agent to platforms.</p>
 
-                    <BrandIcon
+                  
 
-                      type={
+                                          <div class="relative max-w-md">
 
-                        platforms.find((p) => p._id === platformId)?.type ||
+                                              <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
 
-                        'custom'
+                                                  <i class="fa-solid fa-link text-slate-400"></i>
 
-                      }
+                                              </div>
 
-                      size={18}
+                                              <select id="integration-select"
 
-                    />
+                                                  class="w-full bg-white border border-slate-200 rounded-xl pl-10 pr-10 py-3 text-slate-700 font-medium focus:ring-2 focus:ring-orange-100 focus:border-orange-400 outline-none transition appearance-none cursor-pointer shadow-sm"
 
-                    <select
+                                                  value={platformId || ''}
 
-                      className='select'
+                                                  onChange={(e) => setPlatformId(e.target.value)}
 
-                      value={platformId || ''}
+                                              >
 
-                      onChange={(e) => setPlatformId(e.target.value)}
+                                                  <option value="">Select a platform to connect...</option>
 
-                    >
+                                                  {platforms.map((p) => (
 
-                      <option value=''> (Tidak terhubung)</option>
+                                                      <option key={p._id} value={p._id}>
 
-                      {platforms.map((p) => (
+                                                          {p.label} ({p.type})
 
-                        <option key={p._id} value={p._id}>
+                                                      </option>
 
-                          {p.label} ({p.type})
+                                                  ))}
 
-                        </option>
+                                              </select>
 
-                      ))}
+                                              <div class="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
 
-                    </select>
+                                                  <i class="fa-solid fa-chevron-down text-slate-400 text-xs"></i>
 
-                  </div>
+                                              </div>
 
-                  <div className='muted' style={{ marginTop: 6 }}>
+                                          </div>
 
-                    Webhook URL umum: c
+                                      </div>
 
-                    <code>{`<PUBLIC_BASE_URL>/webhook/<platform>`}</code>
+                  
 
-                  </div>
+                                      {/* Telegram Integration Card (Hidden by default) */}
+
+                                      {platformId && (
+
+                                      <div id="integration-telegram">
+
+                                          <div
+
+                                              class="bg-white rounded-2xl p-8 shadow-xl shadow-slate-200/60 border border-slate-100 animate-slide-up">
+
+                                              <div class="flex items-start justify-between mb-6">
+
+                                                  <div class="flex items-center gap-4">
+
+                                                      <div
+
+                                                          class="w-14 h-14 bg-sky-50 rounded-2xl flex items-center justify-center shadow-sm">
+
+                                                          <i class="fa-brands fa-telegram text-3xl text-sky-500"></i>
+
+                                                      </div>
+
+                                                      <div>
+
+                                                          <h2 class="text-xl font-bold text-slate-800">Telegram</h2>
+
+                                                          <p class="text-sm text-slate-500 flex items-center gap-2">
+
+                                                              Connected as <span class="font-semibold text-slate-700">{platforms.find(p => p._id === platformId)?.label}</span>
+
+                                                          </p>
+
+                                                      </div>
+
+                                                  </div>
+
+                  
+
+                                                  {/* Status Column (Green Filled) */}
+
+                                                  <div class="flex flex-col items-end gap-1">
+
+                                                      <div
+
+                                                          class="bg-emerald-500 text-white px-4 py-1.5 rounded-lg shadow-md shadow-emerald-200 flex items-center gap-2">
+
+                                                          <span class="w-2 h-2 bg-white rounded-full animate-pulse"></span>
+
+                                                          <span class="text-xs font-bold uppercase tracking-wide">Online</span>
+
+                                                      </div>
+
+                                                  </div>
+
+                                              </div>
+
+                  
+
+                                              <div class="bg-slate-50 rounded-xl p-5 border border-slate-200">
+
+                                                  <label
+
+                                                      class="text-xs font-bold text-slate-500 uppercase tracking-wide mb-2 block">Webhook
+
+                                                      URL</label>
+
+                                                  <div class="flex gap-2">
+
+                                                      <code
+
+                                                          class="flex-1 bg-white border border-slate-200 rounded-lg px-4 py-2.5 text-sm font-mono text-slate-600 overflow-x-auto whitespace-nowrap flex items-center">
+
+                                                          {`<PUBLIC_BASE_URL>/webhook/${platforms.find(p => p._id === platformId)?.type}/${id}`}
+
+                                                      </code>
+
+                                                      <button
+
+                                                          class="bg-white text-slate-600 border border-slate-200 px-4 rounded-lg hover:bg-slate-100 transition hover:text-orange-500"
+
+                                                          title="Copy">
+
+                                                          <i class="fa-regular fa-copy"></i>
+
+                                                      </button>
+
+                                                  </div>
+
+                                                  <p class="text-xs text-slate-400 mt-2">Webhook URL umum:
+
+                                                      &lt;PUBLIC_BASE_URL&gt;/webhook/&lt;platform&gt;</p>
+
+                                              </div>
+
+                                          </div>
+
+                                      </div>
+
+                                      )}
 
                 </div>
 
@@ -2174,113 +3910,167 @@ function AgentDetail() {
 
     
 
-              {tab === 'followups' && (
+                            {tab === 'followups' && (
 
-                <div className='col'>
+    
 
-                  <div
+                              <div id="content-followups" class="tab-content hidden flex flex-col gap-6">
 
-                    className='row'
+                                      {/* Header Section */}
 
-                    style={{
+                                      <div class="flex justify-between items-center">
 
-                      justifyContent: 'space-between',
+                                          <div>
 
-                      alignItems: 'center',
+                                              <h2 class="text-xl font-bold text-slate-800">Automated Follow-ups</h2>
 
-                    }}
+                                              <p class="text-sm text-slate-500 mt-1">Re-engage users if they stop responding.</p>
 
-                  >
+                                          </div>
 
-                    <h3 style={{ margin: 0 }}>Follow-ups</h3>
+                                          <button
 
-                    <button className='btn ghost' onClick={addFollowUp}>
+                                              class="bg-gradient-to-r from-orange-500 to-pink-500 text-white pl-4 pr-5 py-2.5 rounded-full font-bold text-sm shadow-lg shadow-orange-500/30 hover:shadow-orange-500/50 hover:scale-[1.02] transition flex items-center gap-2"
 
-                      + Add
+                                              onClick={addFollowUp}>
 
-                    </button>
+                                              <i class="fa-solid fa-plus"></i> Add Follow-up
 
-                  </div>
+                                          </button>
 
-                  <div className='list'>
+                                      </div>
 
-                    {followUps.map((f, i) => (
+                  
 
-                      <div key={i} className='rowi'>
+                                      {/* Follow-up Card (Item 1) */}
 
-                        <div className='col' style={{ gap: 8, flex: 1 }}>
+                                      {followUps.map((f, i) => (
 
-                          <textarea
+                                          <div key={i}
 
-                            className='textarea'
+                                              class="bg-white rounded-2xl p-6 shadow-xl shadow-slate-200/60 border border-slate-100 relative overflow-hidden group hover:shadow-2xl hover:shadow-slate-200/80 transition-all">
 
-                            placeholder='Follow-up instruction'
+                                              {/* Decorative Side Bar */}
 
-                            value={f.prompt}
+                                              <div class="absolute left-0 top-0 bottom-0 w-1.5 bg-gradient-to-b from-orange-400 to-pink-500">
 
-                            onChange={(e) =>
+                                              </div>
 
-                              updFollowUp(i, { prompt: e.target.value })
+                  
 
-                            }
+                                              <div class="flex flex-col md:flex-row gap-6 items-start">
 
-                          />
+                  
 
-                          <div
+                                                  {/* Time Setting */}
 
-                            className='row'
+                                                  <div class="w-full md:w-48 shrink-0">
 
-                            style={{ gap: 8, alignItems: 'center' }}
+                                                      <label
 
-                          >
+                                                          class="text-xs font-bold text-slate-500 uppercase tracking-wide mb-2 block flex items-center gap-1">
 
-                            <input
+                                                          <i class="fa-regular fa-hourglass text-orange-400"></i> Trigger Delay
 
-                              type='number'
+                                                      </label>
 
-                              className='input'
+                                                      <div class="relative">
 
-                              style={{ width: 100 }}
+                                                          <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
 
-                              value={f.delay}
+                                                              <i class="fa-regular fa-clock text-slate-400"></i>
 
-                              onChange={(e) =>
+                                                          </div>
 
-                                updFollowUp(i, { delay: e.target.value })
+                                                          <input type="number" value={f.delay}
 
-                              }
+                                                              class="pl-10 pr-12 py-3 w-full bg-slate-50 border border-slate-200 rounded-xl text-slate-700 font-bold focus:ring-2 focus:ring-orange-100 focus:border-orange-400 outline-none transition"
 
-                            />
+                                                              onChange={(e) => updFollowUp(i, { delay: e.target.value })}
 
-                            <div className='muted'>minutes after trigger</div>
+                                                          />
 
-                          </div>
+                                                          <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
 
-                        </div>
+                                                              <span class="text-xs text-slate-400 font-medium">mins</span>
 
-                        <button
+                                                          </div>
 
-                          className='btn ghost'
+                                                      </div>
 
-                          onClick={() => delFollowUp(i)}
+                                                      <p class="text-[10px] text-slate-400 mt-2">Triggers after last user message.</p>
 
-                        >
+                                                  </div>
 
-                          🗑️
+                  
 
-                        </button>
+                                                  {/* Instruction/Message */}
 
-                      </div>
+                                                  <div class="flex-1 w-full">
 
-                    ))}
+                                                      <div class="flex justify-between items-center mb-2">
 
-                    {!followUps.length && (
+                                                          <label class="text-xs font-bold text-slate-500 uppercase tracking-wide">Follow-up
 
-                      <div className='muted'>No follow-ups configured.</div>
+                                                              Instruction</label>
 
-                    )}
+                                                          <button
 
-                  </div>
+                                                              class="text-slate-300 hover:text-red-500 transition text-sm w-8 h-8 rounded-full hover:bg-red-50 flex items-center justify-center"
+
+                                                              onClick={() => delFollowUp(i)}><i
+
+                                                                  class="fa-regular fa-trash-can"></i></button>
+
+                                                      </div>
+
+                                                      <div class="relative">
+
+                                                          <textarea
+
+                                                              class="w-full h-32 bg-slate-50 border border-slate-200 rounded-xl p-4 text-slate-700 text-sm focus:ring-2 focus:ring-orange-100 focus:border-orange-400 outline-none transition resize-none leading-relaxed"
+
+                                                              placeholder="e.g. Ask the user if they are still interested..."
+
+                                                              value={f.prompt}
+
+                                                              onChange={(e) => updFollowUp(i, { prompt: e.target.value })}
+
+                                                          ></textarea>
+
+                                                      </div>
+
+                                                  </div>
+
+                                              </div>
+
+                                          </div>
+
+                                      ))}
+
+                  
+
+                                      {/* Empty State / Add New Placeholder */}
+
+                                      <button
+
+                                          class="border-2 border-dashed border-slate-200 rounded-2xl p-8 flex flex-col items-center justify-center text-center hover:bg-slate-50 hover:border-orange-200 transition group"
+
+                                          onClick={addFollowUp}>
+
+                                          <div
+
+                                              class="w-12 h-12 bg-slate-100 text-slate-400 rounded-full flex items-center justify-center mb-3 group-hover:bg-orange-50 group-hover:text-orange-500 transition">
+
+                                              <i class="fa-solid fa-plus text-lg"></i>
+
+                                          </div>
+
+                                          <p class="text-sm font-bold text-slate-600 group-hover:text-orange-500 transition">Add another
+
+                                              follow-up</p>
+
+                                      </button>
 
                 </div>
 
@@ -2303,315 +4093,314 @@ function AgentDetail() {
 
 
               {tab === 'database' && (
-                <div className='col'>
-                  <div
-                    className='row'
-                    style={{
-                      justifyContent: 'space-between',
-                      alignItems: 'flex-start',
-                      gap: 16,
-                      flexWrap: 'wrap',
-                    }}
-                  >
-                    <h3 style={{ margin: 0 }}>Database Files</h3>
-                    <div
-                      className='col'
-                      style={{
-                        gap: 8,
-                        minWidth: 260,
-                        maxWidth: 340,
-                        flex: '0 0 auto',
-                      }}
-                    >
-                      <input
-                        id='custom-file-id'
-                        className='input'
-                        placeholder='Custom file ID (optional)'
-                        value={databaseCustomId}
-                        onChange={(e) => setDatabaseCustomId(e.target.value)}
-                      />
-                      <FileInput onFileSelect={handleDatabaseFileSelect} />
-                      {dbUploadStatus.status !== 'idle' && (
-                        <div className={`upload-status ${dbUploadStatus.status}`}>
-                          {dbUploadStatus.message}
+                <div id="content-database" class="tab-content hidden flex flex-col gap-6">
+                    {/* Header Section */}
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <h2 class="text-xl font-bold text-slate-800">File Storage</h2>
+                            <p class="text-sm text-slate-500 mt-1">Manage documents, images, and media assets for your
+                                bot.</p>
                         </div>
-                      )}
+                        <div class="flex gap-2">
+                            <div class="relative">
+                                <input type="text" placeholder="Search files..."
+                                    class="bg-white border border-slate-200 rounded-lg pl-9 pr-4 py-2 text-sm focus:ring-2 focus:ring-orange-100 focus:border-orange-400 outline-none transition">
+                                <i
+                                    class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-400 text-xs"></i>
+                            </div>
+                        </div>
                     </div>
-                  </div>
 
-                  <div className='list'>
-                    {combinedDatabase.map((f, i) => {
-                      const fileKey = f.id || f.storedName || `${f.originalName}-${i}`
-                      const link = getFileLink(f)
-                      return (
-                        <div key={fileKey} className='rowi' style={{ flexDirection: 'column', gap: 8 }}>
-                          <div className='row' style={{ width: '100%', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-                            <div className='col' style={{ gap: 4, flex: 1 }}>
-                              <div
-                                className='row'
-                                style={{
-                                  gap: 8,
-                                  alignItems: 'center',
-                                  flexWrap: 'wrap',
-                                }}
-                              >
-                                <span>{f.originalName}</span>
-                                {f.source === 'remote' && f.storedName ? (
-                                  <a
-                                    href={`${api.defaults.baseURL}/files/${f.storedName}`}
-                                    target='_blank'
-                                    rel='noreferrer'
-                                  >
-                                    Open
-                                  </a>
-                                ) : (
-                                  f.dataUrl && (
-                                    <a href={f.dataUrl} download={f.originalName}>
-                                      Download
-                                    </a>
-                                  )
-                                )}
-                                <span
-                                  className='badge'
-                                  style={{
-                                    background:
-                                      f.source === 'remote' ? '#ecfdf3' : '#e0f2fe',
-                                    color:
-                                      f.source === 'remote' ? '#047857' : '#0369a1',
-                                  }}
-                                >
-                                  {f.source === 'remote' ? 'Server' : 'Local only'}
-                                </span>
-                              </div>
-                              {f.size && (
-                                <div className='muted' style={{ fontSize: 12 }}>
-                                  {(f.size / 1024).toFixed(1)} KB
-                                </div>
-                              )}
-                            </div>
+                    {/* Upload Card */}
+                    <div class="bg-white rounded-2xl p-8 shadow-xl shadow-slate-200/60 border border-slate-100">
 
-                            <div className='row' style={{ gap: 6 }}>
-                              <button className='btn ghost' onClick={() => alert(f.id)}>
-                                ID
-                              </button>
-                              <button
-                                className='btn ghost'
-                                onClick={() => toggleLinkPanel(fileKey, f)}
-                              >
-                                Link
-                              </button>
-                              <button
-                                className='btn ghost'
-                                onClick={() => deleteDatabaseFile(f)}
-                              >
-                                ???
-                              </button>
-                            </div>
-                          </div>
-
-                          {activeLinkId === fileKey && link && (
-                            <div
-                              className='row'
-                              style={{
-                                width: '100%',
-                                gap: 8,
-                                alignItems: 'center',
-                                flexWrap: 'wrap',
-                              }}
-                            >
-                              <input
-                                className='input'
-                                readOnly
-                                value={link}
-                                style={{ flex: 1 }}
-                                onFocus={(e) => e.target.select()}
-                              />
-                              <button
-                                className='btn ghost'
-                                title='Copy link'
-                                onClick={() => copyLink(link)}
-                              >
-                                📋
-                              </button>
-                            </div>
-                          )}
+                        <div class="mb-6">
+                            <label class="text-xs font-bold text-slate-500 uppercase tracking-wide mb-2 block">Custom
+                                File ID (Optional)</label>
+                            <input type="text" placeholder="e.g. welcome-banner-img"
+                                class="w-full md:w-1/2 bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-orange-100 focus:border-orange-400 outline-none transition"
+                                value={databaseCustomId}
+                                onChange={(e) => setDatabaseCustomId(e.target.value)}
+                            />
                         </div>
-                      )
-                    })}
 
-                    {!combinedDatabase.length && (
-                      <div className='muted'>No database files yet.</div>
-                    )}
-                  </div>
+                        {/* Big Dropzone */}
+                        <div
+                            class="border-2 border-dashed border-slate-200 rounded-2xl p-12 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-orange-50/50 hover:border-orange-300 transition group relative overflow-hidden"
+                            onClick={() => document.getElementById('database-file-upload-input').click()}
+                        >
+                            <div
+                                class="w-20 h-20 bg-indigo-50 text-indigo-500 rounded-full flex items-center justify-center text-3xl mb-4 group-hover:scale-110 transition shadow-sm z-10">
+                                <i class="fa-solid fa-folder-plus"></i>
+                            </div>
+                            <h3 class="text-lg font-bold text-slate-700 z-10">Upload Documents & Media</h3>
+                            <p class="text-sm text-slate-400 mt-1 max-w-sm mx-auto z-10">Support for Images (JPG, PNG),
+                                Documents (PDF, DOCX), and other assets. Max 25MB.</p>
+                            <input
+                                type="file"
+                                id="database-file-upload-input"
+                                class="hidden"
+                                onChange={(e) => handleDatabaseFileSelect(e.target.files[0])}
+                            />
+                        </div>
+                    </div>
+
+                    {/* File List */}
+                    <div>
+                        <div class="flex justify-between items-end mb-3">
+                            <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Stored Files ({combinedDatabase.length})</h4>
+                            <div class="flex gap-2 text-xs">
+                                <button class="text-slate-500 font-semibold hover:text-orange-500">All</button>
+                                <button class="text-slate-400 hover:text-orange-500">Images</button>
+                                <button class="text-slate-400 hover:text-orange-500">Docs</button>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 gap-3">
+                            {combinedDatabase.map((f, i) => {
+                                const fileKey = f.id || f.storedName || `${f.originalName}-${i}`
+                                const link = getFileLink(f)
+                                return (
+                                    <div key={fileKey}
+                                        class="flex items-center justify-between p-4 bg-white border border-slate-100 rounded-xl hover:shadow-md transition group">
+                                        <div class="flex items-center gap-4">
+                                            <div
+                                                class="w-12 h-12 rounded-xl bg-purple-50 flex items-center justify-center text-purple-500 text-xl relative overflow-hidden">
+                                                {/* Preview thumbnail simulation */}
+                                                {f.originalName.match(/\.(jpeg|jpg|gif|png)$/) ? (
+                                                    <img src={`${api.defaults.baseURL}${f.storedName}`} alt="preview" className="h-full w-full object-cover" />
+                                                ) : f.originalName.match(/\.pdf$/) ? (
+                                                    <i class="fa-regular fa-file-pdf z-10"></i>
+                                                ) : f.originalName.match(/\.(doc|docx)$/) ? (
+                                                    <i class="fa-regular fa-file-word z-10"></i>
+                                                ) : (
+                                                    <i class="fa-regular fa-file z-10"></i>
+                                                )}
+                                                <div class="absolute inset-0 bg-purple-100 opacity-50"></div>
+                                            </div>
+                                            <div>
+                                                <h4 class="text-sm font-bold text-slate-800">{f.originalName}</h4>
+                                                <div class="flex items-center gap-3 mt-1">
+                                                    <span class="text-xs text-slate-400 font-mono">ID: {f.id || 'N/A'}</span>
+                                                    <span class="w-1 h-1 rounded-full bg-slate-300"></span>
+                                                    <span class="text-[10px] font-bold text-slate-500">{(f.size / 1024).toFixed(1)} KB</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="flex items-center gap-3">
+                                            <button
+                                                class="text-slate-400 hover:text-sky-500 transition p-2 rounded-full hover:bg-slate-50"
+                                                title="Preview"
+                                                onClick={() => {
+                                                    const fileUrl = getFileLink(f);
+                                                    if (fileUrl) window.open(fileUrl, '_blank');
+                                                    else alert('File not available for preview.');
+                                                }}
+                                            >
+                                                <i class="fa-regular fa-eye"></i>
+                                            </button>
+                                            <button
+                                                class="text-slate-400 hover:text-orange-500 transition p-2 rounded-full hover:bg-slate-50"
+                                                title="Copy Link"
+                                                onClick={() => copyLink(link)}
+                                            >
+                                                <i class="fa-solid fa-link"></i>
+                                            </button>
+                                            <button
+                                                class="text-slate-400 hover:text-red-500 transition p-2 rounded-full hover:bg-slate-50"
+                                                onClick={() => deleteDatabaseFile(f)}
+                                            >
+                                                <i class="fa-regular fa-trash-can"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                )
+                            })}
+
+                            {!combinedDatabase.length && (
+                                <div className='muted'>No database files yet.</div>
+                            )}
+                        </div>
+                    </div>
                 </div>
               )}
 
-            </div>
-
-    
-
-            {/* RIGHT */}
-
-            {tab === 'general' ? (
-
-              <div className='right'>
-
-                <div className='card testbox'>
-
-                  <div className='testhead'>
-
-                    <div className='avatar'>AI</div>
-
-                    <div style={{ fontWeight: 700 }}>{name || agent.name}</div>
-
-                    <button
-
-                      className='btn ghost'
-
-                      style={{ marginLeft: 'auto' }}
-
-                      onClick={() => setMessages([])}
-
-                    >
-
-                      ↻
-
-                    </button>
-
-                  </div>
-
-                  <div className='testmsgs'>
-
-                    {messages.map((m, idx) => (
-
-                      <div key={idx} className={`bbl ${m.from}`}>
-
-                        {m.text}
-
-                        {m.sticker && (
-
-                          <img
-
-                            src={`${api.defaults.baseURL}${m.sticker}`}
-
-                            alt='sticker'
-
-                            style={{ width: 100, height: 100 }}
-
-                          />
-
-                        )}
-
-                    {m.attachment && (
-
-                      <div style={{ marginTop: 8 }}>
-
-                        {(() => {
-
-                          const filename = m.attachment.filename || '';
-
-                          const url =
-
-                            m.attachment.url && (m.attachment.url.startsWith('http://') || m.attachment.url.startsWith('https://'))
-
-                              ? m.attachment.url
-
-                              : `${api.defaults.baseURL}${m.attachment.url || ''}`;
-
-                          const isImage = /\.(png|jpe?g|gif|webp)$/i.test(filename);
-
-                          if (isImage) {
-
-                            return (
-
-                              <img
-
-                                src={url}
-
-                                alt={filename || 'attachment'}
-
-                                style={{ maxWidth: 220, borderRadius: 8, display: 'block' }}
-
-                              />
-
-                            );
-
-                          }
-
-                          return (
-
-                            <a 
-
-                              href={url}
-
-                              target="_blank"
-
-                              rel="noopener noreferrer"
-
-                              className='btn ghost'
-
-                            >
-
-                              Download {filename || 'file'}
-
-                            </a>
-
-                          );
-
-                        })()}
-
-                      </div>
-
-                    )}
-
-                      </div>
-
-                    ))}
-
-                  </div>
-
-                  <div className='row'>
-
-                    <input
-
-                      className='input'
-
-                      placeholder='Ketik pesan uji…'
-
-                      value={testMsg}
-
-                      onChange={(e) => setTestMsg(e.target.value)}
-
-                      onKeyDown={(e) => e.key === 'Enter' && sendTest()}
-
-                    />
-
-                    <button className='btn' onClick={sendTest} disabled={testing}>
-
-                      {testing ? '...' : 'Kirim'}
-
-                    </button>
-
-                  </div>
-
-                  <div className='muted' style={{ marginTop: 6 }}>
-
-                    Tanpa API key, balasan akan berupa “Echo: &lt;pesan&gt;”.
-
-                  </div>
-
+            </main>
+            <aside class="lg:col-span-5 xl:col-span-4 relative">
+                <div class="sticky top-8">
+
+                    {/* Live Preview Header */}
+                    <div class="flex justify-between items-center mb-4 px-2">
+                        <h3 class="font-bold text-slate-700 flex items-center gap-2 text-lg">
+                            <i class="fa-solid fa-eye text-orange-500"></i> Live Preview
+                        </h3>
+                        <button onClick={() => setMessages([])}
+                            class="text-xs font-medium text-slate-500 hover:text-orange-500 transition flex items-center gap-1">
+                            <i class="fa-solid fa-rotate-right"></i> Refresh
+                        </button>
+                    </div>
+
+                    {/* Background Decoration */}
+                    <div
+                        class="absolute -inset-4 bg-gradient-to-tr from-orange-100 via-pink-50 to-white rounded-[3rem] blur-xl opacity-70 -z-10">
+                    </div>
+
+                    {/* WIDGET CARD START */}
+                    <div
+                        class="bg-white rounded-[2.5rem] shadow-2xl shadow-orange-900/10 overflow-hidden border border-slate-100 h-[640px] flex flex-col relative transform transition hover:scale-[1.01] duration-500">
+                        {/* Header */}
+                        <div class="px-6 py-5 border-b border-slate-50 flex justify-between items-center bg-white z-10">
+                            <div class="flex items-center gap-4">
+                                <div class="relative group cursor-pointer">
+                                    {/* Avatar */}
+                                    <div
+                                        class="w-12 h-12 rounded-full bg-slate-100 border border-slate-100 overflow-hidden flex items-center justify-center group-hover:shadow-md transition">
+                                        <i class="fa-solid fa-robot text-slate-600 text-xl"></i>
+                                    </div>
+                                    {/* Online Dot */}
+                                    <div
+                                        class="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 border-[3px] border-white rounded-full">
+                                    </div>
+                                </div>
+                                <div>
+                                    <h3 id="preview-bot-name" class="font-bold text-slate-800 text-lg leading-tight">
+                                        {name || agent.name}</h3>
+                                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">
+                                        ACTIVE NOW</p>
+                                </div>
+                            </div>
+                            <div class="flex gap-1 text-slate-400">
+                                <button
+                                    class="w-8 h-8 hover:bg-slate-50 rounded-full flex items-center justify-center transition hover:text-orange-500">
+                                    <i class="fa-solid fa-ellipsis-vertical text-sm"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Chat Area */}
+                        <div id="chat-container" class="flex-1 bg-white p-6 overflow-y-auto space-y-6 scroll-smooth">
+
+                            {/* Bot Message */}
+                            <div class="flex items-start gap-3 group">
+                                <div
+                                    class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center shrink-0 mt-1 text-slate-500">
+                                    <i class="fa-solid fa-robot text-xs"></i>
+                                </div>
+                                <div class="flex flex-col gap-2 max-w-[85%]">
+                                    <div
+                                        class="bg-white border border-slate-100 shadow-sm text-slate-600 p-4 rounded-2xl rounded-tl-none text-[15px] leading-relaxed group-hover:shadow-md transition-shadow duration-300">
+                                        <p id="preview-welcome-msg">{welcomeMessage}</p>
+                                    </div>
+                                    {/* Image Preview Container (Hidden by default) */}
+                                    {stickerUrl && (
+                                    <div id="preview-image-container"
+                                        class="rounded-xl overflow-hidden border border-slate-100 shadow-sm">
+                                        <img src={`${api.defaults.baseURL}${stickerUrl}`} class="w-full h-auto object-cover"/>
+                                    </div>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Typing Indicator (Hidden by default) */}
+                            {testing && (
+                            <div id="typing-indicator" class="flex items-start gap-3">
+                                <div
+                                    class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center shrink-0 mt-1 text-slate-500">
+                                    <i class="fa-solid fa-robot text-xs"></i>
+                                </div>
+                                <div
+                                    class="bg-white border border-slate-100 shadow-sm px-4 py-3 rounded-2xl rounded-tl-none">
+                                    <div class="flex gap-1">
+                                        <div class="w-1.5 h-1.5 bg-slate-400 rounded-full typing-dot"></div>
+                                        <div class="w-1.5 h-1.5 bg-slate-400 rounded-full typing-dot"></div>
+                                        <div class="w-1.5 h-1.5 bg-slate-400 rounded-full typing-dot"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            )}
+
+                             {/* Messages from test chat */}
+                            {messages.map((m, idx) => (
+                                <div key={idx} className={`flex items-${m.from === 'user' ? 'end' : 'start'} gap-3 ${m.from === 'user' ? 'flex-row-reverse' : ''}`}>
+                                    {m.from === 'ai' && (
+                                        <div
+                                            class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center shrink-0 mt-1 text-slate-500">
+                                            <i class="fa-solid fa-robot text-xs"></i>
+                                        </div>
+                                    )}
+                                    <div class={`flex flex-col gap-2 max-w-[85%] ${m.from === 'user' ? 'items-end' : ''}`}>
+                                        <div
+                                            class={`${m.from === 'user' ? 'bg-gradient-to-r from-orange-500 to-pink-500 text-white rounded-2xl rounded-br-none shadow-md shadow-orange-200/50' : 'bg-white border border-slate-100 shadow-sm text-slate-600 rounded-2xl rounded-tl-none'} p-4 text-[15px] leading-relaxed group-hover:shadow-md transition-shadow duration-300`}>
+                                            <p>{m.text}</p>
+                                        </div>
+                                        {m.attachment && (
+                                            <div class="mt-2">
+                                                {(() => {
+                                                    const filename = m.attachment.filename || '';
+                                                    const url =
+                                                        m.attachment.url && (m.attachment.url.startsWith('http://') || m.attachment.url.startsWith('https://'))
+                                                            ? m.attachment.url
+                                                            : `${api.defaults.baseURL}${m.attachment.url || ''}`;
+                                                    const isImage = /\.(png|jpe?g|gif|webp)$/i.test(filename);
+                                                    if (isImage) {
+                                                        return (
+                                                            <img
+                                                                src={url}
+                                                                alt={filename || 'attachment'}
+                                                                class="max-w-full rounded-xl"
+                                                            />
+                                                        );
+                                                    }
+                                                    return (
+                                                        <a
+                                                            href={url}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            class="btn ghost"
+                                                        >
+                                                            Download {filename || 'file'}
+                                                        </a>
+                                                    );
+                                                })()}
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            ))}
+
+
+                        </div>
+
+                        {/* Input Area */}
+                        <div class="p-6 pt-2 bg-white pb-8">
+                            <div class="relative group">
+                                <input
+                                    id="phone-input"
+                                    type="text"
+                                    placeholder="Type a message..."
+                                    class="w-full bg-slate-50 text-slate-600 placeholder-slate-400 rounded-2xl pl-5 pr-14 py-4 focus:outline-none focus:bg-white focus:ring-2 focus:ring-orange-100 transition shadow-inner text-sm font-medium"
+                                    value={testMsg}
+                                    onChange={(e) => setTestMsg(e.target.value)}
+                                    onKeyDown={(e) => e.key === 'Enter' && sendTest()}
+                                />
+
+                                {/* Send Button */}
+                                <button onClick={sendTest} disabled={testing}
+                                    class="absolute right-2 top-2 bottom-2 aspect-square bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 text-white rounded-xl flex items-center justify-center shadow-lg shadow-orange-200 transition transform active:scale-95 group-focus-within:shadow-orange-300">
+                                    <i class="fa-solid fa-paper-plane text-sm"></i>
+                                </button>
+                            </div>
+                            <div class="text-center mt-4">
+                                <p class="text-[10px] text-slate-300 font-bold uppercase tracking-widest">Powered by
+                                    Gemini 2.5</p>
+                            </div>
+                        </div>
+
+                    </div>
+                    {/* WIDGET CARD END */}
                 </div>
-
-              </div>
-
-            ) : (
-
-              <div className='right'></div>
-
-            )}
-
+            </aside>
           </div>
-
         </div>
   )
 }
