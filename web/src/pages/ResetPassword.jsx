@@ -1,72 +1,101 @@
-import React, { useState } from 'react'
-import { useParams, useNavigate, Link } from 'react-router-dom'
-import api from '../api'
-import Navbar from '../components/Navbar'
+import React, { useState } from 'react';
+import { useParams, useNavigate, Link } from 'react-router-dom';
+import api from '../api';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faLock, faEye, faEyeSlash, faRobot } from '@fortawesome/free-solid-svg-icons';
+
+// A consistent navbar for all auth pages
+const AuthNavbar = () => (
+    <nav className="lp-navbar scrolled">
+        <div className="lp-container lp-navbar-content">
+             <Link to="/" className="lp-logo" style={{ textDecoration: 'none' }}>
+                <div className="lp-logo-icon"><FontAwesomeIcon icon={faRobot} /></div>
+                <span className="lp-logo-text">KALIS.AI</span>
+             </Link>
+        </div>
+    </nav>
+);
 
 export default function ResetPassword() {
-  const { token } = useParams()
-  const navigate = useNavigate()
-  const [password, setPassword] = useState('')
-  const [confirmPassword, setConfirmPassword] = useState('')
-  const [message, setMessage] = useState('')
-  const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
+  const { token } = useParams();
+  const navigate = useNavigate();
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [message, setMessage] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const submit = async (e) => {
-    e.preventDefault()
+    e.preventDefault();
     if (password !== confirmPassword) {
-      setError('Passwords do not match.')
-      return
+      setError('Passwords do not match.');
+      return;
     }
-    setError('')
-    setMessage('')
-    setLoading(true)
+    setError('');
+    setMessage('');
+    setLoading(true);
     try {
-      const r = await api.post('/auth/reset-password', { token, password })
-      setMessage(r.data.message)
-      setTimeout(() => navigate('/login'), 3000)
+      const r = await api.post('/auth/reset-password', { token, password });
+      setMessage(r.data.message + ' Redirecting to login...');
+      setTimeout(() => navigate('/login'), 2000);
     } catch (e) {
-      setError(e.response?.data?.error || e.message)
+      setError(e.response?.data?.error || 'Failed to reset password.');
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   return (
-    <div>
-      <Navbar />
-      <div className='center' style={{ minHeight: 'calc(100vh - 58px)' }}>
-        <form className='card col' style={{ width: 380 }} onSubmit={submit}>
-          <h3>Reset Password</h3>
-          <p className='muted'>Enter your new password.</p>
-          <input
-            className='input'
-            placeholder='New Password'
-            type='password'
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
-          <input
-            className='input'
-            placeholder='Confirm New Password'
-            type='password'
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            required
-          />
-          {message && <div style={{ color: '#16a34a' }}>{message}</div>}
-          {error && <div style={{ color: '#ef4444' }}>{error}</div>}
-          <button className='btn' disabled={loading}>
-            {loading ? 'Resetting...' : 'Reset Password'}
-          </button>
-          {message && (
-            <div>
-              <Link to='/login'>Go to Login</Link>
+    <div className="auth-new-page">
+      <AuthNavbar />
+      <div className="auth-new-container">
+        <div className="auth-new-card">
+          <h2>Set a New Password</h2>
+          <p>Create a new strong password for your account.</p>
+
+          {error && <p className='auth-new-error'>{error}</p>}
+          {message && <p className='auth-new-success'>{message}</p>}
+
+          <form onSubmit={submit} className='auth-new-form'>
+            <div className="auth-new-input-group">
+                <FontAwesomeIcon icon={faLock} />
+                <input
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder='New Password'
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                />
+                <FontAwesomeIcon 
+                    icon={showPassword ? faEyeSlash : faEye}
+                    className="auth-new-eye-icon"
+                    onClick={() => setShowPassword(!showPassword)}
+                />
             </div>
-          )}
-        </form>
+            <div className="auth-new-input-group">
+                <FontAwesomeIcon icon={faLock} />
+                <input
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    placeholder='Confirm New Password'
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    required
+                />
+                 <FontAwesomeIcon 
+                    icon={showConfirmPassword ? faEyeSlash : faEye}
+                    className="auth-new-eye-icon"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                />
+            </div>
+            
+            <button type='submit' className="lp-btn lp-btn-primary auth-new-btn" disabled={loading}>
+              {loading ? 'Resetting...' : 'Reset Password'}
+            </button>
+          </form>
+        </div>
       </div>
     </div>
-  )
+  );
 }

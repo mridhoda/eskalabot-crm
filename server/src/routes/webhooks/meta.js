@@ -51,6 +51,39 @@ router.post('/', async (req, res) => {
   }
 });
 
+async function getMetaMediaUrl(mediaId, token) {
+  const url = `https://graph.facebook.com/v20.0/${mediaId}?access_token=${token}`;
+  const resp = await fetch(url);
+  const data = await resp.json();
+  if (data.error || !data.url) {
+    throw new Error(
+      `Failed to get Meta media URL: ${JSON.stringify(data.error || data)}`,
+    );
+  }
+  return data.url;
+}
+
+async function saveMetaFileLocally({ url, token, preferredName }) {
+  const downloadResp = await fetch(url, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!downloadResp.ok) {
+    throw new Error(
+      `Download failed from Meta: ${downloadResp.status} ${downloadResp.statusText}`,
+    );
+  }
+  const buffer = Buffer.from(await downloadResp.arrayBuffer());
+  const originalBase = preferredName || `meta_file_${Date.now()}`;
+  const safeOriginal = originalBase.replace(/[\\/:*?"<>|]+/g, '_');
+  await fs.mkdir('uploads', { recursive: true });
+  const storedName = `${Date.now()}_${Math.random()
+    .toString(36)
+    .slice(2, 8)}_${safeOriginal}`;
+  const storedPath = path.resolve('uploads', storedName);
+  await fs.writeFile(storedPath, buffer);
+  return { storedName, originalName: safeOriginal };
+}
+
 async function handleWhatsapp(data) {
   for (const entry of data.entry ?? []) {
     for (const change of entry.changes ?? []) {
@@ -82,13 +115,38 @@ async function handleWhatsapp(data) {
       }
       const system = agent?.behavior || 'You are a helpful assistant.';
       const prompt = agent?.prompt || '';
-      const welcome = agent?.welcomeMessage || 'Halo! Ada yang bisa saya bantu?';
+      const welcome =
+        agent?.welcomeMessage || 'Halo! Ada yang bisa saya bantu?';
 
       for (const message of value.messages) {
-        if (message.type !== 'text') continue;
-
         const from = message.from;
-        const text = message.text?.body ?? '';
+        const text = message.text?.body || '';
+        let incomingAttachment = null;
+
+        if (message.image) {
+          try {
+            const mediaUrl = await getMetaMediaUrl(
+              message.image.id,
+              platform.token,
+            );
+            const saved = await saveMetaFileLocally({
+              url: mediaUrl,
+              token: platform.token,
+              preferredName: `whatsapp_image_${message.image.id}.jpg`,
+            });
+            incomingAttachment = {
+              url: `/files/${saved.storedName}`,
+              filename: saved.originalName,
+            };
+          } catch (e) {
+            console.error('[meta] Failed to process WhatsApp image:', e);
+          }
+        }
+        
+        if (!text && !incomingAttachment) {
+            console.log('[meta] Skipping empty WhatsApp message.');
+            continue;
+        }
 
         let contact = await Contact.findOne({
           userId: platform.userId,
@@ -128,11 +186,12 @@ async function handleWhatsapp(data) {
           await chat.save();
         }
 
-        await Message.create({
+        const userMessage = await Message.create({
           chatId: chat._id,
           workspaceId: platform.workspaceId,
           from: 'user',
-          text,
+          text: text,
+          attachment: incomingAttachment,
           createdAt: new Date(),
         });
         await Chat.updateOne(
@@ -149,7 +208,12 @@ async function handleWhatsapp(data) {
 
         if (isNewChat) {
           const processedWelcome = welcome.replace('{{name}}', contact.name);
-          await waSend(platform.token, fromPhoneNumberId, from, processedWelcome);
+          await waSend(
+            platform.token,
+            fromPhoneNumberId,
+            from,
+            processedWelcome,
+          );
           await Message.create({
             chatId: chat._id,
             workspaceId: platform.workspaceId,
@@ -159,7 +223,7 @@ async function handleWhatsapp(data) {
           });
         }
 
-        if (text && (!isNewChat || text.toLowerCase() !== '/start')) {
+        if (userMessage && (!isNewChat || userMessage.text?.toLowerCase() !== '/start')) {
           let reply;
           try {
             const history = await Message.find({ chatId: chat._id })
@@ -169,7 +233,7 @@ async function handleWhatsapp(data) {
             reply = await generateAIReply({
               system,
               prompt,
-              message: text,
+              message: userMessage,
               knowledge: agent?.knowledge,
               agent,
               chat,
@@ -177,7 +241,7 @@ async function handleWhatsapp(data) {
             });
           } catch (e) {
             console.error('[meta] AI error:', e);
-            reply = { text: `Echo: ${text}` };
+            reply = { text: `Echo: ${userMessage.text}` };
           }
 
           const replyText = typeof reply === 'string' ? reply : reply.text;
@@ -217,103 +281,75 @@ async function handleWhatsapp(data) {
 
 async function handleInstagram(data) {
   for (const entry of data.entry ?? []) {
-    const rawMessages = [];
-
-    if (Array.isArray(entry.messaging)) {
-      rawMessages.push(...entry.messaging);
-    }
-
-    if (Array.isArray(entry.changes)) {
-      for (const change of entry.changes) {
-        if (change?.field !== 'messages') continue;
-        const value = change.value || {};
-        if (Array.isArray(value.messaging)) {
-          rawMessages.push(...value.messaging);
-        } else if (value.message || value.sender) {
-          rawMessages.push({
-            sender: value.sender,
-            recipient: value.recipient,
-            message: value.message,
-          });
-        }
-      }
-    }
-
-    if (!rawMessages.length) {
-      console.warn(
-        '[meta] instagram webhook entry without messages payload:',
-        entry,
-      );
-      continue;
-    }
-
-    for (const message of rawMessages) {
-      if (!message?.message) {
-        console.log(
-          '[meta] skipping instagram event without message payload:',
-          message,
-        );
+    for (const message of entry.messaging ?? []) {
+      if (!message.message) {
+        console.log('[meta] skipping instagram event without message payload:', message);
         continue;
       }
 
-      const text = message.message?.text;
       const from = message.sender?.id;
       if (!from) {
-        console.warn(
-          '[meta] instagram message missing sender id:',
-          message,
-        );
+        console.warn('[meta] instagram message missing sender id:', message);
         continue;
       }
 
-      const platformAccountId =
-        message.recipient?.id ||
-        entry?.changes?.[0]?.value?.recipient?.id ||
-        entry.id;
+      const text = message.message.text || '';
+      let incomingAttachment = null;
 
-      console.log(`[meta] instagram message from ${from}: ${text}`);
+      if (message.message.attachments) {
+        const imageAttachment = message.message.attachments.find(a => a.type === 'image');
+        if (imageAttachment) {
+          try {
+            const saved = await saveMetaFileLocally({
+              url: imageAttachment.payload.url,
+              token: null, // Instagram attachment URLs are public
+              preferredName: `instagram_image_${from}_${Date.now()}.jpg`,
+            });
+            incomingAttachment = {
+              url: `/files/${saved.storedName}`,
+              filename: saved.originalName,
+            };
+          } catch (e) {
+            console.error('[meta] Failed to process Instagram image:', e);
+          }
+        }
+      }
 
+      if (!text && !incomingAttachment) {
+        console.log('[meta] Skipping empty Instagram message.');
+        continue;
+      }
+
+      const platformAccountId = message.recipient?.id || entry.id;
       const platform = await Platform.findOne({
         accountId: platformAccountId,
         type: 'instagram',
       });
 
       if (!platform) {
-        console.warn(
-          `[meta] instagram platform not found for accountId: ${platformAccountId}`,
-        );
+        console.warn(`[meta] instagram platform not found for accountId: ${platformAccountId}`);
         continue;
       }
 
       let agent = await Agent.findOne({ platformId: platform._id });
       if (!agent) {
-        agent = await Agent.findOne({
-          workspaceId: platform.workspaceId,
-        }).sort({ createdAt: 1 });
+        agent = await Agent.findOne({ workspaceId: platform.workspaceId }).sort({ createdAt: 1 });
       }
       const system = agent?.behavior || 'You are a helpful assistant.';
       const prompt = agent?.prompt || '';
       const welcome = agent?.welcomeMessage || 'Halo! Ada yang bisa saya bantu?';
 
-      const hasToken = Boolean(platform.token);
-      let contact = await Contact.findOne({
-        userId: platform.userId,
-        platformAccountId: from,
-      });
-
+      let contact = await Contact.findOne({ userId: platform.userId, platformAccountId: from });
       if (!contact) {
         let name = `Instagram User ${from}`;
-        if (hasToken && text) {
+        if (platform.token) {
           try {
             const profile = await igGetUserProfile(from, platform.token);
-            if (profile?.name) {
-              name = profile.name;
-            }
+            if (profile?.name) name = profile.name;
           } catch (e) {
             console.error('[meta] failed to fetch instagram profile:', e);
           }
         }
-
         contact = await Contact.create({
           userId: platform.userId,
           workspaceId: platform.workspaceId,
@@ -323,16 +359,6 @@ async function handleInstagram(data) {
           handle: from,
           lastSeen: new Date(),
         });
-      } else if (hasToken && contact.name.startsWith('Instagram User')) {
-        try {
-          const profile = await igGetUserProfile(from, platform.token);
-          if (profile?.name) {
-            contact.name = profile.name;
-            await contact.save();
-          }
-        } catch (e) {
-          console.error('[meta] failed to update instagram profile:', e);
-        }
       }
 
       let chat = await Chat.findOne({
@@ -355,36 +381,25 @@ async function handleInstagram(data) {
         chat.agentId = agent._id;
         await chat.save();
       }
-
-      if (text) {
-        await Message.create({
-          chatId: chat._id,
-          workspaceId: platform.workspaceId,
-          from: 'user',
-          text,
-          createdAt: new Date(),
-        });
-        await Chat.updateOne(
-          { _id: chat._id },
-          { $set: { lastMessageAt: new Date() }, $inc: { unread: 1 } },
-        );
-      }
+      
+      const userMessage = await Message.create({
+        chatId: chat._id,
+        workspaceId: platform.workspaceId,
+        from: 'user',
+        text: text,
+        attachment: incomingAttachment,
+        createdAt: new Date(),
+      });
+      await Chat.updateOne({ _id: chat._id }, { $set: { lastMessageAt: new Date() }, $inc: { unread: 1 } });
 
       if (chat.takeoverBy) {
-        console.log(
-          `[meta] chat ${chat._id} is handled by human, skipping AI reply.`,
-        );
+        console.log(`[meta] chat ${chat._id} is handled by human, skipping AI reply.`);
         continue;
       }
 
-      if (isNewChat && text) {
+      if (isNewChat && (text || incomingAttachment)) {
         const processedWelcome = welcome.replace('{{name}}', contact.name);
-        await igSend(
-          platform.token,
-          platform.accountId,
-          from,
-          processedWelcome,
-        );
+        await igSend(platform.token, platform.accountId, from, processedWelcome);
         await Message.create({
           chatId: chat._id,
           workspaceId: platform.workspaceId,
@@ -394,17 +409,15 @@ async function handleInstagram(data) {
         });
       }
 
-      if (text && (!isNewChat || text.toLowerCase() !== '/start')) {
+      if (userMessage && (!isNewChat || userMessage.text?.toLowerCase() !== '/start')) {
         let reply;
         try {
-          const history = await Message.find({ chatId: chat._id })
-            .sort({ createdAt: -1 })
-            .limit(10);
+          const history = await Message.find({ chatId: chat._id }).sort({ createdAt: -1 }).limit(10);
           history.reverse();
           reply = await generateAIReply({
             system,
             prompt,
-            message: text,
+            message: userMessage,
             knowledge: agent?.knowledge,
             agent,
             chat,
@@ -412,30 +425,16 @@ async function handleInstagram(data) {
           });
         } catch (e) {
           console.error('[meta] instagram AI error:', e);
-          reply = { text: `Echo: ${text}` };
+          reply = { text: `Echo: ${userMessage.text}` };
         }
 
-        const replyText = typeof reply === 'string' ? reply : reply.text;
-        const attachment =
-          typeof reply === 'object' && reply.attachment
-            ? reply.attachment
-            : null;
+        const replyText = typeof reply === 'string' ? reply : (reply.text || '');
+        const attachment = typeof reply === 'object' && reply.attachment ? reply.attachment : null;
 
         if (attachment && attachment.url) {
-          await igSendDocument(
-            platform.token,
-            platform.accountId,
-            from,
-            attachment.url,
-            replyText,
-          );
+          await igSendDocument(platform.token, platform.accountId, from, attachment.url, replyText);
         } else if (replyText) {
-          await igSend(
-            platform.token,
-            platform.accountId,
-            from,
-            replyText,
-          );
+          await igSend(platform.token, platform.accountId, from, replyText);
         }
 
         await Message.create({

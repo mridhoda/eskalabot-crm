@@ -1,14 +1,30 @@
 import Fuse from 'fuse.js';
+import { promises as fs } from 'fs';
+import path from 'path';
 import { openaiClient, geminiClient } from './aiClient.js';
 
 import Chat from '../models/Chat.js';
 import Contact from '../models/Contact.js';
 import Knowledge from '../models/Knowledge.js';
 
+// Helper to get MIME type from filename
+function getMimeType(filename = '') {
+  const lower = filename.toLowerCase();
+  if (lower.endsWith('.png')) return 'image/png';
+  if (lower.endsWith('.jpg') || lower.endsWith('.jpeg')) return 'image/jpeg';
+  if (lower.endsWith('.webp')) return 'image/webp';
+  if (lower.endsWith('.heic')) return 'image/heic';
+  if (lower.endsWith('.heif')) return 'image/heif';
+  // Default for safety, though Gemini supports various types
+  return 'image/jpeg';
+}
+
 export async function generateAIReply({ system, prompt, message, knowledge, agent, chat, history = [] }) {
+  const currentMessageText = message.text || (message.attachment ? '[Attachment]' : '');
+
   // Fallback echo
   if (!openaiClient && !geminiClient) {
-    return `Echo: ${message}`;
+    return `Echo: ${currentMessageText}`;
   }
 
   // --- 1. Q&A Check ---
@@ -20,7 +36,7 @@ export async function generateAIReply({ system, prompt, message, knowledge, agen
         includeScore: true,
         threshold: 0.4,
       });
-      const results = fuse.search(message);
+      const results = fuse.search(currentMessageText);
       if (results.length > 0 && results[0].score < 0.4) {
         console.log('Q&A match found:', results[0].item.question);
         return results[0].item.answer;
@@ -41,7 +57,6 @@ export async function generateAIReply({ system, prompt, message, knowledge, agen
       } else if (k.kind === 'text') {
         return `Text: ${k.value}`;
       } else if (k.kind === 'file') {
-        // Exclude file knowledge from the main prompt to let the file checker handle it
         return '';
       } else if (k.kind === 'qna') {
         return `Q: ${k.question}\nA: ${k.answer}`;
@@ -53,12 +68,13 @@ export async function generateAIReply({ system, prompt, message, knowledge, agen
     let reply = '';
     // Prioritize OpenAI if available
     if (openaiClient) {
+      // TODO: Add multimodal support for OpenAI
       try {
         const resp = await openaiClient.chat.completions.create({
           model: 'gpt-4o-mini',
           messages: [
             { role: 'system', content: (system || 'You are a helpful assistant.') + contactName },
-            { role: 'user', content: `${prompt || ''}\n\nKnowledge:\n${knowledgeContent}\n\nUser: ${message}` },
+            { role: 'user', content: `${prompt || ''}\n\nKnowledge:\n${knowledgeContent}\n\nUser: ${currentMessageText}` },
           ],
           temperature: 0.6,
         });
@@ -72,29 +88,70 @@ export async function generateAIReply({ system, prompt, message, knowledge, agen
     // Fallback to Gemini if OpenAI fails or is not available
     if (geminiClient && !reply) {
       try {
-        const model = geminiClient.getGenerativeModel({ model: 'gemini-pro' });
+        const model = geminiClient.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
-        // Use agent behavior as system instruction for Gemini
         const systemInstruction = (system || 'You are a helpful assistant.') + contactName;
 
         const geminiHistory = [
           { role: 'user', parts: [{ text: systemInstruction }] },
-          { role: 'model', parts: [{ text: 'Baik, saya mengerti. Saya akan menjadi asisten yang profesional dan efisien dan tidak akan mengarang pesan pengiriman file.' }] },
-          ...history.map(msg => ({
-            role: msg.from === 'user' ? 'user' : 'model',
-            parts: [{ text: msg.text }],
-          }))
+          { role: 'model', parts: [{ text: 'Baik, saya mengerti.' }] },
         ];
 
+        // Process history asynchronously to avoid blocking
+        for (const msg of history) {
+          const role = msg.from === 'user' ? 'user' : 'model';
+          const parts = [];
+          if (msg.text) {
+            parts.push({ text: msg.text });
+          }
+          if (msg.attachment?.url) {
+            const storedName = msg.attachment.url.split('/files/')[1];
+            if (storedName) {
+              try {
+                const filePath = path.resolve('uploads', storedName);
+                await fs.access(filePath); // Check if file exists
+                const mimeType = getMimeType(msg.attachment.filename);
+                const data = await fs.readFile(filePath, 'base64');
+                parts.push({ inlineData: { mimeType, data } });
+              } catch (e) {
+                console.warn('[AI] History attachment not found or unreadable: ', storedName);
+                parts.push({ text: '[Attachment unreadable]' });
+              }
+            }
+          }
+          if(parts.length > 0) {
+            geminiHistory.push({ role, parts });
+          }
+        }
+        
         const chatSession = model.startChat({
           history: geminiHistory,
           generationConfig: {
             temperature: 0.5,
           }
         });
+        
+        const promptText = `${prompt || ''}\n\nKnowledge:\n${knowledgeContent}\n\nUser: ${currentMessageText}`;
+        const promptParts = [{ text: promptText }];
 
-        const fullPrompt = `${prompt || ''}\n\nKnowledge:\n${knowledgeContent}\n\nUser: ${message}`;
-        const result = await chatSession.sendMessage(fullPrompt);
+        if (message.attachment?.url) {
+          const storedName = message.attachment.url.split('/files/')[1];
+          if (storedName) {
+            try {
+              const filePath = path.resolve('uploads', storedName);
+              await fs.access(filePath);
+              const mimeType = getMimeType(message.attachment.filename);
+              const data = await fs.readFile(filePath, 'base64');
+              promptParts.push({ inlineData: { mimeType, data } });
+              console.log(`[AI] Attached image ${filePath} to prompt.`);
+            } catch (e) {
+              console.error(`[AI] Failed to read attachment for prompt: ${storedName}`, e);
+              promptParts[0].text += '\n[System note: Failed to load attachment.]';
+            }
+          }
+        }
+
+        const result = await chatSession.sendMessage(promptParts);
         reply = result.response.text();
         console.log('Gemini AI reply:', reply);
       } catch (e) {
@@ -102,18 +159,9 @@ export async function generateAIReply({ system, prompt, message, knowledge, agen
       }
     }
 
-    // Check for follow-up triggers
-    if (agent && agent.followUps && agent.followUps.length > 0 && chat?._id && !chat.state?.followUp) {
-      const followUp = agent.followUps[0]; // Take the first follow-up
-      if (followUp) {
-        await Chat.updateOne({ _id: chat._id }, { $set: { 'state.followUp': { prompt: followUp.prompt, delay: followUp.delay, triggeredAt: new Date() } } });
-      }
-    }
-
-    // Save name
     if (contactId && !contact?.name) {
-      const namePrompt = `Does the user reveal their name in this message? If so, what is it? If not, say "NO_NAME".\n\nUser: ${message}`;
-      const model = geminiClient.getGenerativeModel({ model: 'gemini-pro' });
+      const namePrompt = `Does the user reveal their name in this message? If so, what is it? If not, say "NO_NAME".\n\nUser: ${currentMessageText}`;
+      const model = geminiClient.getGenerativeModel({ model: 'gemini-2.5-flash' });
       const resp = await model.generateContent(namePrompt);
       const name = resp.response.text();
       if (name && name.trim().toUpperCase() !== 'NO_NAME') {
@@ -126,10 +174,13 @@ export async function generateAIReply({ system, prompt, message, knowledge, agen
     console.error('AI error:', e.message);
   }
 
-  return `Echo: ${message}`;
+  return `Echo: ${currentMessageText}`;
 }
 
 export async function findAndSendFile({ agent, message, openaiClient, geminiClient }) {
+  const messageText = typeof message === 'string' ? message : message.text || '';
+  if (!messageText) return null;
+
   try {
     if (agent.database && agent.database.length > 0) {
       if (agent.prompt) {
@@ -141,7 +192,7 @@ export async function findAndSendFile({ agent, message, openaiClient, geminiClie
             const condition = match[1].trim();
             const fileId = match[2].trim();
 
-            const prompt = `You are a helpful assistant. The user's message is: "${message}". The condition for sending a file is: "${condition}". Does the user's message match the condition? Please answer with "yes" or "no".`;
+            const prompt = `You are a helpful assistant. The user's message is: "${messageText}". The condition for sending a file is: "${condition}". Does the user's message match the condition? Please answer with "yes" or "no".`;
 
             let answer = 'no';
             if (openaiClient) {
@@ -152,7 +203,7 @@ export async function findAndSendFile({ agent, message, openaiClient, geminiClie
               });
               answer = resp.choices?.[0]?.message?.content || 'no';
             } else if (geminiClient) {
-              const model = geminiClient.getGenerativeModel({ model: 'gemini-pro' });
+              const model = geminiClient.getGenerativeModel({ model: 'gemini-2.5-flash' });
               const result = await model.generateContent(prompt);
               answer = result.response.text();
             }
@@ -160,10 +211,10 @@ export async function findAndSendFile({ agent, message, openaiClient, geminiClie
             if (answer.toLowerCase().includes('yes')) {
               const file = agent.database.find(f => f.id.includes(fileId));
               if (file) {
-                console.log(`File found for user message based on prompt:`, file.originalName);
+                console.log('File found for user message based on prompt:', file.originalName);
                 const serverUrl = process.env.PUBLIC_BASE_URL || 'http://localhost:5000';
                 return {
-                  text: `Tentu, ini file ${file.originalName} yang Anda minta.`,
+                  text: `Tentu, ini file ${file.originalName} yang Anda minta.`, 
                   attachment: {
                     url: `${serverUrl}/files/${file.storedName}`,
                     filename: file.originalName,
@@ -176,7 +227,7 @@ export async function findAndSendFile({ agent, message, openaiClient, geminiClie
         }
       }
 
-      const lowerMsg = message.toLowerCase();
+      const lowerMsg = messageText.toLowerCase();
       const simpleMatch = agent.database.find(file => {
         const name = (file.originalName || '').toLowerCase();
         const base = name.replace(/\.[^.]+$/, '');
@@ -191,7 +242,7 @@ export async function findAndSendFile({ agent, message, openaiClient, geminiClie
         console.log('Simple keyword match found for:', simpleMatch.originalName);
         const serverUrl = process.env.PUBLIC_BASE_URL || 'http://localhost:5000';
         return {
-          text: `Tentu, ini file ${simpleMatch.originalName} yang Anda minta.`,
+          text: `Tentu, ini file ${simpleMatch.originalName} yang Anda minta.`, 
           attachment: {
             url: `${serverUrl}/files/${simpleMatch.storedName}`,
             filename: simpleMatch.originalName,

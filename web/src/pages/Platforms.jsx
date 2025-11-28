@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState, useCallback } from 'react'
 import api from '../api'
 import BrandIcon from '../components/BrandIcon'
 import PlatformPickerModal from '../components/PlatformPickerModal'
+import '../platforms.css'
 
 export default function Platforms() {
   const [rows, setRows] = useState([])
@@ -28,26 +29,26 @@ export default function Platforms() {
   // ===== Load data sekali (anti-loop) =====
   useEffect(() => {
     const ac = new AbortController()
-    ;(async () => {
-      try {
-        const [p, a] = await Promise.all([
-          api.get('/platforms', { signal: ac.signal }),
-          api.get('/agents', { signal: ac.signal }),
-        ])
-        const plats = p.data || []
-        setRows(plats)
-        setAgents(a.data || [])
-        // Only set sel if it's currently null and there are platforms
-        setSel((currentSel) => {
-          if (!currentSel && plats.length) {
-            return plats[0]
-          }
-          return currentSel
-        })
-      } catch (error) {
-        console.error('Failed to load platforms or agents', error)
-      }
-    })()
+      ; (async () => {
+        try {
+          const [p, a] = await Promise.all([
+            api.get('/platforms', { signal: ac.signal }),
+            api.get('/agents', { signal: ac.signal }),
+          ])
+          const plats = p.data || []
+          setRows(plats)
+          setAgents(a.data || [])
+          // Only set sel if it's currently null and there are platforms
+          setSel((currentSel) => {
+            if (!currentSel && plats.length) {
+              return plats[0]
+            }
+            return currentSel
+          })
+        } catch (error) {
+          console.error('Failed to load platforms or agents', error)
+        }
+      })()
     return () => ac.abort()
   }, [])
 
@@ -144,6 +145,17 @@ export default function Platforms() {
           })
           setRows((prev) => [r.data, ...prev])
           setSel(r.data)
+          if (r.data.type === 'telegram') {
+            try {
+              await api.post(`/integrations/telegram/${r.data._id}/setWebhook`)
+              console.log('Successfully set Telegram webhook for', r.data.label)
+            } catch (err) {
+              console.error('Failed to auto-set webhook for Telegram', err)
+              alert(
+                'Platform berhasil disimpan, tapi gagal auto-set webhook. Coba edit dan simpan lagi.'
+              )
+            }
+          }
         }
         setShowModal(false)
       } finally {
@@ -296,23 +308,6 @@ export default function Platforms() {
                 <span className='badge'>{sel.type}</span>
               </div>
               <div className='row' style={{ gap: 8 }}>
-                {sel?.type === 'telegram' && (
-                  <button
-                    className='btn ghost'
-                    onClick={async () => {
-                      try {
-                        await api.post(
-                          `/integrations/telegram/${sel._id}/setWebhook`
-                        )
-                        alert('Webhook Telegram terset ✔')
-                      } catch {
-                        alert('Gagal set webhook')
-                      }
-                    }}
-                  >
-                    Auto Set Webhook
-                  </button>
-                )}
                 {sel?.type === 'instagram' && (
                   <button
                     className='btn ghost'

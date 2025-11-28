@@ -1,100 +1,106 @@
-import React, { useState } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
-import api from '../api'
-import Navbar from '../components/Navbar'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import {
-  faEnvelope,
-  faLock,
-  faEye,
-  faEyeSlash,
-} from '@fortawesome/free-solid-svg-icons'
+import React, { useState } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
+import api from '../api';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faEnvelope, faLock, faEye, faEyeSlash, faRobot } from '@fortawesome/free-solid-svg-icons';
+
+// A consistent navbar for all auth pages
+const AuthNavbar = () => (
+    <nav className="lp-navbar scrolled">
+        <div className="lp-container lp-navbar-content">
+             <Link to="/" className="lp-logo" style={{ textDecoration: 'none' }}>
+                <div className="lp-logo-icon"><FontAwesomeIcon icon={faRobot} /></div>
+                <span className="lp-logo-text">KALIS.AI</span>
+             </Link>
+        </div>
+    </nav>
+);
 
 export default function Login() {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [showPassword, setShowPassword] = useState(false)
-  const [remember, setRemember] = useState(true)
-  const [error, setError] = useState('')
-  const navigate = useNavigate()
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [remember, setRemember] = useState(true);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
   const submit = async (e) => {
-    e.preventDefault()
-    setError('')
+    e.preventDefault();
+    setError('');
+    setLoading(true);
     try {
-      const r = await api.post('/auth/login', { email, password })
-      sessionStorage.setItem('token', r.data.token)
-      if (remember) localStorage.setItem('token', r.data.token)
-      sessionStorage.setItem('user', JSON.stringify(r.data.user))
-      navigate('/app')
+      const r = await api.post('/auth/login', { email, password });
+      sessionStorage.setItem('token', r.data.token);
+      if (remember) localStorage.setItem('token', r.data.token);
+      sessionStorage.setItem('user', JSON.stringify(r.data.user));
+      navigate('/app');
     } catch (e) {
-      setError(e.response?.data?.error || 'Invalid email or password')
+      setError(e.response?.data?.error || 'Invalid email or password');
+    } finally {
+      setLoading(false);
     }
-  }
+  };
 
   return (
-    <div className='auth-page'>
-      <Navbar />
-      <div className='auth-container'>
-        <div className='auth-card'>
-          <h2>Welcome Back</h2>
-          <p className='muted'>Login to your account</p>
+    <div className="auth-new-page">
+      <AuthNavbar />
+      <div className="auth-new-container">
+        <div className="auth-new-card">
+          <h2>Welcome Back!</h2>
+          <p>Login to your KALIS.AI account</p>
 
-          <form onSubmit={submit} className='auth-form'>
-            <div className='input-with-icon'>
-              <FontAwesomeIcon icon={faEnvelope} className='input-icon' />
+          {error && <p className='auth-new-error'>{error}</p>}
+
+          <form onSubmit={submit} className='auth-new-form'>
+            <div className="auth-new-input-group">
+              <FontAwesomeIcon icon={faEnvelope} />
               <input
-                className='input'
                 type='email'
-                placeholder='Email'
+                placeholder='Email address'
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
               />
             </div>
-            <div className='input-with-icon'>
-              <FontAwesomeIcon icon={faLock} className='input-icon' />
+            <div className="auth-new-input-group">
+              <FontAwesomeIcon icon={faLock} />
               <input
-                className='input'
                 type={showPassword ? 'text' : 'password'}
                 placeholder='Password'
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
               />
-              <FontAwesomeIcon
-                icon={showPassword ? faEyeSlash : faEye}
-                className='password-toggle-icon'
-                onClick={() => setShowPassword(!showPassword)}
-              />
+               <FontAwesomeIcon 
+                  icon={showPassword ? faEyeSlash : faEye}
+                  className="auth-new-eye-icon"
+                  onClick={() => setShowPassword(!showPassword)}
+                />
             </div>
 
-            <label className='remember-me'>
-              <input
-                type='checkbox'
-                checked={remember}
-                onChange={(e) => setRemember(e.target.checked)}
-              />
-              Remember me
-            </label>
+            <div className="auth-new-options">
+                <label className='auth-new-remember'>
+                    <input
+                        type='checkbox'
+                        checked={remember}
+                        onChange={(e) => setRemember(e.target.checked)}
+                    />
+                    Remember me
+                </label>
+                <Link to='/forgot-password'>Forgot password?</Link>
+            </div>
 
-            {error && <p className='error-message'>{error}</p>}
-
-            <button type='submit' className='btn'>
-              Sign In
+            <button type='submit' className="lp-btn lp-btn-primary auth-new-btn" disabled={loading}>
+              {loading ? 'Signing In...' : 'Sign In'}
             </button>
           </form>
 
-          <Link to='/forgot-password' className='auth-link'>
-            Forgot your password?
-          </Link>
-
-          <div className='auth-switch'>
-            <p className='muted'>Don&apos;t have an account yet?</p>
-            <Link to='/register'>Create an account</Link>
+          <div className='auth-new-switch'>
+            Don&apos;t have an account? <Link to='/register'>Create one</Link>
           </div>
         </div>
       </div>
     </div>
-  )
+  );
 }

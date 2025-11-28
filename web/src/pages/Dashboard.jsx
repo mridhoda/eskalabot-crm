@@ -12,7 +12,7 @@ import Platforms from './Platforms'
 import * as XLSX from 'xlsx'
 import { Line, Pie, Bar } from 'react-chartjs-2'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faMagnifyingGlass, faSliders, faEnvelopeOpen } from '@fortawesome/free-solid-svg-icons'
+import { faMagnifyingGlass, faSliders, faEnvelopeOpen, faCopy, faTrash } from '@fortawesome/free-solid-svg-icons'
 import {
   Chart as ChartJS,
   ArcElement,
@@ -636,6 +636,9 @@ function Contacts() {
 }
 
 /* ========================= AGENTS (grid + platform icon + settings) ========================= */
+import '../agents.css'
+
+/* ========================= AGENTS (grid + platform icon + settings) ========================= */
 function Agents() {
   const [rows, setRows] = useState([])
   const [platforms, setPlatforms] = useState([])
@@ -725,72 +728,72 @@ function Agents() {
   platforms.forEach((p) => (pfById[p._id] = p))
 
   return (
-    <div style={{ maxWidth: 1150, margin: '0 auto' }}>
-      <div
-        className='row'
-        style={{
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          marginBottom: 16,
-        }}
-      >
-        <h2 style={{ margin: 0 }}>AI Agents</h2>
-        <div className='searchbox'>
+    <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 20px' }}>
+
+      {/* Header */}
+      <div className='agents-page-header'>
+        <h2>AI Agents</h2>
+        <p>
+          Ini adalah halaman di mana Anda dapat mengunjungi AI yang telah Anda buat sebelumnya.
+          <br />
+          Jangan ragu untuk membuat perubahan dan membuat chatbot sebanyak yang Anda inginkan kapan saja!
+        </p>
+      </div>
+
+      {/* Search */}
+      <div className='agents-search-container'>
+        <div className='agents-search-box'>
           <input
             className='input'
-            placeholder='Search AI agents…'
+            placeholder='Search AI agents...'
             value={q}
             onChange={(e) => setQ(e.target.value)}
           />
-          <div className='search-ico'></div>
         </div>
+        <button className='btn ghost' title='History'>
+          🕒
+        </button>
       </div>
 
-      <div className='agent-grid'>
+      {/* Grid */}
+      <div className='agents-grid'>
         {filtered.map((a) => (
           <div key={a._id} className='agent-card'>
-            <div className='agent-avatar'>{initials(a.name)}</div>
             <div className='agent-name'>{a.name}</div>
+            <div className='agent-avatar'>{initials(a.name)}</div>
             <div className='agent-sub'>
               {(a.prompt || a.welcomeMessage || '-').slice(0, 60) || '-'}
             </div>
 
-            {/* platform icon jika ada */}
-            {a.platformId && pfById[a.platformId] && (
-              <div className='row' style={{ gap: 6, alignItems: 'center' }}>
-                <BrandIcon type={pfById[a.platformId].type} size={16} />
-                <span className='badge'>{pfById[a.platformId].type}</span>
-              </div>
-            )}
-
             <div className='agent-actions'>
               <button
-                className='btn ghost'
+                className='agent-action-btn'
                 onClick={() => navigate(`/app/agents/${a._id}`)}
               >
                 Settings
               </button>
               <button
-                className='btn ghost'
+                className='agent-action-btn icon-only'
                 title='Copy ID'
                 onClick={() => copy(a._id)}
               >
-                📋
+                <FontAwesomeIcon icon={faCopy} />
               </button>
               <button
-                className='btn ghost'
+                className='agent-action-btn icon-only'
                 title='Delete'
                 onClick={() => del(a._id)}
               >
-                🗑️
+                <FontAwesomeIcon icon={faTrash} />
               </button>
             </div>
           </div>
         ))}
-        {/* Create New */}
-        <div className='agent-card create' onClick={openCreate}>
-          <div className='plus'>＋</div>
-          <div className='agent-name'>Create New</div>
+
+        {/* Create New Card */}
+        <div className='agent-card create-new' onClick={openCreate}>
+          <div className='create-new-icon'>＋</div>
+          <div className='create-new-text'>Create New</div>
         </div>
       </div>
 
@@ -873,8 +876,9 @@ function Agents() {
             </form>
           </div>
         </div>
-      )}
-    </div>
+      )
+      }
+    </div >
   )
 }
 

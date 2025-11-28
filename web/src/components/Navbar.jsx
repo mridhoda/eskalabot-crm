@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faRobot } from '@fortawesome/free-solid-svg-icons' // Import the robot icon
 
 export default function Navbar({ authed, user, plan, className }) {
   const navigate = useNavigate()
@@ -33,7 +35,10 @@ export default function Navbar({ authed, user, plan, className }) {
         style={{ textDecoration: 'none', color: 'inherit', cursor: 'pointer' }}
       >
         <div className='logo'>
-          <div className='logo-dot'></div>
+          {/* Replaced logo-dot with FontAwesomeIcon and new styling */}
+          <div className='lp-logo-icon' style={{ width: 32, height: 32, fontSize: 18, borderRadius: 8 }}>
+            <FontAwesomeIcon icon={faRobot} />
+          </div>
           <div>{import.meta.env.VITE_APP_NAME || 'KALIS.AI'}</div>
         </div>
       </Link>
@@ -65,12 +70,12 @@ export default function Navbar({ authed, user, plan, className }) {
                 width: 8,
                 height: 8,
                 borderRadius: 999,
-                background: '#22c55e',
+                background: 'var(--lp-green-500)', // Using new color variable
               }}
             ></div>
             <div>
               {user?.name}{' '}
-              <span style={{ color: '#6b7280' }}>({user?.email})</span>
+              <span style={{ color: 'var(--muted)' }}>({user?.email})</span> {/* Using new color variable */}
             </div>
             <button
               className='btn ghost'
@@ -86,11 +91,11 @@ export default function Navbar({ authed, user, plan, className }) {
                   top: '100%',
                   right: 0,
                   background: 'white',
-                  border: '1px solid #eee',
+                  border: '1px solid var(--border)', // Using new color variable
                   borderRadius: 8,
                   padding: 8,
                   marginTop: 4,
-                  boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+                  boxShadow: 'var(--shadow)', // Using new shadow variable
                   zIndex: 10,
                 }}
               >

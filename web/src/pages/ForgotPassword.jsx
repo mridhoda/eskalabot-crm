@@ -1,67 +1,75 @@
-import React, { useState } from 'react'
-import { Link } from 'react-router-dom'
-import api from '../api'
-import Navbar from '../components/Navbar'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faEnvelope } from '@fortawesome/free-solid-svg-icons'
+import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
+import api from '../api';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faEnvelope, faRobot } from '@fortawesome/free-solid-svg-icons';
+
+// A consistent navbar for all auth pages
+const AuthNavbar = () => (
+    <nav className="lp-navbar scrolled">
+        <div className="lp-container lp-navbar-content">
+             <Link to="/" className="lp-logo" style={{ textDecoration: 'none' }}>
+                <div className="lp-logo-icon"><FontAwesomeIcon icon={faRobot} /></div>
+                <span className="lp-logo-text">KALIS.AI</span>
+             </Link>
+        </div>
+    </nav>
+);
 
 export default function ForgotPassword() {
-  const [email, setEmail] = useState('')
-  const [message, setMessage] = useState('')
-  const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
+  const [email, setEmail] = useState('');
+  const [message, setMessage] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const submit = async (e) => {
-    e.preventDefault()
-    setError('')
-    setMessage('')
-    setLoading(true)
+    e.preventDefault();
+    setError('');
+    setMessage('');
+    setLoading(true);
     try {
-      const r = await api.post('/auth/forgot-password', { email })
-      setMessage(r.data.message)
+      const r = await api.post('/auth/forgot-password', { email });
+      setMessage(r.data.message);
     } catch (e) {
-      setError(e.response?.data?.error || 'Failed to send reset link')
+      setError(e.response?.data?.error || 'Failed to send reset link');
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   return (
-    <div className='auth-page'>
-      <Navbar />
-      <div className='auth-container'>
-        <div className='auth-card'>
-          <h2>Forgot Your Password?</h2>
-          <p className='muted'>
-            No worries, we&apos;ll send you reset instructions.
-          </p>
+    <div className="auth-new-page">
+      <AuthNavbar />
+      <div className="auth-new-container">
+        <div className="auth-new-card">
+          <h2>Forgot Password?</h2>
+          <p>No worries, we'll send you reset instructions.</p>
 
-          <form onSubmit={submit} className='auth-form'>
-            <div className='input-with-icon'>
-              <FontAwesomeIcon icon={faEnvelope} className='input-icon' />
+          {error && <p className='auth-new-error'>{error}</p>}
+          {message && <p className='auth-new-success'>{message}</p>}
+
+          <form onSubmit={submit} className='auth-new-form'>
+            <div className="auth-new-input-group">
+              <FontAwesomeIcon icon={faEnvelope} />
               <input
-                className='input'
                 type='email'
-                placeholder='Email'
+                placeholder='Enter your email'
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
               />
             </div>
 
-            {message && <p className='success-message'>{message}</p>}
-            {error && <p className='error-message'>{error}</p>}
-
-            <button type='submit' className='btn' disabled={loading}>
-              {loading ? 'Sending...' : 'Send Reset Link'}
+            <button type='submit' className="lp-btn lp-btn-primary auth-new-btn" disabled={loading}>
+              {loading ? 'Sending...' : 'Send Reset Instructions'}
             </button>
           </form>
 
-          <p className='auth-switch'>
-            Remembered your password? <Link to='/login'>Sign In</Link>
-          </p>
+          <div className='auth-new-switch'>
+            <Link to='/login'>← Back to Sign In</Link>
+          </div>
         </div>
       </div>
     </div>
-  )
+  );
 }

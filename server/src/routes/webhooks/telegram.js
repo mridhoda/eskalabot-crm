@@ -198,12 +198,13 @@ router.post('/:token?', async (req, res) => {
       await chat.save();
     }
 
+    let userMessage = null;
     if (text || incomingAttachment) {
-      await Message.create({
+      userMessage = await Message.create({
         chatId: chat._id,
         workspaceId: platform.workspaceId,
         from: 'user',
-        text: text || '[Attachment]',
+        text: text || '',
         attachment: incomingAttachment,
         createdAt: new Date(),
       });
@@ -245,10 +246,10 @@ router.post('/:token?', async (req, res) => {
       }
     }
 
-    if (text && (!isNewChat || text !== '/start')) {
+    if (userMessage && (!isNewChat || userMessage.text !== '/start')) {
       const fileResponse = await findAndSendFile({
         agent,
-        message: text,
+        message: userMessage,
         openaiClient,
         geminiClient,
       });
@@ -300,7 +301,7 @@ router.post('/:token?', async (req, res) => {
         reply = await generateAIReply({
           system,
           prompt,
-          message: text,
+          message: userMessage,
           knowledge: agent?.knowledge,
           agent,
           chat,
@@ -308,7 +309,7 @@ router.post('/:token?', async (req, res) => {
         });
       } catch (e) {
         console.error('[telegram] AI error:', e);
-        reply = { text: `Echo: ${text}` };
+        reply = { text: `Echo: ${userMessage.text}` };
       }
 
       let replyText = typeof reply === 'string' ? reply : reply.text;
