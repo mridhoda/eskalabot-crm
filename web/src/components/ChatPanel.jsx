@@ -1,72 +1,106 @@
-import React, { useEffect, useState, useRef, useCallback } from 'react'
-import api from '../api'
+import React, { useEffect, useState, useRef, useCallback } from 'react';
+import api from '../api';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faPaperclip, faPaperPlane, faSync, faUserShield, faCheckCircle, faRobot } from '@fortawesome/free-solid-svg-icons';
 
 function MessageFooter({ message, selected, user }) {
-  const isUser = message.from === 'user'
-  const agentName = isUser
-    ? selected.contactId?.name
-    : selected.takeoverBy
-      ? user?.name
-      : selected.agentId?.name
-  const agentType = isUser ? 'client' : selected.takeoverBy ? 'human' : 'ai'
+  // The sender is directly available in the message object
+  const senderType = message.from; // 'user', 'ai', or 'human'
+
+  // We only want to show the badge for our own agents (AI or Human)
+  if (senderType === 'user') {
+    return (
+       <div className="chat-message-time">
+        {new Date(message.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+      </div>
+    );
+  }
+
+  const isHuman = senderType === 'human';
+  
+  const badgeStyle = {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '4px',
+    padding: '2px 6px',
+    borderRadius: '6px',
+    fontSize: '10px',
+    fontWeight: '600',
+    lineHeight: '1.2',
+    color: isHuman ? '#4338CA' : '#CC5800', // text-indigo-800, text-orange-700
+    backgroundColor: isHuman ? '#E0E7FF' : '#FFEDD5', // bg-indigo-100, bg-orange-100
+  };
 
   return (
-    <div style={{ fontSize: 10, color: '#999', marginTop: 4 }}>
-      Deliver by {agentName} ({agentType}) -{' '}
-      {new Date(message.createdAt).toLocaleString()}
+    <div className="chat-message-time" style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '8px' }}>
+       <div style={badgeStyle}>
+        <FontAwesomeIcon icon={isHuman ? faUserShield : faRobot} />
+        <span>{isHuman ? 'Human Agent' : 'AI Agent'}</span>
+      </div>
+      <span>
+        {new Date(message.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+      </span>
     </div>
-  )
+  );
 }
 
 export default function ChatPanel({ selected, reload, onChatUpdate }) {
-  const [messages, setMessages] = useState([])
-  const [text, setText] = useState('')
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [isUploading, setIsUploading] = useState(false)
+  const [messages, setMessages] = useState([]);
+  const [text, setText] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef(null);
-  const endRef = useRef(null)
+  const endRef = useRef(null);
 
   const [user] = useState(() => {
     try {
-      return JSON.parse(sessionStorage.getItem('user') || 'null')
+      return JSON.parse(sessionStorage.getItem('user') || 'null');
     } catch {
-      return null
+      return null;
     }
-  })
+  });
 
   const selectedId = selected?._id;
 
   const loadMessages = useCallback(async () => {
     if (!selectedId) return;
-    const r = await api.get(`/chats/${selectedId}/messages`);
-    setMessages(r.data);
+    try {
+      const r = await api.get(`/chats/${selectedId}/messages`);
+      setMessages(r.data);
+    } catch (error) {
+      console.error("Failed to load messages:", error);
+    }
   }, [selectedId]);
 
   useEffect(() => {
-    loadMessages()
-  }, [loadMessages])
+    loadMessages();
+  }, [loadMessages]);
 
   useEffect(() => {
-    if (endRef.current) {
-      endRef.current.scrollIntoView({ behavior: 'smooth' })
-    }
-  }, [messages])
+    endRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
 
   useEffect(() => {
-    if (!selectedId) return
-    const interval = setInterval(() => {
-      loadMessages()
-    }, 4000)
-    return () => clearInterval(interval)
-  }, [selectedId, loadMessages])
+    if (!selectedId) return;
+    const interval = setInterval(loadMessages, 4000);
+    return () => clearInterval(interval);
+  }, [selectedId, loadMessages]);
 
   const send = async () => {
-    if (!selectedId || !text) return
-    await api.post(`/chats/${selectedId}/send`, { text })
-    setText('')
-    loadMessages();
-    reload?.()
-  }
+    if (!selectedId || !text.trim()) return;
+    setIsSubmitting(true);
+    try {
+      await api.post(`/chats/${selectedId}/send`, { text });
+      setText('');
+      await loadMessages();
+      reload?.();
+    } catch (error)
+    {
+      console.error("Failed to send message:", error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   const handleFileSelected = async (event) => {
     const file = event.target.files[0];
@@ -77,32 +111,23 @@ export default function ChatPanel({ selected, reload, onChatUpdate }) {
     formData.append('file', file);
 
     try {
-      // 1. Upload the file to get a URL
       const uploadResponse = await api.post('/agents/upload', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
+        headers: { 'Content-Type': 'multipart/form-data' },
       });
       const { filePath, originalName } = uploadResponse.data;
 
-      // 2. Send the message with the attachment URL
       await api.post(`/chats/${selectedId}/send`, {
         text: `File: ${originalName}`,
-        attachment: {
-          url: filePath,
-          filename: originalName,
-        },
+        attachment: { url: filePath, filename: originalName },
       });
 
-      // 3. Refresh messages
-      loadMessages();
+      await loadMessages();
       reload?.();
     } catch (error) {
       console.error('File sending failed:', error);
       alert('Failed to send file.');
     } finally {
       setIsUploading(false);
-      // Reset file input
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
@@ -110,167 +135,147 @@ export default function ChatPanel({ selected, reload, onChatUpdate }) {
   };
 
   const takeover = async () => {
-    if (!selectedId) return
-    setIsSubmitting(true)
+    if (!selectedId) return;
+    setIsSubmitting(true);
     try {
-      const r = await api.post(`/chats/${selectedId}/takeover`)
-      onChatUpdate(r.data)
+      const r = await api.post(`/chats/${selectedId}/takeover`);
+      onChatUpdate(r.data);
     } finally {
-      setIsSubmitting(false)
+      setIsSubmitting(false);
     }
-  }
+  };
 
   const resolve = async () => {
-    if (!selectedId) return
-    setIsSubmitting(true)
+    if (!selectedId) return;
+    setIsSubmitting(true);
     try {
-      const r = await api.post(`/chats/${selectedId}/resolve`)
-      onChatUpdate(r.data)
+      const r = await api.post(`/chats/${selectedId}/resolve`);
+      onChatUpdate(r.data);
     } finally {
-      setIsSubmitting(false)
+      setIsSubmitting(false);
     }
-  }
+  };
 
-  if (!selected)
-    return (
-      <div
-        className='card'
-        style={{ display: 'grid', placeItems: 'center', height: '100%' }}
-      >
-        Pilih chat di kiri…
-      </div>
-    )
+  if (!selected) return null; // The parent component now handles the empty state
 
-  const initials = (s = '') =>
-    s
-      .trim()
-      .split(/\s+/)
-      .slice(0, 2)
-      .map((x) => x[0]?.toUpperCase() || '')
-      .join('') || '?'
+  const getInitials = (s = '') => s.trim().split(/\s+/).slice(0, 2).map(x => x[0]?.toUpperCase() || '').join('') || '?';
+
+  // Determine message sender type for CSS class
+  const getSenderType = (message) => {
+    return message.from === 'user' ? 'user' : 'agent';
+  };
 
   return (
-    <div
-      className='card col'
-      style={{ height: 'calc(100vh - 58px - 20px)', gap: 8 }}
-    >
+    <div className="chat-modern-container">
       {/* Header */}
-      <div
-        className='testhead'
-        style={{ paddingBottom: 8, borderBottom: '1px solid var(--border)' }}
-      >
-        <div className='avatar'>{initials(selected.contactId?.name)}</div>
-        <div style={{ fontWeight: 700 }}>
-          {selected.contactId?.name || 'User'}
+      <div className="chat-modern-header">
+        <div className="chat-header-info">
+          <div className="chat-header-avatar">
+            {getInitials(selected.contactId?.name)}
+          </div>
+          <div className="chat-header-details">
+            <h2>{selected.contactId?.name || 'User'}</h2>
+            <div className="chat-header-platform">
+              via {selected.platform}
+            </div>
+          </div>
         </div>
-        {selected.takeoverBy && (
-          <button
-            className='btn'
-            style={{ marginLeft: 'auto' }}
-            onClick={resolve}
-            disabled={isSubmitting}
-          >
-            {isSubmitting ? 'Loading...' : 'Resolve'}
+        <div className="chat-header-actions">
+          {selected.takeoverBy && (
+            <button className="chat-icon-btn" onClick={resolve} disabled={isSubmitting} title="Resolve Chat">
+              <FontAwesomeIcon icon={faCheckCircle} />
+            </button>
+          )}
+          <button className="chat-icon-btn" onClick={loadMessages} title="Refresh">
+            <FontAwesomeIcon icon={faSync} />
           </button>
-        )}
-        <button
-          className='btn ghost'
-          style={{ marginLeft: selected.takeoverBy ? '8px' : 'auto' }}
-          onClick={loadMessages}
-        >
-          ↻
-        </button>
+        </div>
       </div>
 
       {/* Messages */}
-      <div
-        style={{
-          flex: 1,
-          overflowY: 'auto',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 8,
-        }}
-      >
-        {messages.map((m, idx) => (
-          <div
-            key={m._id}
-            className={`msg-wrap ${m.from}`}
-            ref={idx === messages.length - 1 ? endRef : null}
-          >
-            <div className={`bbl ${m.from}`}>
-              {m.text}
-              {m.attachment && (
-                <div style={{ marginTop: 8 }}>
-                  {(() => {
-                    const filename = m.attachment.filename || '';
-                    const url =
-                      m.attachment.url && (m.attachment.url.startsWith('http://') || m.attachment.url.startsWith('https://'))
-                        ? m.attachment.url
-                        : `${api.defaults.baseURL}${m.attachment.url || ''}`;
-                    const isImage = /\.(png|jpe?g|gif|webp)$/i.test(filename);
-                    if (isImage) {
+      <div className="chat-messages-area">
+        {messages.map((m) => (
+          <div key={m._id} className={`chat-message-wrapper ${getSenderType(m)}`} ref={endRef}>
+            <div className="chat-message-content">
+              <div className="chat-message-bubble">
+                {m.text}
+                {m.attachment && (
+                  <div style={{ marginTop: 8 }}>
+                    {(() => {
+                      const filename = m.attachment.filename || '';
+                      const url = m.attachment.url?.startsWith('http') ? m.attachment.url : `${api.defaults.baseURL}${m.attachment.url || ''}`;
+                      const isImage = /\.(png|jpe?g|gif|webp)$/i.test(filename);
+                      if (isImage) {
+                        return <img src={url} alt={filename} style={{ maxWidth: 220, borderRadius: 8, display: 'block' }} />;
+                      }
                       return (
-                        <img
-                          src={url}
-                          alt={filename || 'attachment'}
-                          style={{ maxWidth: 220, borderRadius: 8, display: 'block' }}
-                        />
+                        <a href={url} target="_blank" rel="noopener noreferrer" className='btn ghost'>
+                          Download {filename || 'file'}
+                        </a>
                       );
-                    }
-                    return (
-                      <a
-                        href={url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className='btn ghost'
-                      >
-                        Download {filename || 'file'}
-                      </a>
-                    );
-                  })()}
-                </div>
-              )}
+                    })()}
+                  </div>
+                )}
+              </div>
+              <MessageFooter message={m} selected={selected} user={user} />
             </div>
-            <MessageFooter message={m} selected={selected} user={user} />
           </div>
         ))}
       </div>
 
       {/* Input */}
-      {selected.takeoverBy ? (
-        <div className='row'>
-          <input
-            type="file"
-            ref={fileInputRef}
-            style={{ display: 'none' }}
-            onChange={handleFileSelected}
-          />
-          <button 
-            className='btn ghost' 
-            onClick={() => fileInputRef.current.click()}
-            disabled={isUploading}
-          >
-            {isUploading ? '...' : '📎'}
-          </button>
-          <input
-            className='input'
-            placeholder='Ketik pesan…'
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && send()}
-          />
-          <button className='btn' onClick={send}>
-            Kirim
-          </button>
-        </div>
-      ) : (
-        <div className='row' style={{ justifyContent: 'center' }}>
-          <button className='btn' onClick={takeover} disabled={isSubmitting}>
-            {isSubmitting ? 'Loading...' : 'Takeover Chat'}
-          </button>
-        </div>
-      )}
+      <div className="chat-input-area">
+        {selected.status !== 'resolved' ? (
+          selected.takeoverBy ? (
+            <div className="chat-input-wrapper">
+              <input
+                type="file"
+                ref={fileInputRef}
+                style={{ display: 'none' }}
+                onChange={handleFileSelected}
+              />
+              <button
+                className="chat-input-btn"
+                onClick={() => fileInputRef.current.click()}
+                disabled={isUploading}
+                title="Attach File"
+              >
+                <FontAwesomeIcon icon={faPaperclip} />
+              </button>
+              <textarea
+                className="chat-input-field"
+                placeholder="Type your message…"
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    send();
+                  }
+                }}
+                rows={1}
+              />
+              <button className="chat-send-btn" onClick={send} disabled={isSubmitting || !text.trim()}>
+                <FontAwesomeIcon icon={faPaperPlane} />
+              </button>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', justifyContent: 'center' }}>
+                <button className="chat-takeover-btn" onClick={takeover} disabled={isSubmitting}>
+                    <div className='chat-takeover-icon'><FontAwesomeIcon icon={faUserShield} /></div>
+                    <div className='chat-takeover-text'>
+                        <div className='chat-takeover-title'>{isSubmitting ? 'Loading...' : 'Takeover Chat'}</div>
+                        <div className='chat-takeover-subtitle'>Switch from AI to human agent</div>
+                    </div>
+                </button>
+            </div>
+          )
+        ) : (
+          <div style={{ textAlign: 'center', color: '#94A3B8', padding: '10px' }}>
+            This conversation has been resolved.
+          </div>
+        )}
+      </div>
     </div>
-  )
+  );
 }

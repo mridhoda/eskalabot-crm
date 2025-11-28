@@ -13,6 +13,11 @@ import * as XLSX from 'xlsx'
 import { Line, Pie, Bar } from 'react-chartjs-2'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faMagnifyingGlass, faSliders, faEnvelopeOpen, faCopy, faTrash } from '@fortawesome/free-solid-svg-icons'
+import '../inbox-modern.css'
+import '../analytics.css'
+import '../modal.css'
+import '../agents.css'
+import FileInput from '../components/FileInput'
 import {
   Chart as ChartJS,
   ArcElement,
@@ -140,503 +145,168 @@ function Inbox() {
   }
 
   const handleDeleteChat = async (chatId) => {
-    if (!chatId) return
-    if (!window.confirm('Delete this chat and all of its messages?')) return
+    if (!confirm('Are you sure you want to delete this chat?')) return
     try {
       await api.delete(`/chats/${chatId}`)
       setChats((prev) => prev.filter((c) => c._id !== chatId))
-      setSelected((prev) => (prev?._id === chatId ? null : prev))
-    } catch (error) {
-      console.error('Failed to delete chat', error)
-      alert('Failed to delete chat.')
+      if (selected?._id === chatId) setSelected(null)
+    } catch (err) {
+      console.error('Failed to delete chat:', err)
+      alert('Failed to delete chat')
     }
   }
 
+  const handleResolve = async (chatId) => {
+    try {
+      const chat = chats.find((c) => c._id === chatId)
+      const newStatus = chat.status === 'resolved' ? 'open' : 'resolved'
+      await api.put(`/chats/${chatId}`, { status: newStatus })
+
+      const updatedChat = { ...chat, status: newStatus }
+      handleChatUpdate(updatedChat)
+    } catch (err) {
+      console.error('Failed to update status:', err)
+    }
+  }
 
   return (
     <>
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: '320px 1fr 280px',
-          gap: 16,
-          alignItems: 'stretch',
-          height: panelHeight,
-        }}
-      >
-        {/* Left Column */}
-        <div className='col' style={{ minHeight: 0 }}>
-          <div
-            className='card col inbox-panel'
-            style={{
-              height: '100%',
-              gap: 12,
-              overflow: 'hidden',
-              minHeight: 0,
-            }}
-          >
-            <div style={{ fontWeight: 700 }}>Inbox</div>
-
-            {/* New Filters */}
-            <div
-              className='row'
-              style={{
-                justifyContent: 'space-between',
-                flexWrap: 'wrap',
-                gap: 8,
-                alignItems: 'center',
-              }}
-            >
-              <select
-                className='select'
-                style={{ flex: 1, minWidth: 140 }}
-                value={filters.agentId}
-                onChange={(e) => handleFilterChange({ agentId: e.target.value })}
-              >
-                <option value=''>All Agents</option>
-                {agents.map((a) => (
-                  <option key={a._id} value={a._id}>
-                    {a.name}
-                  </option>
-                ))}
-              </select>
-
-              <div className='row' style={{ gap: 8 }}>
+      <div className='inbox-modern-container' style={{ height: panelHeight }}>
+        {/* LEFT COLUMN: Chat List */}
+        <div className='inbox-modern-sidebar'>
+          <div className='inbox-modern-header'>
+            <div className='inbox-header-top'>
+              <h2>Inbox</h2>
+              <div className='inbox-header-actions'>
                 <button
-                  className={`icon-btn ${filters.unreadOnly ? 'active' : ''}`}
-                  onClick={() =>
-                    handleFilterChange({ unreadOnly: !filters.unreadOnly })
-                  }
-                  title='Show unread only'
+                  className={`btn-icon ${showSearch ? 'active' : ''}`}
+                  onClick={() => setShowSearch(!showSearch)}
+                  title="Search"
                 >
-                  <FontAwesomeIcon icon={faEnvelopeOpen} />
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                  </svg>
                 </button>
                 <button
-                  className={`icon-btn ${hasAdvancedFilters ? 'active' : ''}`}
+                  className={`btn-icon ${hasAdvancedFilters ? 'active' : ''}`}
                   onClick={() => setShowFilterPopup(true)}
-                  title='Advanced filters'
+                  title="Filter"
                 >
-                  <FontAwesomeIcon icon={faSliders} />
-                </button>
-                <button
-                  className={`icon-btn ${searchActive ? 'active' : ''}`}
-                  onClick={() => setShowSearch((prev) => !prev)}
-                  title='Search conversations'
-                >
-                  <FontAwesomeIcon icon={faMagnifyingGlass} />
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+                  </svg>
                 </button>
               </div>
             </div>
-            {showSearch && (
-              <div className='searchbox'>
+
+            {searchActive && (
+              <div className='inbox-search-bar'>
                 <input
-                  className='input'
-                  placeholder='Search messages'
+                  placeholder='Search messages...'
                   value={filters.search}
-                  onChange={(e) =>
-                    handleFilterChange({ search: e.target.value })
-                  }
+                  onChange={(e) => handleFilterChange({ search: e.target.value })}
+                  autoFocus
                 />
               </div>
             )}
+          </div>
 
-            <div
-              className='list inbox-scroll'
-              style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}
-            >
-              {chats.map((c) => (
-                <div
-                  key={c._id}
-                  className={`rowi ${selected?._id === c._id ? 'unread' : ''}`}
-                  onClick={() => {
-                    setSelected(c)
-                    if (c.unread > 0) {
-                      const newChats = chats.map((chat) =>
-                        chat._id === c._id ? { ...chat, unread: 0 } : chat
-                      )
-                      setChats(newChats)
-                    }
-                  }}
-                >
-                  <div style={{ flex: 1 }}>
-                    <div>{c.contactId?.name || `Chat #${c._id.slice(-6)}`}</div>
-                    <div style={{ fontSize: 12, color: '#666' }}>
-                      {c.lastMessage?.slice(0, 30)}...
-                    </div>
-                    <div
-                      className='row'
-                      style={{ alignItems: 'center', gap: 4, marginTop: 4 }}
-                    >
-                      <BrandIcon type={c.platformType} size={12} />
-                      <div style={{ fontSize: 12, color: '#666' }}>
-                        {c.agentId?.name}
-                      </div>
-                    </div>
+          <div className='inbox-chat-list'>
+            {chats.map((chat) => (
+              <div
+                key={chat._id}
+                className={`inbox-chat-item ${selected?._id === chat._id ? 'active' : ''} ${chat.unreadCount > 0 ? 'unread' : ''}`}
+                onClick={() => setSelected(chat)}
+              >
+                <div className='chat-item-avatar'>
+                  {chat.contactId?.name?.charAt(0).toUpperCase() || '?'}
+                  {chat.platform === 'whatsapp' && (
+                    <span className="platform-badge whatsapp">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
+                      </svg>
+                    </span>
+                  )}
+                </div>
+                <div className='chat-item-content'>
+                  <div className='chat-item-top'>
+                    <span className='chat-item-name'>{chat.contactId?.name || chat.from}</span>
+                    <span className='chat-item-time'>
+                      {new Date(chat.lastMessageAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </span>
                   </div>
-                  <div
-                    className='col'
-                    style={{ alignItems: 'flex-end', gap: 4 }}
-                  >
-                    <div
-                      className='row'
-                      style={{ alignItems: 'center', gap: 8 }}
-                    >
-                      {c.unread > 0 && (
-                        <div
-                          className='badge'
-                          style={{ background: 'var(--brand)', color: 'white' }}
-                        >
-                          {c.unread}
-                        </div>
-                      )}
-                      <div className='badge'>
-                        {new Date(c.lastMessageAt).toLocaleTimeString([], {
-                          hour: '2-digit',
-                          minute: '2-digit',
-                        })}
-                      </div>
-                    </div>
-                    <div
-                      className='badge'
-                      style={
-                        c.takeoverBy
-                          ? {
-                            color: '#007bff',
-                            backgroundColor: 'rgba(0, 123, 255, 0.25)',
-                            border: '1px solid rgba(0, 123, 255, 0.25)',
-                          }
-                          : {
-                            color: '#ffc107',
-                            backgroundColor: 'rgba(255, 193, 7, 0.25)',
-                            border: '1px solid rgba(255, 193, 7, 0.25)',
-                          }
-                      }
-                    >
-                      {c.takeoverBy ? 'assign' : 'open'}
-                    </div>
+                  <div className='chat-item-preview'>
+                    {chat.lastMessage || 'No messages yet'}
+                  </div>
+                  <div className='chat-item-footer'>
+                    {chat.unreadCount > 0 && (
+                      <span className='unread-badge'>{chat.unreadCount}</span>
+                    )}
+                    {chat.status === 'resolved' && (
+                      <span className='status-badge resolved'>Resolved</span>
+                    )}
+                    {chat.agentId && (
+                      <span className='agent-badge'>
+                        {agents.find(a => a._id === chat.agentId)?.name || 'Agent'}
+                      </span>
+                    )}
                   </div>
                 </div>
-              ))}
-            </div>
+              </div>
+            ))}
+            {chats.length === 0 && (
+              <div className='empty-state'>
+                No chats found
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Middle Column */}
-        <div style={{ flex: 1, height: panelHeight }}>
+
+        {/* MIDDLE COLUMN: Chat Area */}
+        <div className='inbox-modern-main'>
           {selected ? (
             <ChatPanel
               selected={selected}
-              reload={load}
               onChatUpdate={handleChatUpdate}
             />
           ) : (
-            <div
-              className='card'
-              style={{
-                height: '100%',
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'center',
-                alignItems: 'center',
-              }}
-            >
-              <div style={{ fontWeight: 700, marginBottom: 8 }}>
-                Selamat datang di Chatbot AI
-              </div>
-              <QuickActions />
+            <div className='empty-chat-panel'>
+              <div className='empty-icon'>💬</div>
+              <h3>Select a conversation</h3>
+              <p>Choose a chat from the list to start messaging</p>
             </div>
           )}
         </div>
 
-        {/* Right Column */}
-        <div style={{ height: '100%', display: 'flex' }}>
-          <ContactPanel
-            selected={selected}
-            onUpdate={handleContactUpdate}
-            onDeleteChat={handleDeleteChat}
-          />
+        {/* RIGHT COLUMN: Contact Info */}
+        <div className='inbox-modern-details'>
+          {selected ? (
+            <ContactPanel
+              selected={selected}
+              onUpdate={handleContactUpdate}
+            />
+          ) : (
+            <div className='empty-details-panel'>
+              <p>Contact details will appear here</p>
+            </div>
+          )}
         </div>
       </div>
 
       {showFilterPopup && (
         <FilterPopup
+          isOpen={showFilterPopup}
           onClose={() => setShowFilterPopup(false)}
-          onApply={(newFilters) => {
-            handleFilterChange(newFilters)
-            setShowFilterPopup(false)
-          }}
-          currentFilters={filters}
+          filters={filters}
+          onApply={handleFilterChange}
+          agents={agents}
         />
       )}
     </>
   )
 }
-
-/* ========================= ANALYTICS ========================= */
-
-function AnalyticsPage() {
-  const [traffic, setTraffic] = useState([])
-  const [platforms, setPlatforms] = useState([])
-  const [agents, setAgents] = useState([])
-  const [chatsByDay, setChatsByDay] = useState([])
-
-  useEffect(() => {
-    api.get('/analytics/traffic?groupBy=day').then((r) => setTraffic(r.data))
-    api.get('/analytics/platforms').then((r) => setPlatforms(r.data))
-    api.get('/analytics/agents').then((r) => setAgents(r.data))
-    api.get('/analytics/chats-by-day').then((r) => setChatsByDay(r.data))
-  }, [])
-
-  const trafficData = {
-    labels: traffic.map(
-      (r) =>
-        `${r._id.y}-${String(r._id.m).padStart(2, '0')}-${String(r._id.d).padStart(2, '0')}`
-    ),
-    datasets: [
-      {
-        label: 'Messages per day',
-        data: traffic.map((r) => r.count),
-        fill: false,
-        borderColor: 'rgb(75, 192, 192)',
-        tension: 0.1,
-      },
-    ],
-  }
-
-  const platformData = {
-    labels: platforms.map((p) => p._id),
-    datasets: [
-      {
-        label: 'Messages per platform',
-        data: platforms.map((p) => p.count),
-        backgroundColor: [
-          'rgba(255, 99, 132, 0.2)',
-          'rgba(54, 162, 235, 0.2)',
-          'rgba(255, 206, 86, 0.2)',
-          'rgba(75, 192, 192, 0.2)',
-          'rgba(153, 102, 255, 0.2)',
-          'rgba(255, 159, 64, 0.2)',
-        ],
-        borderColor: [
-          'rgba(255, 99, 132, 1)',
-          'rgba(54, 162, 235, 1)',
-          'rgba(255, 206, 86, 1)',
-          'rgba(75, 192, 192, 1)',
-          'rgba(153, 102, 255, 1)',
-          'rgba(255, 159, 64, 1)',
-        ],
-        borderWidth: 1,
-      },
-    ],
-  }
-
-  const agentData = {
-    labels: agents.map((a) => a._id),
-    datasets: [
-      {
-        label: 'Messages per agent',
-        data: agents.map((a) => a.count),
-        backgroundColor: 'rgba(54, 162, 235, 0.2)',
-        borderColor: 'rgba(54, 162, 235, 1)',
-        borderWidth: 1,
-      },
-    ],
-  }
-
-  const chatsByDayData = {
-    labels: chatsByDay.labels,
-    datasets: [
-      {
-        label: 'Chats per day',
-        data: chatsByDay.data,
-        backgroundColor: 'rgba(255, 159, 64, 0.2)',
-        borderColor: 'rgba(255, 159, 64, 1)',
-        borderWidth: 1,
-      },
-    ],
-  }
-
-  return (
-    <div
-      style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}
-    >
-      <div className='card'>
-        <div style={{ fontWeight: 700, marginBottom: 10 }}>Traffic</div>
-        <Line data={trafficData} />
-      </div>
-      <div className='card'>
-        <div style={{ fontWeight: 700, marginBottom: 10 }}>Chats by Day</div>
-        <Bar data={chatsByDayData} />
-      </div>
-      <div className='card'>
-        <div style={{ fontWeight: 700, marginBottom: 10 }}>
-          Messages by Platform
-        </div>
-        <Pie data={platformData} />
-      </div>
-      <div className='card'>
-        <div style={{ fontWeight: 700, marginBottom: 10 }}>
-          Messages by Agent
-        </div>
-        <Bar data={agentData} />
-      </div>
-    </div>
-  )
-}
-
-/* ========================= CONTACTS ========================= */
-function Contacts() {
-  const [contacts, setContacts] = useState([])
-  const [selectedContacts, setSelectedContacts] = useState([])
-  const [currentPage, setCurrentPage] = useState(1)
-  const [rowsPerPage, setRowsPerPage] = useState(10)
-
-  useEffect(() => {
-    api.get('/contacts').then((r) => setContacts(r.data))
-  }, [])
-
-  const handleSelectAll = (e) => {
-    if (e.target.checked) {
-      setSelectedContacts(contacts.map((c) => c._id))
-    } else {
-      setSelectedContacts([])
-    }
-  }
-
-  const handleSelect = (e, id) => {
-    if (e.target.checked) {
-      setSelectedContacts([...selectedContacts, id])
-    } else {
-      setSelectedContacts(selectedContacts.filter((cId) => cId !== id))
-    }
-  }
-
-  const handleExport = async () => {
-    const dataToExport =
-      selectedContacts.length > 0
-        ? contacts.filter((c) => selectedContacts.includes(c._id))
-        : contacts
-    const worksheet = XLSX.utils.json_to_sheet(dataToExport)
-    const workbook = XLSX.utils.book_new()
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Contacts')
-    XLSX.writeFile(workbook, 'contacts.xlsx')
-  }
-
-  const indexOfLastRow = currentPage * rowsPerPage
-  const indexOfFirstRow = indexOfLastRow - rowsPerPage
-  const currentRows = contacts.slice(indexOfFirstRow, indexOfLastRow)
-
-  const totalPages = Math.ceil(contacts.length / rowsPerPage)
-
-  return (
-    <>
-      <div className='card'>
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            marginBottom: 10,
-          }}
-        >
-          <div style={{ fontWeight: 700 }}>Contacts</div>
-          <button className='btn' onClick={handleExport}>
-            Export to Excel
-          </button>
-        </div>
-        <table className='table'>
-          <thead>
-            <tr>
-              <th>
-                <input type='checkbox' onChange={handleSelectAll} />
-              </th>
-              <th>Client Name</th>
-              <th>Agent Name</th>
-              <th>ID/Phone Number</th>
-              <th>First Chat Date</th>
-              <th>First Message</th>
-              <th>Last Message Date</th>
-            </tr>
-          </thead>
-          <tbody>
-            {currentRows.map((c) => (
-              <tr key={c._id}>
-                <td>
-                  <input
-                    type='checkbox'
-                    checked={selectedContacts.includes(c._id)}
-                    onChange={(e) => handleSelect(e, c._id)}
-                  />
-                </td>
-                <td>{c.name}</td>
-                <td>{c.agentName}</td>
-                <td>{c.platformAccountId}</td>
-                <td>{new Date(c.createdAt).toLocaleString()}</td>
-                <td>{c.firstMessage}</td>
-                <td>{new Date(c.lastMessageAt).toLocaleString()}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>{' '}
-      <div
-        className='main pagination-container'
-        style={{
-          position: 'fixed',
-          bottom: 0,
-          left: 0,
-          right: 0,
-          backgroundColor: 'white',
-          borderTop: '1px solid var(--border)',
-        }}
-      >
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            padding: '10px',
-          }}
-        >
-          <div>Total Contacts: {contacts.length}</div>
-          <div style={{ display: 'flex', alignItems: 'center' }}>
-            <button
-              className='btn ghost'
-              onClick={() => setCurrentPage(currentPage - 1)}
-              disabled={currentPage === 1}
-            >
-              Previous
-            </button>
-            <div style={{ margin: '0 10px' }}>
-              Page {currentPage} of {totalPages}
-            </div>
-            <button
-              className='btn ghost'
-              onClick={() => setCurrentPage(currentPage + 1)}
-              disabled={currentPage === totalPages}
-            >
-              Next
-            </button>
-          </div>
-          <div>
-            <select
-              className='select'
-              value={rowsPerPage}
-              onChange={(e) => setRowsPerPage(parseInt(e.target.value))}
-            >
-              <option value={10}>10 per page</option>
-              <option value={25}>25 per page</option>
-              <option value={50}>50 per page</option>
-            </select>
-          </div>
-        </div>
-      </div>
-    </>
-  )
-}
-
-/* ========================= AGENTS (grid + platform icon + settings) ========================= */
-import '../agents.css'
 
 /* ========================= AGENTS (grid + platform icon + settings) ========================= */
 function Agents() {
@@ -961,35 +631,41 @@ function Humans() {
     currentUser?.role === 'owner' || currentUser?.role === 'super'
 
   return (
-    <div style={{ maxWidth: 1150, margin: '0 auto', height: '100%', overflowY: 'auto', width: '100%', padding: '0 20px' }}>
-      <div
-        className='row'
-        style={{
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          marginBottom: 16,
-        }}
-      >
-        <h2 style={{ margin: 0 }}>Human Agents</h2>
-        <div className='searchbox'>
+    <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 20px' }}>
+
+      {/* Header */}
+      <div className='agents-page-header'>
+        <h2>Human Agents</h2>
+        <p>
+          Ini adalah halaman di mana Anda dapat mengunjungi human yang telah Anda buat sebelumnya.
+          <br />
+          Jangan ragu untuk membuat perubahan dan membuat human sebanyak yang Anda inginkan kapan saja!
+        </p>
+      </div>
+
+      {/* Search */}
+      <div className='agents-search-container'>
+        <div className='agents-search-box'>
           <input
             className='input'
-            placeholder='Search by name or email…'
+            placeholder='Search human agents...'
             value={q}
             onChange={(e) => setQ(e.target.value)}
           />
-          <div className='search-ico'></div>
         </div>
+        <button className='btn ghost' title='History'>
+          🕒
+        </button>
       </div>
 
-      <div className='agent-grid-vertical'>
+      {/* Grid */}
+      <div className='agents-grid'>
         {filtered.map((u) => (
           <div key={u._id} className='agent-card'>
-            <div className='agent-avatar'>{initials(u.name)}</div>
             <div className='agent-name'>{u.name}</div>
-            <div className='agent-sub'>{u.email}</div>
-            <div className='row' style={{ gap: 6, alignItems: 'center' }}>
-              <span className='badge'>{u.role}</span>
+            <div className='agent-avatar'>{initials(u.name)}</div>
+            <div className='agent-sub'>
+              {(u.email || '-').slice(0, 60) || '-'}
             </div>
 
             <div className='agent-actions'>
@@ -998,19 +674,22 @@ function Humans() {
                 title='Delete'
                 onClick={() => del(u._id)}
               >
-                🗑️
+                <FontAwesomeIcon icon={faTrash} />
               </button>
             </div>
           </div>
         ))}
+
+        {/* Create New Card */}
         {canManage && (
-          <div className='agent-card create' onClick={openCreate}>
-            <div className='plus'>＋</div>
-            <div className='agent-name'>Create New</div>
+          <div className='agent-card create-new' onClick={openCreate}>
+            <div className='create-new-icon'>＋</div>
+            <div className='create-new-text'>Create New</div>
           </div>
         )}
       </div>
 
+      {/* Modal Create */}
       {showCreate && (
         <div className='modal'>
           <div className='modal-card'>
@@ -1074,6 +753,256 @@ function Humans() {
           </div>
         </div>
       )}
+    </div >
+  )
+}
+
+/* ========================= ANALYTICS PAGE ========================= */
+function AnalyticsPage() {
+  const [traffic, setTraffic] = useState([])
+  const [platforms, setPlatforms] = useState([])
+  const [agents, setAgents] = useState([])
+  const [peakHours, setPeakHours] = useState([])
+
+  useEffect(() => {
+    api.get('/analytics/traffic').then((r) => setTraffic(r.data))
+    api.get('/analytics/platforms').then((r) => setPlatforms(r.data))
+    api.get('/analytics/agents').then((r) => setAgents(r.data))
+    api.get('/analytics/peak-hours').then((r) => setPeakHours(r.data))
+  }, [])
+
+  const totalChats = traffic.reduce((sum, t) => sum + t.count, 0)
+  const totalContacts = new Set(traffic.map((t) => t._id)).size
+  const avgResponseTime = '2.3 min'
+
+  const trafficData = {
+    labels: traffic.map((t) => new Date(t._id).toLocaleDateString()),
+    datasets: [
+      {
+        label: 'Messages',
+        data: traffic.map((t) => t.count),
+        borderColor: 'rgb(99, 102, 241)',
+        backgroundColor: 'rgba(99, 102, 241, 0.1)',
+        tension: 0.4,
+      },
+    ],
+  }
+
+  const platformData = {
+    labels: platforms.map((p) => p._id || 'Unknown'),
+    datasets: [
+      {
+        data: platforms.map((p) => p.count),
+        backgroundColor: [
+          'rgba(34, 197, 94, 0.8)',
+          'rgba(59, 130, 246, 0.8)',
+          'rgba(168, 85, 247, 0.8)',
+          'rgba(251, 146, 60, 0.8)',
+        ],
+      },
+    ],
+  }
+
+  const agentData = {
+    labels: agents.map((a) => a._id?.name || 'No Agent'),
+    datasets: [
+      {
+        label: 'Chats Handled',
+        data: agents.map((a) => a.count),
+        backgroundColor: 'rgba(99, 102, 241, 0.8)',
+      },
+    ],
+  }
+
+  const peakHoursData = {
+    labels: peakHours.map((h) => `${h._id}:00`),
+    datasets: [
+      {
+        label: 'Messages',
+        data: peakHours.map((h) => h.count),
+        backgroundColor: 'rgba(168, 85, 247, 0.8)',
+      },
+    ],
+  }
+
+  const chartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        display: false,
+      },
+    },
+  }
+
+  return (
+    <div className='analytics-container'>
+      <div className='analytics-header'>
+        <h2>Analytics</h2>
+      </div>
+
+      <div className='analytics-stats'>
+        <div className='stat-card'>
+          <div className='stat-value'>{totalChats}</div>
+          <div className='stat-label'>Total Messages</div>
+        </div>
+        <div className='stat-card'>
+          <div className='stat-value'>{totalContacts}</div>
+          <div className='stat-label'>Active Contacts</div>
+        </div>
+        <div className='stat-card'>
+          <div className='stat-value'>{avgResponseTime}</div>
+          <div className='stat-label'>Avg Response Time</div>
+        </div>
+      </div>
+
+      <div className='analytics-charts'>
+        <div className='chart-card'>
+          <h3>Message Traffic</h3>
+          <div className='chart-wrapper'>
+            <Line data={trafficData} options={chartOptions} />
+          </div>
+        </div>
+
+        <div className='chart-card'>
+          <h3>Messages by Platform</h3>
+          <div className='chart-wrapper'>
+            <Pie data={platformData} options={chartOptions} />
+          </div>
+        </div>
+
+        <div className='chart-card'>
+          <h3>Chats by Agent</h3>
+          <div className='chart-wrapper'>
+            <Bar data={agentData} options={chartOptions} />
+          </div>
+        </div>
+
+        <div className='chart-card'>
+          <h3>Peak Chat Hours</h3>
+          <div className='chart-wrapper'>
+            <Bar data={peakHoursData} options={chartOptions} />
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/* ========================= CONTACTS ========================= */
+function Contacts() {
+  const [contacts, setContacts] = useState([])
+  const [q, setQ] = useState('')
+
+  useEffect(() => {
+    api.get('/contacts').then((r) => setContacts(r.data))
+  }, [])
+
+  const filtered = contacts.filter((c) =>
+    c.name?.toLowerCase().includes(q.toLowerCase())
+  )
+
+  const exportToExcel = () => {
+    const ws = XLSX.utils.json_to_sheet(
+      contacts.map((c) => ({
+        Name: c.name,
+        Phone: c.phone,
+        Email: c.email,
+        Tags: (c.tags || []).join(', '),
+      }))
+    )
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, ws, 'Contacts')
+    XLSX.writeFile(wb, 'contacts.xlsx')
+  }
+
+  return (
+    <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 20px' }}>
+      <div className='row' style={{ justifyContent: 'space-between', marginBottom: 20 }}>
+        <h2>Contacts</h2>
+        <button className='btn' onClick={exportToExcel}>
+          Export to Excel
+        </button>
+      </div>
+
+      <input
+        className='input'
+        placeholder='Search contacts...'
+        value={q}
+        onChange={(e) => setQ(e.target.value)}
+        style={{ marginBottom: 20 }}
+      />
+
+      <div className='card'>
+        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <thead>
+            <tr>
+              <th style={{ textAlign: 'left', padding: 10 }}>Name</th>
+              <th style={{ textAlign: 'left', padding: 10 }}>Phone</th>
+              <th style={{ textAlign: 'left', padding: 10 }}>Email</th>
+              <th style={{ textAlign: 'left', padding: 10 }}>Tags</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.map((c) => (
+              <tr key={c._id} style={{ borderTop: '1px solid #e5e7eb' }}>
+                <td style={{ padding: 10 }}>{c.name}</td>
+                <td style={{ padding: 10 }}>{c.phone}</td>
+                <td style={{ padding: 10 }}>{c.email || '-'}</td>
+                <td style={{ padding: 10 }}>{(c.tags || []).join(', ') || '-'}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  )
+}
+
+/* ========================= PROFILE ========================= */
+function Profile() {
+  const { user } = useAuth()
+  const [name, setName] = useState(user?.name || '')
+  const [email, setEmail] = useState(user?.email || '')
+  const [saving, setSaving] = useState(false)
+
+  const save = async () => {
+    setSaving(true)
+    try {
+      await api.put('/users/profile', { name, email })
+      alert('Profile updated successfully!')
+    } catch (err) {
+      alert(err.response?.data?.error || 'Failed to update profile')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div className='card' style={{ maxWidth: 600, margin: '0 auto' }}>
+      <h2>Profile</h2>
+      <div className='col' style={{ gap: 16 }}>
+        <div>
+          <div className='muted'>Name</div>
+          <input
+            className='input'
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+          />
+        </div>
+        <div>
+          <div className='muted'>Email</div>
+          <input
+            className='input'
+            type='email'
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
+        </div>
+        <button className='btn' onClick={save} disabled={saving}>
+          {saving ? 'Saving...' : 'Save Changes'}
+        </button>
+      </div>
     </div>
   )
 }
@@ -1099,11 +1028,6 @@ function Billing() {
     </div>
   )
 }
-function Profile() {
-  return <div className='card'>Atur profil & Sign out.</div>
-}
-
-import FileInput from '../components/FileInput'
 
 /* ========================= AGENT DETAIL ========================= */
 function AgentDetail() {
@@ -2665,3 +2589,4 @@ export default function Dashboard() {
     </div>
   )
 }
+// Force rebuild

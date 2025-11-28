@@ -44,8 +44,18 @@ router.get('/platforms', authRequired, attachUser, async (req, res) => {
       { $unwind: '$chat' },
       { $match: { 'chat.userId': req.me._id } },
       { $lookup: { from: 'platforms', localField: 'chat.platformId', foreignField: '_id', as: 'platform' } },
-      { $unwind: '$platform' },
-      { $group: { _id: '$platform.name', count: { $sum: 1 } } },
+      {
+        $addFields: {
+          platformName: {
+            $cond: {
+              if: { $gt: [{ $size: '$platform' }, 0] },
+              then: { $arrayElemAt: ['$platform.name', 0] },
+              else: 'Direct'
+            }
+          }
+        }
+      },
+      { $group: { _id: '$platformName', count: { $sum: 1 } } },
       { $sort: { count: -1 } }
     ]
 
@@ -77,51 +87,43 @@ router.get('/agents', authRequired, attachUser, async (req, res) => {
   }
 })
 
-router.get('/chats-by-day', authRequired, attachUser, async (req, res) => {
+router.get('/peak-hours', authRequired, attachUser, async (req, res) => {
   try {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    const yesterday = new Date(today);
-    yesterday.setDate(today.getDate() - 1);
-
     const pipeline = [
-      {
-        $match: {
-          userId: req.me._id,
-          createdAt: {
-            $gte: yesterday,
-          },
-        },
-      },
+      { $lookup: { from: 'chats', localField: 'chatId', foreignField: '_id', as: 'chat' } },
+      { $unwind: '$chat' },
+      { $match: { 'chat.userId': req.me._id, from: 'user' } }, // Only user messages
       {
         $group: {
-          _id: {
-            $dateToString: { format: '%Y-%m-%d', date: '$createdAt' },
-          },
-          count: { $sum: 1 },
-        },
+          _id: { $hour: '$createdAt' },
+          count: { $sum: 1 }
+        }
       },
-      {
-        $sort: { _id: 1 },
-      },
+      { $sort: { _id: 1 } }
     ];
 
-    const rows = await Chat.aggregate(pipeline);
-    
-    // Ensure both today and yesterday are present in the result
-    const result = {
-      [today.toISOString().split('T')[0]]: 0,
-      [yesterday.toISOString().split('T')[0]]: 0,
-    };
+    const rows = await Message.aggregate(pipeline);
 
+    // Create array for all 24 hours
+    const hourlyData = Array(24).fill(0);
     rows.forEach(row => {
-      result[row._id] = row.count;
+      hourlyData[row._id] = row.count;
     });
 
+    // Generate labels (00:00, 01:00, ..., 23:00)
+    const labels = Array.from({ length: 24 }, (_, i) =>
+      `${String(i).padStart(2, '0')}:00`
+    );
+
+    // Find peak hour
+    const maxCount = Math.max(...hourlyData);
+    const peakHour = hourlyData.indexOf(maxCount);
+
     res.json({
-      labels: Object.keys(result),
-      data: Object.values(result),
+      labels,
+      data: hourlyData,
+      peakHour: `${String(peakHour).padStart(2, '0')}:00`,
+      peakCount: maxCount
     });
   } catch (err) {
     console.error('Analytics error:', err);

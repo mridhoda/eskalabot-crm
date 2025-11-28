@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faRobot } from '@fortawesome/free-solid-svg-icons' // Import the robot icon
+import { faRobot, faUser } from '@fortawesome/free-solid-svg-icons'
 
 export default function Navbar({ authed, user, plan, className }) {
   const navigate = useNavigate()
   const [showDropdown, setShowDropdown] = useState(false)
+  const [isOnline, setIsOnline] = useState(true)
   const dropdownRef = useRef(null)
 
   const handleLogout = () => {
@@ -15,7 +16,6 @@ export default function Navbar({ authed, user, plan, className }) {
     navigate('/login')
   }
 
-  // Close dropdown when clicking outside
   useEffect(() => {
     function handleClickOutside(event) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -28,6 +28,8 @@ export default function Navbar({ authed, user, plan, className }) {
     }
   }, [dropdownRef])
 
+  const onlineStatusColor = isOnline ? 'var(--lp-green-500)' : 'var(--lp-slate-400)';
+
   return (
     <div className={`navbar ${className || ''}`}>
       <Link
@@ -35,7 +37,6 @@ export default function Navbar({ authed, user, plan, className }) {
         style={{ textDecoration: 'none', color: 'inherit', cursor: 'pointer' }}
       >
         <div className='logo'>
-          {/* Replaced logo-dot with FontAwesomeIcon and new styling */}
           <div className='lp-logo-icon' style={{ width: 32, height: 32, fontSize: 18, borderRadius: 8 }}>
             <FontAwesomeIcon icon={faRobot} />
           </div>
@@ -65,43 +66,91 @@ export default function Navbar({ authed, user, plan, className }) {
             className='row'
             style={{ gap: 8, alignItems: 'center', position: 'relative' }}
           >
-            <div
-              style={{
-                width: 8,
-                height: 8,
-                borderRadius: 999,
-                background: 'var(--lp-green-500)', // Using new color variable
-              }}
-            ></div>
-            <div>
-              {user?.name}{' '}
-              <span style={{ color: 'var(--muted)' }}>({user?.email})</span> {/* Using new color variable */}
-            </div>
             <button
               className='btn ghost'
+              style={{ display: 'flex', alignItems: 'center', gap: 8 }}
               onClick={() => setShowDropdown((prev) => !prev)}
             >
-              Profile
+              {user?.name}
+              <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                <div style={{
+                  width: '28px',
+                  height: '28px',
+                  borderRadius: '50%',
+                  background: 'var(--lp-slate-100)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}>
+                  <FontAwesomeIcon icon={faUser} style={{ fontSize: '16px', color: 'var(--muted)' }} />
+                </div>
+                <div
+                  style={{
+                    position: 'absolute',
+                    bottom: 0,
+                    right: 0,
+                    width: 8,
+                    height: 8,
+                    borderRadius: '50%',
+                    background: onlineStatusColor,
+                    border: '1.5px solid white'
+                  }}
+                ></div>
+              </div>
             </button>
 
             {showDropdown && (
               <div
                 style={{
                   position: 'absolute',
-                  top: '100%',
+                  top: 'calc(100% + 4px)',
                   right: 0,
+                  width: '260px',
                   background: 'white',
-                  border: '1px solid var(--border)', // Using new color variable
-                  borderRadius: 8,
-                  padding: 8,
+                  border: '1px solid var(--border)',
+                  borderRadius: 12,
+                  padding: 12,
                   marginTop: 4,
-                  boxShadow: 'var(--shadow)', // Using new shadow variable
+                  boxShadow: 'var(--shadow)',
                   zIndex: 10,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '8px'
                 }}
               >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, borderBottom: '1px solid var(--border)', paddingBottom: 12, marginBottom: 4 }}>
+                    <div style={{
+                      width: '40px',
+                      height: '40px',
+                      borderRadius: '50%',
+                      background: 'var(--lp-slate-100)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0
+                    }}>
+                      <FontAwesomeIcon icon={faUser} style={{ fontSize: '20px', color: 'var(--muted)' }} />
+                    </div>
+                    <div style={{ minWidth: 0 }}>
+                        <div style={{ fontWeight: 600, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{user?.name}</div>
+                        <div style={{ fontSize: '12px', color: 'var(--muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{user?.email}</div>
+                    </div>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 0' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <div style={{ width: 8, height: 8, borderRadius: '50%', background: onlineStatusColor }}></div>
+                    <span style={{ fontSize: '14px', color: 'var(--text)' }}>Online</span>
+                  </div>
+                  <label className="switch">
+                    <input type="checkbox" checked={isOnline} onChange={() => setIsOnline(!isOnline)} />
+                    <span className="slider"></span>
+                  </label>
+                </div>
+
                 <button
                   className='btn ghost'
-                  style={{ width: '100%', textAlign: 'left' }}
+                  style={{ width: '100%', textAlign: 'left', justifyContent: 'flex-start', marginTop: '4px', borderTop: '1px solid var(--border)', paddingTop: '12px' }}
                   onClick={handleLogout}
                 >
                   Log out

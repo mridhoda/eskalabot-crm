@@ -23,8 +23,8 @@ router.post('/register', async (req, res) => {
   const user = await User.create({ name, email, passwordHash: hash, role: 'owner', verified: false, status: 'offline', workspaceId });
 
   // generate OTP
-  const code = Math.floor(100000 + Math.random()*900000).toString();
-  const expiresAt = new Date(Date.now() + 1000*60*10); // 10 min
+  const code = Math.floor(100000 + Math.random() * 900000).toString();
+  const expiresAt = new Date(Date.now() + 1000 * 60 * 10); // 10 min
   await OTP.create({ email, code, expiresAt });
   await sendMail({
     to: email,
