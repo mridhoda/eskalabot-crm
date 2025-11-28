@@ -300,6 +300,11 @@ function Inbox() {
                     {chat.status !== 'resolved' && !chat.takeoverBy && !chat.agentId && (
                       <span className='status-badge pending'>Pending</span>
                     )}
+                    {chat.contactId?.tags?.map((tag) => (
+                      <span key={tag} className='contact-tag-badge'>
+                        {tag}
+                      </span>
+                    ))}
                   </div>
                 </div>
               </div>

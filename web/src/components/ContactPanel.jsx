@@ -28,29 +28,41 @@ export default function ContactPanel({ selected, onUpdate, onDeleteChat }) {
     }
   }
 
-  const addTag = () => {
-    if (tagInput && !tags.includes(tagInput)) {
-      setTags([...tags, tagInput])
-      setTagInput('')
-    }
-  }
-
-  const removeTag = (tagToRemove) => {
-    setTags(tags.filter((tag) => tag !== tagToRemove))
-  }
-
-  const save = async () => {
+  const save = async (currentTags, currentNotes) => {
     if (!contact) return
     setSaving(true)
     try {
-      const r = await api.put(`/contacts/${contact._id}`, { tags, notes })
+      const r = await api.put(`/contacts/${contact._id}`, { tags: currentTags, notes: currentNotes })
       onUpdate?.(r.data)
+      // Only set tags/notes from backend response if successful
+      setTags(r.data.tags || [])
+      setNotes(r.data.notes || '')
     } catch (err) {
       console.error('Failed to save contact details', err)
       alert('Failed to save.')
     } finally {
       setSaving(false)
     }
+  }
+
+  const addTag = async () => {
+    if (tagInput && !tags.includes(tagInput)) {
+      const newTags = [...tags, tagInput];
+      setTags(newTags); // Update local state immediately for responsiveness
+      setTagInput('');
+      await save(newTags, notes); // Persist new tags to backend
+    }
+  }
+
+  const removeTag = async (tagToRemove) => {
+    const newTags = tags.filter((tag) => tag !== tagToRemove);
+    setTags(newTags); // Update local state
+    await save(newTags, notes); // Persist updated tags to backend
+  }
+
+  // Handle saving notes separately
+  const saveNotes = async () => {
+    await save(tags, notes);
   }
 
   const [activeTab, setActiveTab] = useState('info')
@@ -205,11 +217,12 @@ export default function ContactPanel({ selected, onUpdate, onDeleteChat }) {
             placeholder='Add a note...'
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
+            onBlur={() => save(tags, notes)} // Save on blur
           />
           <button
             className='contact-add-btn'
             style={{ marginTop: 8, width: '100%', textAlign: 'center' }}
-            onClick={save}
+            onClick={() => save(tags, notes)} // Pass current tags and notes
             disabled={saving}
           >
             {saving ? 'Saving...' : 'Save Details'}

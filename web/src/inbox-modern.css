@@ -327,6 +327,15 @@
     /* Darker green */
 }
 
+.contact-tag-badge {
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    background: #E2E8F0; /* Light gray */
+    color: #475569;     /* Darker gray */
+}
+
 .agent-badge {
     padding: 2px 8px;
     border-radius: 12px;
