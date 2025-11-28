@@ -182,8 +182,9 @@ export default function ChatPanel({ selected, reload, onChatUpdate }) {
         </div>
         <div className="chat-header-actions">
           {selected.takeoverBy && (
-            <button className="chat-icon-btn" onClick={resolve} disabled={isSubmitting} title="Resolve Chat">
+            <button className="chat-resolve-btn" onClick={resolve} disabled={isSubmitting} title="Resolve Chat">
               <FontAwesomeIcon icon={faCheckCircle} />
+              <span>Resolve Chat</span>
             </button>
           )}
           <button className="chat-icon-btn" onClick={loadMessages} title="Refresh">

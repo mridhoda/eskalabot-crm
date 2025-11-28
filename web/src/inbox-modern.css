@@ -146,6 +146,9 @@
 }
 
 .inbox-chat-item {
+    display: flex;
+    gap: 16px;
+    align-items: center;
     padding: 16px 20px;
     border-bottom: 1px solid #F1F5F9;
     cursor: pointer;
@@ -173,8 +176,8 @@
 }
 
 .chat-item-avatar {
-    width: 48px;
-    height: 48px;
+    width: 40px;
+    height: 40px;
     border-radius: 50%;
     background: linear-gradient(135deg, #E2E8F0 0%, #CBD5E1 100%);
     display: flex;
@@ -185,7 +188,6 @@
     font-size: 18px;
     flex-shrink: 0;
     position: relative;
-    margin-bottom: 8px;
 }
 
 .platform-badge {
@@ -439,6 +441,32 @@
     background: #F8FAFC;
     border-color: #CBD5E1;
     color: #F97316;
+}
+
+.chat-resolve-btn {
+    padding: 8px 16px;
+    background: linear-gradient(135deg, #F97316 0%, #EC4899 100%);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s;
+}
+
+.chat-resolve-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3);
+}
+
+.chat-resolve-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
 }
 
 .chat-messages-area {
