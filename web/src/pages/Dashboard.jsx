@@ -124,7 +124,7 @@ function Inbox() {
     } else if (currentAssignment === 'resolved') {
       chatsData = chatsData.filter(c => c.status === 'resolved');
     }
-    
+
     setChats(chatsData)
     setSelected((prev) => {
       if (!prev?._id) return prev
@@ -272,7 +272,7 @@ function Inbox() {
                 onClick={() => setSelected(chat)}
               >
                 <div className='chat-item-avatar'>
-                  <BrandIcon type={pfById[chat.platform]?.type || 'custom'} size={24}/>
+                  <BrandIcon type={pfById[chat.platform]?.type || 'custom'} size={24} />
                 </div>
                 <div className='chat-item-content'>
                   <div className='chat-item-top'>
@@ -811,7 +811,7 @@ function AnalyticsPage() {
   const [traffic, setTraffic] = useState([])
   const [platforms, setPlatforms] = useState([])
   const [agents, setAgents] = useState([])
-  const [peakHours, setPeakHours] = useState([])
+  const [peakHours, setPeakHours] = useState({ labels: [], data: [] })
 
   useEffect(() => {
     api.get('/analytics/traffic').then((r) => setTraffic(r.data))
@@ -853,7 +853,7 @@ function AnalyticsPage() {
   }
 
   const agentData = {
-    labels: agents.map((a) => a._id?.name || 'No Agent'),
+    labels: agents.map((a) => a._id || 'No Agent'),
     datasets: [
       {
         label: 'Chats Handled',
@@ -864,11 +864,11 @@ function AnalyticsPage() {
   }
 
   const peakHoursData = {
-    labels: peakHours.map((h) => `${h._id}:00`),
+    labels: peakHours.labels || [],
     datasets: [
       {
         label: 'Messages',
-        data: peakHours.map((h) => h.count),
+        data: peakHours.data || [],
         backgroundColor: 'rgba(168, 85, 247, 0.8)',
       },
     ],
@@ -890,46 +890,46 @@ function AnalyticsPage() {
         <h2>Analytics</h2>
       </div>
 
-      <div className='analytics-stats'>
-        <div className='stat-card'>
-          <div className='stat-value'>{totalChats}</div>
-          <div className='stat-label'>Total Messages</div>
+      <div className='analytics-stats-row'>
+        <div className='analytics-stat-card'>
+          <div className='analytics-stat-value'>{totalChats}</div>
+          <div className='analytics-stat-label'>Total Messages</div>
         </div>
-        <div className='stat-card'>
-          <div className='stat-value'>{totalContacts}</div>
-          <div className='stat-label'>Active Contacts</div>
+        <div className='analytics-stat-card'>
+          <div className='analytics-stat-value'>{totalContacts}</div>
+          <div className='analytics-stat-label'>Active Contacts</div>
         </div>
-        <div className='stat-card'>
-          <div className='stat-value'>{avgResponseTime}</div>
-          <div className='stat-label'>Avg Response Time</div>
+        <div className='analytics-stat-card'>
+          <div className='analytics-stat-value'>{avgResponseTime}</div>
+          <div className='analytics-stat-label'>Avg Response Time</div>
         </div>
       </div>
 
-      <div className='analytics-charts'>
-        <div className='chart-card'>
+      <div className='analytics-charts-grid'>
+        <div className='analytics-chart-card'>
           <h3>Message Traffic</h3>
-          <div className='chart-wrapper'>
+          <div className='analytics-chart-wrapper'>
             <Line data={trafficData} options={chartOptions} />
           </div>
         </div>
 
-        <div className='chart-card'>
+        <div className='analytics-chart-card'>
           <h3>Messages by Platform</h3>
-          <div className='chart-wrapper'>
+          <div className='analytics-chart-wrapper'>
             <Pie data={platformData} options={chartOptions} />
           </div>
         </div>
 
-        <div className='chart-card'>
+        <div className='analytics-chart-card'>
           <h3>Chats by Agent</h3>
-          <div className='chart-wrapper'>
+          <div className='analytics-chart-wrapper'>
             <Bar data={agentData} options={chartOptions} />
           </div>
         </div>
 
-        <div className='chart-card'>
+        <div className='analytics-chart-card'>
           <h3>Peak Chat Hours</h3>
-          <div className='chart-wrapper'>
+          <div className='analytics-chart-wrapper'>
             <Bar data={peakHoursData} options={chartOptions} />
           </div>
         </div>
