@@ -27,7 +27,7 @@
     border-radius: 16px;
     overflow: hidden;
     display: grid;
-    grid-template-columns: 320px 1fr 320px;
+    grid-template-columns: 280px 1fr 300px;
     gap: 0;
     height: 100%;
 }
@@ -60,7 +60,7 @@
 
 /* ===== INBOX HEADER ===== */
 .inbox-modern-header {
-    padding: 20px;
+    padding: 16px;
     border-bottom: 1px solid #E2E8F0;
     background: white;
     position: sticky;
@@ -180,7 +180,7 @@
     display: flex;
     gap: 16px;
     align-items: center;
-    padding: 16px 20px;
+    padding: 12px 16px;
     border-bottom: 1px solid #F1F5F9;
     cursor: pointer;
     transition: all 0.2s;
@@ -255,7 +255,7 @@
 .chat-item-name {
     font-weight: 600;
     color: #0F172A;
-    font-size: 15px;
+    font-size: 14px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -270,7 +270,7 @@
 }
 
 .chat-item-preview {
-    font-size: 13px;
+    font-size: 12px;
     color: #64748B;
     margin-bottom: 6px;
     white-space: nowrap;
@@ -307,18 +307,24 @@
 }
 
 .status-badge.assigned {
-    background: #E0E7FF; /* Light blue */
-    color: #4F46E5;     /* Darker blue */
+    background: #E0E7FF;
+    /* Light blue */
+    color: #4F46E5;
+    /* Darker blue */
 }
 
 .status-badge.pending {
-    background: #FEF3C7; /* Light yellow/orange */
-    color: #D97706;     /* Darker yellow/orange */
+    background: #FEF3C7;
+    /* Light yellow/orange */
+    color: #D97706;
+    /* Darker yellow/orange */
 }
 
 .status-badge.open {
-    background: #D1FAE5; /* Light green */
-    color: #059669;     /* Darker green */
+    background: #D1FAE5;
+    /* Light green */
+    color: #059669;
+    /* Darker green */
 }
 
 .agent-badge {
@@ -383,7 +389,7 @@
 .chat-modern-header {
     background: white;
     border-bottom: 1px solid #E2E8F0;
-    padding: 16px 20px;
+    padding: 12px 16px;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -672,28 +678,8 @@
 }
 
 .contact-panel-header {
-    padding: 20px;
+    padding: 16px;
     background: white;
-    border-bottom: 1px solid #E2E8F0;
-    text-align: center;
-}
-
-.contact-panel-avatar {
-    width: 80px;
-    height: 80px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #E2E8F0 0%, #CBD5E1 100%);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 700;
-    color: #475569;
-    font-size: 32px;
-    margin: 0 auto 12px;
-}
-
-.contact-panel-name {
-    font-size: 18px;
     font-weight: 600;
     color: #0F172A;
     margin: 0 0 4px 0;
