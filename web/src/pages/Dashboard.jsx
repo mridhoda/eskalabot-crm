@@ -225,6 +225,26 @@ function Inbox() {
                 />
               </div>
             )}
+            <div className='inbox-filter-tabs'>
+              <button
+                className={`filter-btn ${filters.assignment === 'assigned' ? 'active' : ''}`}
+                onClick={() => handleFilterChange({ assignment: 'assigned' })}
+              >
+                Assigned
+              </button>
+              <button
+                className={`filter-btn ${filters.assignment === 'unassigned' ? 'active' : ''}`}
+                onClick={() => handleFilterChange({ assignment: 'unassigned' })}
+              >
+                Unassigned
+              </button>
+              <button
+                className={`filter-btn ${filters.assignment === 'resolved' ? 'active' : ''}`}
+                onClick={() => handleFilterChange({ assignment: 'resolved' })}
+              >
+                Resolved
+              </button>
+            </div>
           </div>
 
           <div className='inbox-chat-list'>
