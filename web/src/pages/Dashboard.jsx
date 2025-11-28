@@ -830,8 +830,8 @@ function AnalyticsPage() {
       {
         label: 'Messages',
         data: traffic.map((t) => t.count),
-        borderColor: 'rgb(99, 102, 241)',
-        backgroundColor: 'rgba(99, 102, 241, 0.1)',
+        borderColor: '#F97316',
+        backgroundColor: 'rgba(249, 115, 22, 0.1)',
         tension: 0.4,
       },
     ],
@@ -843,10 +843,10 @@ function AnalyticsPage() {
       {
         data: platforms.map((p) => p.count),
         backgroundColor: [
-          'rgba(34, 197, 94, 0.8)',
-          'rgba(59, 130, 246, 0.8)',
-          'rgba(168, 85, 247, 0.8)',
-          'rgba(251, 146, 60, 0.8)',
+          'rgba(249, 115, 22, 0.8)',   // Brand Orange
+          'rgba(251, 146, 60, 0.8)',   // Existing complementary orange
+          'rgba(156, 163, 175, 0.8)',  // Neutral gray
+          'rgba(249, 115, 22, 0.6)',   // Lighter Brand Orange
         ],
       },
     ],
@@ -858,7 +858,7 @@ function AnalyticsPage() {
       {
         label: 'Chats Handled',
         data: agents.map((a) => a.count),
-        backgroundColor: 'rgba(99, 102, 241, 0.8)',
+        backgroundColor: 'rgba(249, 115, 22, 0.8)',
       },
     ],
   }
@@ -869,7 +869,7 @@ function AnalyticsPage() {
       {
         label: 'Messages',
         data: peakHours.data || [],
-        backgroundColor: 'rgba(168, 85, 247, 0.8)',
+        backgroundColor: 'rgba(249, 115, 22, 0.8)',
       },
     ],
   }

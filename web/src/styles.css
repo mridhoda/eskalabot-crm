@@ -211,14 +211,17 @@ a:hover {
 }
 .sidebar .label {
   opacity: 0;
-  transition: opacity 0.1s ease-out;
-  width: 0;
+  transition: all 0.2s ease-out;
+  max-width: 0; /* Ensures it collapses fully */
+  overflow: hidden;
   padding-left: 12px;
-  white-space: nowrap; /* Prevent text wrapping */
+  white-space: nowrap;
+  flex-shrink: 0; /* Prevent label from shrinking prematurely */
 }
 .sidebar:hover .label {
   opacity: 1;
-  width: auto;
+  max-width: 100%; /* Allow it to expand fully within its flex container */
+  flex-grow: 1; /* Takes up remaining space */
 }
 
 .sidebar:hover {
