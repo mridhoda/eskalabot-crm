@@ -99,19 +99,36 @@ function Inbox() {
       tags: filters.tags.length ? filters.tags.join(',') : undefined,
     }
 
-    if (!filters.assignment || filters.assignment === 'all') {
-      delete params.assignment
+    const currentAssignment = filters.assignment;
+
+    // For assigned/unassigned, we fetch all non-resolved and filter client-side.
+    // For resolved, we use the backend filter.
+    // For 'all', we don't send any assignment filter.
+    if (currentAssignment === 'assigned' || currentAssignment === 'unassigned') {
+      delete params.assignment;
     }
+
     if (!filters.agentId) delete params.agentId
     if (!filters.from) delete params.from
     if (!filters.to) delete params.to
     if (!filters.unreadOnly) delete params.unreadOnly
 
     const r = await api.get('/chats', { params })
-    setChats(r.data)
+    let chatsData = r.data;
+
+    // Apply client-side filtering for assigned/unassigned
+    if (currentAssignment === 'assigned') {
+      chatsData = chatsData.filter(c => c.takeoverBy);
+    } else if (currentAssignment === 'unassigned') {
+      chatsData = chatsData.filter(c => !c.takeoverBy && c.status !== 'resolved');
+    } else if (currentAssignment === 'resolved') {
+      chatsData = chatsData.filter(c => c.status === 'resolved');
+    }
+    
+    setChats(chatsData)
     setSelected((prev) => {
       if (!prev?._id) return prev
-      const updated = r.data.find((chat) => chat._id === prev._id)
+      const updated = chatsData.find((chat) => chat._id === prev._id)
       return updated || prev
     })
   }, [filters])
@@ -274,10 +291,13 @@ function Inbox() {
                     {chat.status === 'resolved' && (
                       <span className='status-badge resolved'>Resolved</span>
                     )}
-                    {chat.status !== 'resolved' && chat.agentId && (
+                    {chat.status !== 'resolved' && chat.takeoverBy && (
                       <span className='status-badge assigned'>Assigned</span>
                     )}
-                    {chat.status !== 'resolved' && !chat.agentId && (
+                    {chat.status !== 'resolved' && !chat.takeoverBy && chat.agentId && (
+                      <span className='status-badge open'>Open</span>
+                    )}
+                    {chat.status !== 'resolved' && !chat.takeoverBy && !chat.agentId && (
                       <span className='status-badge pending'>Pending</span>
                     )}
                   </div>

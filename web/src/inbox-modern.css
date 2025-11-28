@@ -316,6 +316,11 @@
     color: #D97706;     /* Darker yellow/orange */
 }
 
+.status-badge.open {
+    background: #D1FAE5; /* Light green */
+    color: #059669;     /* Darker green */
+}
+
 .agent-badge {
     padding: 2px 8px;
     border-radius: 12px;
