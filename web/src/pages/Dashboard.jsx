@@ -274,10 +274,11 @@ function Inbox() {
                     {chat.status === 'resolved' && (
                       <span className='status-badge resolved'>Resolved</span>
                     )}
-                    {chat.agentId && (
-                      <span className='agent-badge'>
-                        {agents.find(a => a._id === chat.agentId)?.name || 'Agent'}
-                      </span>
+                    {chat.status !== 'resolved' && chat.agentId && (
+                      <span className='status-badge assigned'>Assigned</span>
+                    )}
+                    {chat.status !== 'resolved' && !chat.agentId && (
+                      <span className='status-badge pending'>Pending</span>
                     )}
                   </div>
                 </div>

@@ -306,6 +306,16 @@
     color: #059669;
 }
 
+.status-badge.assigned {
+    background: #E0E7FF; /* Light blue */
+    color: #4F46E5;     /* Darker blue */
+}
+
+.status-badge.pending {
+    background: #FEF3C7; /* Light yellow/orange */
+    color: #D97706;     /* Darker yellow/orange */
+}
+
 .agent-badge {
     padding: 2px 8px;
     border-radius: 12px;
