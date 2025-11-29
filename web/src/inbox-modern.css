@@ -958,9 +958,9 @@
 /* ===== TAKEOVER BUTTON STYLES ===== */
 .chat-takeover-btn {
     width: 100%;
-    padding: 20px;
+    padding: 5px;
     background: linear-gradient(135deg, #FFF7ED 0%, #FFEDD5 100%);
-    border: 2px dashed #FDBA74;
+    border: 2px solid #FDBA74;
     border-radius: 12px;
     cursor: pointer;
     display: flex;
@@ -983,8 +983,8 @@
 }
 
 .chat-takeover-icon {
-    width: 48px;
-    height: 48px;
+    width: 30px;
+    height: 30px;
     background: linear-gradient(135deg, #FF6B35 0%, #FF8E9E 100%);
     border-radius: 12px;
     display: flex;
@@ -1000,14 +1000,14 @@
 }
 
 .chat-takeover-title {
-    font-size: 16px;
+    font-size: 14px;
     font-weight: 600;
     color: #0F172A;
     margin-bottom: 2px;
 }
 
 .chat-takeover-subtitle {
-    font-size: 13px;
+    font-size: 10px;
     color: #64748B;
 }
 
