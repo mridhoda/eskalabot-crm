@@ -287,7 +287,7 @@ function Inbox() {
                 onClick={() => setSelected(chat)}
               >
                 <div className='chat-item-avatar'>
-                  <BrandIcon type={pfById[chat.platform]?.type || 'custom'} size={24} />
+                  <BrandIcon type={pfById[chat.platform]?.type || 'custom'} size={14} />
                 </div>
                 <div className='chat-item-content'>
                   <div className='chat-item-top'>
@@ -373,7 +373,6 @@ function Inbox() {
           onClose={() => setShowFilterPopup(false)}
           filters={filters}
           onApply={handleFilterChange}
-          agents={agents}
         />
       )}
     </>

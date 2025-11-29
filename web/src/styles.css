@@ -224,7 +224,7 @@ a:hover {
 .sidebar {
     width: 64px;
     height: 100vh;
-    padding: 12px 0;
+    padding: 1px 0;
     background: var(--sidebar-bg);
     border-right: 1px solid var(--border);
     box-sizing: border-box;
@@ -288,7 +288,7 @@ a:hover {
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    font-size: 16px;
+    font-size: 14px;
 }
 
 .sidebar .divider {

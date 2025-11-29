@@ -1,9 +1,9 @@
 import React, { useState } from 'react'
 
-export default function FilterPopup({ onClose, onApply, currentFilters }) {
-  const [from, setFrom] = useState(currentFilters.from || '')
-  const [to, setTo] = useState(currentFilters.to || '')
-  const [tags, setTags] = useState(currentFilters.tags || [])
+export default function FilterPopup({ onClose, onApply, filters }) {
+  const [from, setFrom] = useState(filters.from || '')
+  const [to, setTo] = useState(filters.to || '')
+  const [tags, setTags] = useState(filters.tags || [])
   const [tagInput, setTagInput] = useState('')
 
   const addTag = () => {
