@@ -212,6 +212,37 @@ export default function ChatPanel({ selected, reload, onChatUpdate }) {
     return currentDate.toDateString() !== previousDate.toDateString();
   };
 
+  // Detect takeover event - check if there's a transition from AI to human agent
+  const shouldShowTakeoverMessage = (currentMessage, previousMessage) => {
+    if (!previousMessage) return false;
+
+    // Check if current message is from human and previous was from AI
+    if (currentMessage.from === 'human' && previousMessage.from === 'ai') {
+      return true;
+    }
+
+    return false;
+  };
+
+  // Format time for system messages
+  const formatTime = (date) => {
+    return new Date(date).toLocaleTimeString('id-ID', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    });
+  };
+
+  // Get agent name from selected chat data
+  const getAgentName = () => {
+    // If we have takeoverBy populated with user data
+    if (selected.takeoverBy && typeof selected.takeoverBy === 'object') {
+      return selected.takeoverBy.name || 'Human Agent';
+    }
+    // Fallback
+    return user?.name || 'Human Agent';
+  };
+
   return (
     <div className="chat-modern-container">
       {/* Header */}
@@ -249,6 +280,17 @@ export default function ChatPanel({ selected, reload, onChatUpdate }) {
                 <span className="chat-date-separator-text">
                   {formatDateSeparator(m.createdAt)}
                 </span>
+              </div>
+            )}
+            {shouldShowTakeoverMessage(m, messages[index - 1]) && (
+              <div className="chat-system-message">
+                <div className="chat-system-message-content">
+                  <FontAwesomeIcon icon={faUserShield} className="chat-system-message-icon" />
+                  <span className="chat-system-message-text">
+                    <strong>{getAgentName()}</strong> self assigned to this conversation
+                  </span>
+                  <span className="chat-system-message-time">{formatTime(m.createdAt)}</span>
+                </div>
               </div>
             )}
             <div className={`chat-message-wrapper ${getSenderType(m)}`} ref={index === messages.length - 1 ? endRef : null}>

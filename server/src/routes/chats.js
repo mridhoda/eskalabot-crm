@@ -62,6 +62,7 @@ router.get('/', authRequired, attachUser, async (req, res) => {
   const rows = await Chat.find(queryFilter)
     .populate(contactPopulate)
     .populate('agentId')
+    .populate('takeoverBy')
     .sort({ lastMessageAt: -1 })
     .limit(200);
 
@@ -120,12 +121,12 @@ router.post('/:chatId/send', authRequired, attachUser, async (req, res) => {
   }
 
   // as human
-  const msg = await Message.create({ 
-    chatId, 
-    from: 'human', 
-    text: text || '', 
+  const msg = await Message.create({
+    chatId,
+    from: 'human',
+    text: text || '',
     attachment: attachment || null,
-    workspaceId: req.me.workspaceId 
+    workspaceId: req.me.workspaceId
   });
   await Chat.updateOne({ _id: chatId }, { $set: { lastMessageAt: new Date() } });
 
@@ -171,7 +172,7 @@ router.post('/:chatId/takeover', authRequired, attachUser, async (req, res) => {
     { _id: chatId, workspaceId: req.me.workspaceId },
     { $set: { takeoverBy: req.me._id } },
     { new: true }
-  ).populate('contactId').populate('agentId');
+  ).populate('contactId').populate('agentId').populate('takeoverBy');
   res.json(chat);
 });
 
@@ -181,7 +182,7 @@ router.post('/:chatId/resolve', authRequired, attachUser, async (req, res) => {
     { _id: chatId, workspaceId: req.me.workspaceId },
     { $set: { takeoverBy: null } },
     { new: true }
-  ).populate('contactId').populate('agentId');
+  ).populate('contactId').populate('agentId').populate('takeoverBy');
   res.json(chat);
 });
 
