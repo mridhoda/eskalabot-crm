@@ -91,7 +91,11 @@ export async function generateAIReply({ system, prompt, message, knowledge, agen
         const model = geminiClient.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
         const escalationInstruction = `
-        IMPORTANT: If the user explicitly asks to speak with a human agent, customer service, admin, or a real person, OR if they ask a specific question that you cannot answer based on the provided knowledge, you MUST reply with exactly: "ESCALATE_TO_HUMAN". Do not add any other text.
+        IMPORTANT: You are a smart assistant.
+        1. If the user EXPLICITLY asks to speak with a human agent, customer service, admin, or a real person (e.g., "bisa bicara dengan orang?", "mana adminnya?", "hubungkan ke CS"), you MUST reply with exactly: "ESCALATE_TO_HUMAN".
+        2. If the user just says "halo", "hi", "selamat pagi", or asks general questions, DO NOT escalate. Answer them politely.
+        3. If the user asks a specific question about the business/product that is NOT in your knowledge base, you MAY escalate by replying "ESCALATE_TO_HUMAN", but try to be helpful first if possible.
+        4. Do not add any other text if you decide to escalate.
         `;
 
         const systemInstruction = (system || 'You are a helpful assistant.') + contactName + escalationInstruction;

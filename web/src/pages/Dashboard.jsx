@@ -138,6 +138,14 @@ function Inbox() {
     load()
   }, [load])
 
+  // Optimistically clear unread count when chat is selected
+  useEffect(() => {
+    if (selected?._id && selected.unread > 0) {
+      const updatedChat = { ...selected, unread: 0 };
+      handleChatUpdate(updatedChat);
+    }
+  }, [selected?._id]);
+
   useEffect(() => {
     const interval = setInterval(() => {
       load()
@@ -275,7 +283,7 @@ function Inbox() {
             {chats.map((chat) => (
               <div
                 key={chat._id}
-                className={`inbox-chat-item ${selected?._id === chat._id ? 'active' : ''} ${chat.unreadCount > 0 ? 'unread' : ''}`}
+                className={`inbox-chat-item ${selected?._id === chat._id ? 'active' : ''} ${chat.unread > 0 ? 'unread' : ''}`}
                 onClick={() => setSelected(chat)}
               >
                 <div className='chat-item-avatar'>
@@ -292,8 +300,8 @@ function Inbox() {
                     {chat.lastMessage || 'No messages yet'}
                   </div>
                   <div className='chat-item-footer'>
-                    {chat.unreadCount > 0 && (
-                      <span className='unread-badge'>{chat.unreadCount}</span>
+                    {chat.unread > 0 && (
+                      <span className='unread-badge'>{chat.unread}</span>
                     )}
                     {chat.status === 'resolved' && (
                       <span className='status-badge resolved'>Resolved</span>
