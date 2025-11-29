@@ -51,6 +51,8 @@ export default function ChatPanel({ selected, reload, onChatUpdate }) {
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef(null);
   const endRef = useRef(null);
+  const hasScrolledRef = useRef(false);
+  const shouldScrollRef = useRef(false);
 
   const [user] = useState(() => {
     try {
@@ -74,10 +76,20 @@ export default function ChatPanel({ selected, reload, onChatUpdate }) {
 
   useEffect(() => {
     loadMessages();
+    // Reset scroll flag when chat changes
+    hasScrolledRef.current = false;
+    shouldScrollRef.current = true;
   }, [loadMessages]);
 
   useEffect(() => {
-    endRef.current?.scrollIntoView({ behavior: 'smooth' });
+    // Only auto-scroll if:
+    // 1. Haven't scrolled yet (initial load), OR
+    // 2. User just sent a message (shouldScrollRef is true)
+    if (!hasScrolledRef.current || shouldScrollRef.current) {
+      endRef.current?.scrollIntoView({ behavior: 'smooth' });
+      hasScrolledRef.current = true;
+      shouldScrollRef.current = false;
+    }
   }, [messages]);
 
   useEffect(() => {
@@ -92,6 +104,7 @@ export default function ChatPanel({ selected, reload, onChatUpdate }) {
     try {
       await api.post(`/chats/${selectedId}/send`, { text });
       setText('');
+      shouldScrollRef.current = true; // Trigger scroll after sending
       await loadMessages();
       reload?.();
     } catch (error) {
@@ -120,6 +133,7 @@ export default function ChatPanel({ selected, reload, onChatUpdate }) {
         attachment: { url: filePath, filename: originalName },
       });
 
+      shouldScrollRef.current = true; // Trigger scroll after sending file
       await loadMessages();
       reload?.();
     } catch (error) {
