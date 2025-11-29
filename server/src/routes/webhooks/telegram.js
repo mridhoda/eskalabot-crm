@@ -210,7 +210,14 @@ router.post('/:token?', async (req, res) => {
       });
       await Chat.updateOne(
         { _id: chat._id },
-        { $set: { lastMessageAt: new Date() }, $inc: { unread: 1 } },
+        {
+          $set: {
+            lastMessageAt: new Date(),
+            status: 'open',
+            isEscalated: false
+          },
+          $inc: { unread: 1 }
+        },
       );
     }
 

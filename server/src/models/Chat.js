@@ -10,6 +10,8 @@ const ChatSchema = new mongoose.Schema({
   unread: { type: Number, default: 0 },
   lastMessageAt: { type: Date, default: Date.now },
   takeoverBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null }, // human takeover
+  isEscalated: { type: Boolean, default: false }, // AI escalated to human
+  status: { type: String, default: 'open', enum: ['open', 'resolved'] },
   state: { type: Object, default: {} },
 }, { timestamps: true });
 

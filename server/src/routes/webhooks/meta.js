@@ -142,10 +142,10 @@ async function handleWhatsapp(data) {
             console.error('[meta] Failed to process WhatsApp image:', e);
           }
         }
-        
+
         if (!text && !incomingAttachment) {
-            console.log('[meta] Skipping empty WhatsApp message.');
-            continue;
+          console.log('[meta] Skipping empty WhatsApp message.');
+          continue;
         }
 
         let contact = await Contact.findOne({
@@ -196,7 +196,14 @@ async function handleWhatsapp(data) {
         });
         await Chat.updateOne(
           { _id: chat._id },
-          { $set: { lastMessageAt: new Date() }, $inc: { unread: 1 } },
+          {
+            $set: {
+              lastMessageAt: new Date(),
+              status: 'open',
+              isEscalated: false
+            },
+            $inc: { unread: 1 }
+          },
         );
 
         if (chat.takeoverBy) {
@@ -381,7 +388,7 @@ async function handleInstagram(data) {
         chat.agentId = agent._id;
         await chat.save();
       }
-      
+
       const userMessage = await Message.create({
         chatId: chat._id,
         workspaceId: platform.workspaceId,
@@ -390,7 +397,17 @@ async function handleInstagram(data) {
         attachment: incomingAttachment,
         createdAt: new Date(),
       });
-      await Chat.updateOne({ _id: chat._id }, { $set: { lastMessageAt: new Date() }, $inc: { unread: 1 } });
+      await Chat.updateOne(
+        { _id: chat._id },
+        {
+          $set: {
+            lastMessageAt: new Date(),
+            status: 'open',
+            isEscalated: false
+          },
+          $inc: { unread: 1 }
+        },
+      );
 
       if (chat.takeoverBy) {
         console.log(`[meta] chat ${chat._id} is handled by human, skipping AI reply.`);

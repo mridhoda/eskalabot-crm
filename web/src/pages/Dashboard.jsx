@@ -118,9 +118,9 @@ function Inbox() {
 
     // Apply client-side filtering for assigned/unassigned
     if (currentAssignment === 'assigned') {
-      chatsData = chatsData.filter(c => c.takeoverBy);
+      chatsData = chatsData.filter(c => c.takeoverBy || c.isEscalated);
     } else if (currentAssignment === 'unassigned') {
-      chatsData = chatsData.filter(c => !c.takeoverBy && c.status !== 'resolved');
+      chatsData = chatsData.filter(c => !c.takeoverBy && !c.isEscalated && c.status !== 'resolved');
     } else if (currentAssignment === 'resolved') {
       chatsData = chatsData.filter(c => c.status === 'resolved');
     }
@@ -301,10 +301,13 @@ function Inbox() {
                     {chat.status !== 'resolved' && chat.takeoverBy && (
                       <span className='status-badge assigned'>Assigned</span>
                     )}
-                    {chat.status !== 'resolved' && !chat.takeoverBy && chat.agentId && (
+                    {chat.status !== 'resolved' && !chat.takeoverBy && chat.isEscalated && (
+                      <span className='status-badge pending' style={{ backgroundColor: '#F97316', color: 'white' }}>Pending Human</span>
+                    )}
+                    {chat.status !== 'resolved' && !chat.takeoverBy && !chat.isEscalated && chat.agentId && (
                       <span className='status-badge open'>Open</span>
                     )}
-                    {chat.status !== 'resolved' && !chat.takeoverBy && !chat.agentId && (
+                    {chat.status !== 'resolved' && !chat.takeoverBy && !chat.isEscalated && !chat.agentId && (
                       <span className='status-badge pending'>Pending</span>
                     )}
                     {chat.contactId?.tags?.map((tag) => (

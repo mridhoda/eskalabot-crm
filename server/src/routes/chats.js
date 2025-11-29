@@ -26,9 +26,13 @@ router.get('/', authRequired, attachUser, async (req, res) => {
     queryFilter.agentId = agentId;
   }
   if (assignment === 'assigned') {
-    queryFilter.takeoverBy = { $ne: null };
+    queryFilter.$or = [
+      { takeoverBy: { $ne: null } },
+      { isEscalated: true }
+    ];
   } else if (assignment === 'unassigned') {
     queryFilter.takeoverBy = null;
+    queryFilter.isEscalated = { $ne: true };
   }
 
   if (from || to) {
@@ -180,7 +184,7 @@ router.post('/:chatId/resolve', authRequired, attachUser, async (req, res) => {
   const { chatId } = req.params;
   const chat = await Chat.findOneAndUpdate(
     { _id: chatId, workspaceId: req.me.workspaceId },
-    { $set: { takeoverBy: null } },
+    { $set: { takeoverBy: null, isEscalated: false, status: 'resolved' } },
     { new: true }
   ).populate('contactId').populate('agentId').populate('takeoverBy');
   res.json(chat);

@@ -90,7 +90,11 @@ export async function generateAIReply({ system, prompt, message, knowledge, agen
       try {
         const model = geminiClient.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
-        const systemInstruction = (system || 'You are a helpful assistant.') + contactName;
+        const escalationInstruction = `
+        IMPORTANT: If the user explicitly asks to speak with a human agent, customer service, admin, or a real person, OR if they ask a specific question that you cannot answer based on the provided knowledge, you MUST reply with exactly: "ESCALATE_TO_HUMAN". Do not add any other text.
+        `;
+
+        const systemInstruction = (system || 'You are a helpful assistant.') + contactName + escalationInstruction;
 
         const geminiHistory = [
           { role: 'user', parts: [{ text: systemInstruction }] },
@@ -119,18 +123,18 @@ export async function generateAIReply({ system, prompt, message, knowledge, agen
               }
             }
           }
-          if(parts.length > 0) {
+          if (parts.length > 0) {
             geminiHistory.push({ role, parts });
           }
         }
-        
+
         const chatSession = model.startChat({
           history: geminiHistory,
           generationConfig: {
             temperature: 0.5,
           }
         });
-        
+
         const promptText = `${prompt || ''}\n\nKnowledge:\n${knowledgeContent}\n\nUser: ${currentMessageText}`;
         const promptParts = [{ text: promptText }];
 
@@ -154,6 +158,14 @@ export async function generateAIReply({ system, prompt, message, knowledge, agen
         const result = await chatSession.sendMessage(promptParts);
         reply = result.response.text();
         console.log('Gemini AI reply:', reply);
+
+        // Check for escalation
+        if (reply.includes('ESCALATE_TO_HUMAN')) {
+          console.log('[AI] Escalation triggered for chat:', chat._id);
+          await Chat.updateOne({ _id: chat._id }, { $set: { isEscalated: true } });
+          return 'Baik, mohon tunggu sebentar, saya akan menyambungkan Anda dengan staf kami.';
+        }
+
       } catch (e) {
         console.error('Gemini AI error:', e.message);
       }
@@ -214,7 +226,7 @@ export async function findAndSendFile({ agent, message, openaiClient, geminiClie
                 console.log('File found for user message based on prompt:', file.originalName);
                 const serverUrl = process.env.PUBLIC_BASE_URL || 'http://localhost:5000';
                 return {
-                  text: `Tentu, ini file ${file.originalName} yang Anda minta.`, 
+                  text: `Tentu, ini file ${file.originalName} yang Anda minta.`,
                   attachment: {
                     url: `${serverUrl}/files/${file.storedName}`,
                     filename: file.originalName,
@@ -242,7 +254,7 @@ export async function findAndSendFile({ agent, message, openaiClient, geminiClie
         console.log('Simple keyword match found for:', simpleMatch.originalName);
         const serverUrl = process.env.PUBLIC_BASE_URL || 'http://localhost:5000';
         return {
-          text: `Tentu, ini file ${simpleMatch.originalName} yang Anda minta.`, 
+          text: `Tentu, ini file ${simpleMatch.originalName} yang Anda minta.`,
           attachment: {
             url: `${serverUrl}/files/${simpleMatch.storedName}`,
             filename: simpleMatch.originalName,
