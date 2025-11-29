@@ -221,6 +221,13 @@ function Inbox() {
                   </svg>
                 </button>
                 <button
+                  className={`btn-icon ${filters.unreadOnly ? 'active' : ''}`}
+                  onClick={() => handleFilterChange({ unreadOnly: !filters.unreadOnly })}
+                  title="Toggle Unread Only"
+                >
+                  <FontAwesomeIcon icon={faEnvelopeOpen} />
+                </button>
+                <button
                   className={`btn-icon ${hasAdvancedFilters ? 'active' : ''}`}
                   onClick={() => setShowFilterPopup(true)}
                   title="Filter"
