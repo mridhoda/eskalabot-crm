@@ -208,7 +208,7 @@ function Inbox() {
         <div className='inbox-modern-sidebar'>
           <div className='inbox-modern-header'>
             <div className='inbox-header-top'>
-              <h2>Inbox</h2>
+              <h2>Message</h2>
               <div className='inbox-header-actions'>
                 <button
                   className={`btn-icon ${showSearch ? 'active' : ''}`}

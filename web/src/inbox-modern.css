@@ -307,24 +307,27 @@
 }
 
 .status-badge.assigned {
-    background: #E0E7FF;
-    /* Light blue */
-    color: #4F46E5;
-    /* Darker blue */
+
+    background: #E0FFFF; /* Light cyan */
+
+    color: #4682B4; /* SteelBlue */
+
 }
 
 .status-badge.pending {
-    background: #FEF3C7;
-    /* Light yellow/orange */
-    color: #D97706;
-    /* Darker yellow/orange */
+
+    background: #FFDCDC; /* Light pastel red */
+
+    color: #CD5C5C; /* IndianRed */
+
 }
 
 .status-badge.open {
-    background: #D1FAE5;
-    /* Light green */
-    color: #059669;
-    /* Darker green */
+
+    background: #FFFACD; /* Light pastel yellow */
+
+    color: #DAA520; /* Goldenrod */
+
 }
 
 .contact-tag-badge {
