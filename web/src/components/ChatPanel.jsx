@@ -10,14 +10,14 @@ function MessageFooter({ message, selected, user }) {
   // We only want to show the badge for our own agents (AI or Human)
   if (senderType === 'user') {
     return (
-       <div className="chat-message-time">
+      <div className="chat-message-time">
         {new Date(message.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
       </div>
     );
   }
 
   const isHuman = senderType === 'human';
-  
+
   const badgeStyle = {
     display: 'inline-flex',
     alignItems: 'center',
@@ -33,7 +33,7 @@ function MessageFooter({ message, selected, user }) {
 
   return (
     <div className="chat-message-time" style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '8px' }}>
-       <div style={badgeStyle}>
+      <div style={badgeStyle}>
         <FontAwesomeIcon icon={isHuman ? faUserShield : faRobot} />
         <span>{isHuman ? 'Human Agent' : 'AI Agent'}</span>
       </div>
@@ -94,8 +94,7 @@ export default function ChatPanel({ selected, reload, onChatUpdate }) {
       setText('');
       await loadMessages();
       reload?.();
-    } catch (error)
-    {
+    } catch (error) {
       console.error("Failed to send message:", error);
     } finally {
       setIsSubmitting(false);
@@ -165,6 +164,40 @@ export default function ChatPanel({ selected, reload, onChatUpdate }) {
     return message.from === 'user' ? 'user' : 'agent';
   };
 
+  // Format date for separator
+  const formatDateSeparator = (date) => {
+    const messageDate = new Date(date);
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    // Reset time to compare only dates
+    const resetTime = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    const msgDate = resetTime(messageDate);
+    const todayDate = resetTime(today);
+    const yesterdayDate = resetTime(yesterday);
+
+    if (msgDate.getTime() === todayDate.getTime()) {
+      return 'Hari Ini';
+    } else if (msgDate.getTime() === yesterdayDate.getTime()) {
+      return 'Kemarin';
+    } else {
+      // Format: "25 November 2025"
+      const options = { day: 'numeric', month: 'long', year: 'numeric' };
+      return messageDate.toLocaleDateString('id-ID', options);
+    }
+  };
+
+  // Check if we need to show date separator
+  const shouldShowDateSeparator = (currentMessage, previousMessage) => {
+    if (!previousMessage) return true;
+
+    const currentDate = new Date(currentMessage.createdAt);
+    const previousDate = new Date(previousMessage.createdAt);
+
+    return currentDate.toDateString() !== previousDate.toDateString();
+  };
+
   return (
     <div className="chat-modern-container">
       {/* Header */}
@@ -195,32 +228,41 @@ export default function ChatPanel({ selected, reload, onChatUpdate }) {
 
       {/* Messages */}
       <div className="chat-messages-area">
-        {messages.map((m) => (
-          <div key={m._id} className={`chat-message-wrapper ${getSenderType(m)}`} ref={endRef}>
-            <div className="chat-message-content">
-              <div className="chat-message-bubble">
-                {m.text}
-                {m.attachment && (
-                  <div style={{ marginTop: 8 }}>
-                    {(() => {
-                      const filename = m.attachment.filename || '';
-                      const url = m.attachment.url?.startsWith('http') ? m.attachment.url : `${api.defaults.baseURL}${m.attachment.url || ''}`;
-                      const isImage = /\.(png|jpe?g|gif|webp)$/i.test(filename);
-                      if (isImage) {
-                        return <img src={url} alt={filename} style={{ maxWidth: 220, borderRadius: 8, display: 'block' }} />;
-                      }
-                      return (
-                        <a href={url} target="_blank" rel="noopener noreferrer" className='btn ghost'>
-                          Download {filename || 'file'}
-                        </a>
-                      );
-                    })()}
-                  </div>
-                )}
+        {messages.map((m, index) => (
+          <React.Fragment key={m._id}>
+            {shouldShowDateSeparator(m, messages[index - 1]) && (
+              <div className="chat-date-separator">
+                <span className="chat-date-separator-text">
+                  {formatDateSeparator(m.createdAt)}
+                </span>
               </div>
-              <MessageFooter message={m} selected={selected} user={user} />
+            )}
+            <div className={`chat-message-wrapper ${getSenderType(m)}`} ref={index === messages.length - 1 ? endRef : null}>
+              <div className="chat-message-content">
+                <div className="chat-message-bubble">
+                  {m.text}
+                  {m.attachment && (
+                    <div style={{ marginTop: 8 }}>
+                      {(() => {
+                        const filename = m.attachment.filename || '';
+                        const url = m.attachment.url?.startsWith('http') ? m.attachment.url : `${api.defaults.baseURL}${m.attachment.url || ''}`;
+                        const isImage = /\.(png|jpe?g|gif|webp)$/i.test(filename);
+                        if (isImage) {
+                          return <img src={url} alt={filename} style={{ maxWidth: 220, borderRadius: 8, display: 'block' }} />;
+                        }
+                        return (
+                          <a href={url} target="_blank" rel="noopener noreferrer" className='btn ghost'>
+                            Download {filename || 'file'}
+                          </a>
+                        );
+                      })()}
+                    </div>
+                  )}
+                </div>
+                <MessageFooter message={m} selected={selected} user={user} />
+              </div>
             </div>
-          </div>
+          </React.Fragment>
         ))}
       </div>
 
@@ -262,13 +304,13 @@ export default function ChatPanel({ selected, reload, onChatUpdate }) {
             </div>
           ) : (
             <div style={{ display: 'flex', justifyContent: 'center' }}>
-                <button className="chat-takeover-btn" onClick={takeover} disabled={isSubmitting}>
-                    <div className='chat-takeover-icon'><FontAwesomeIcon icon={faUserShield} /></div>
-                    <div className='chat-takeover-text'>
-                        <div className='chat-takeover-title'>{isSubmitting ? 'Loading...' : 'Takeover Chat'}</div>
-                        <div className='chat-takeover-subtitle'>Switch from AI to human agent</div>
-                    </div>
-                </button>
+              <button className="chat-takeover-btn" onClick={takeover} disabled={isSubmitting}>
+                <div className='chat-takeover-icon'><FontAwesomeIcon icon={faUserShield} /></div>
+                <div className='chat-takeover-text'>
+                  <div className='chat-takeover-title'>{isSubmitting ? 'Loading...' : 'Takeover Chat'}</div>
+                  <div className='chat-takeover-subtitle'>Switch from AI to human agent</div>
+                </div>
+              </button>
             </div>
           )
         ) : (
