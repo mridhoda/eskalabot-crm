@@ -1,7 +1,8 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import api from '../api';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPaperclip, faPaperPlane, faSync, faUserShield, faCheckCircle, faRobot } from '@fortawesome/free-solid-svg-icons';
+import { faPlus, faPaperPlane, faSync, faUserShield, faCheckCircle, faRobot, faSmile, faImage } from '@fortawesome/free-solid-svg-icons';
+import EmojiPicker from 'emoji-picker-react';
 
 function MessageFooter({ message, selected, user }) {
   // The sender is directly available in the message object
@@ -49,7 +50,9 @@ export default function ChatPanel({ selected, reload, onChatUpdate }) {
   const [text, setText] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const fileInputRef = useRef(null);
+  const imageInputRef = useRef(null);
   const endRef = useRef(null);
   const hasScrolledRef = useRef(false);
   const shouldScrollRef = useRef(false);
@@ -141,9 +144,8 @@ export default function ChatPanel({ selected, reload, onChatUpdate }) {
       alert('Failed to send file.');
     } finally {
       setIsUploading(false);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      if (imageInputRef.current) imageInputRef.current.value = '';
     }
   };
 
@@ -167,6 +169,11 @@ export default function ChatPanel({ selected, reload, onChatUpdate }) {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const onEmojiClick = (emojiObject) => {
+    setText((prevInput) => prevInput + emojiObject.emoji);
+    setShowEmojiPicker(false);
   };
 
   if (!selected) return null; // The parent component now handles the empty state
@@ -326,23 +333,35 @@ export default function ChatPanel({ selected, reload, onChatUpdate }) {
       <div className="chat-input-area">
         {selected.status !== 'resolved' ? (
           selected.takeoverBy ? (
-            <div className="chat-input-wrapper">
+            <div className="chat-input-container-modern">
+              {/* Hidden file inputs */}
               <input
                 type="file"
                 ref={fileInputRef}
                 style={{ display: 'none' }}
                 onChange={handleFileSelected}
               />
+              <input
+                type="file"
+                ref={imageInputRef}
+                accept="image/*"
+                style={{ display: 'none' }}
+                onChange={handleFileSelected}
+              />
+
+              {/* Plus button for attachments */}
               <button
-                className="chat-input-btn"
+                className="chat-input-icon-btn"
                 onClick={() => fileInputRef.current.click()}
                 disabled={isUploading}
                 title="Attach File"
               >
-                <FontAwesomeIcon icon={faPaperclip} />
+                <FontAwesomeIcon icon={faPlus} />
               </button>
+
+              {/* Text input */}
               <textarea
-                className="chat-input-field"
+                className="chat-input-field-modern"
                 placeholder="Type your message…"
                 value={text}
                 onChange={(e) => setText(e.target.value)}
@@ -354,7 +373,38 @@ export default function ChatPanel({ selected, reload, onChatUpdate }) {
                 }}
                 rows={1}
               />
-              <button className="chat-send-btn" onClick={send} disabled={isSubmitting || !text.trim()}>
+
+              {/* Right side icons */}
+              <div className="chat-input-icons-right" style={{ position: 'relative' }}>
+                <button
+                  className="chat-input-icon-btn"
+                  onClick={() => imageInputRef.current.click()}
+                  disabled={isUploading}
+                  title="Send Image"
+                >
+                  <FontAwesomeIcon icon={faImage} />
+                </button>
+                <button
+                  className="chat-input-icon-btn"
+                  title="Add Emoji"
+                  onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                >
+                  <FontAwesomeIcon icon={faSmile} />
+                </button>
+
+                {showEmojiPicker && (
+                  <div style={{ position: 'absolute', bottom: '50px', right: '0', zIndex: 1000 }}>
+                    <EmojiPicker onEmojiClick={onEmojiClick} width={300} height={400} />
+                  </div>
+                )}
+              </div>
+
+              {/* Send button */}
+              <button
+                className="chat-send-btn-modern"
+                onClick={send}
+                disabled={isSubmitting || !text.trim()}
+              >
                 <FontAwesomeIcon icon={faPaperPlane} />
               </button>
             </div>
