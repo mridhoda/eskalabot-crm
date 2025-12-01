@@ -988,43 +988,69 @@ function Contacts() {
   }
 
   return (
-    <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 20px' }}>
-      <div className='row' style={{ justifyContent: 'space-between', marginBottom: 20 }}>
-        <h2>Contacts</h2>
-        <button className='btn' onClick={exportToExcel}>
-          Export to Excel
-        </button>
-      </div>
+    <div className="p-8 bg-slate-50 min-h-screen">
+      <div className="max-w-7xl mx-auto">
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-3xl font-bold text-slate-800">Contacts</h1>
+          <button 
+            className="bg-gradient-to-r from-orange-500 to-pink-500 text-white font-semibold px-6 py-2 rounded-lg shadow-md hover:shadow-lg transition-shadow"
+            onClick={exportToExcel}
+          >
+            Export to Excel
+          </button>
+        </div>
 
-      <input
-        className='input'
-        placeholder='Search contacts...'
-        value={q}
-        onChange={(e) => setQ(e.target.value)}
-        style={{ marginBottom: 20 }}
-      />
+        <div className="mb-8">
+          <input
+            className="w-full px-4 py-3 border border-slate-200 rounded-xl bg-white shadow-sm focus:ring-2 focus:ring-orange-300 focus:border-orange-300 transition"
+            placeholder="Search contacts by name..."
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+          />
+        </div>
 
-      <div className='card'>
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-          <thead>
-            <tr>
-              <th style={{ textAlign: 'left', padding: 10 }}>Name</th>
-              <th style={{ textAlign: 'left', padding: 10 }}>Phone</th>
-              <th style={{ textAlign: 'left', padding: 10 }}>Email</th>
-              <th style={{ textAlign: 'left', padding: 10 }}>Tags</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.map((c) => (
-              <tr key={c._id} style={{ borderTop: '1px solid #e5e7eb' }}>
-                <td style={{ padding: 10 }}>{c.name}</td>
-                <td style={{ padding: 10 }}>{c.phone}</td>
-                <td style={{ padding: 10 }}>{c.email || '-'}</td>
-                <td style={{ padding: 10 }}>{(c.tags || []).join(', ') || '-'}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm text-left text-slate-500 border border-slate-200">
+              <thead className="text-xs text-slate-700 uppercase bg-slate-50">
+                <tr>
+                  <th scope="col" className="px-6 py-4 font-semibold border-r border-slate-200">Name</th>
+                  <th scope="col" className="px-6 py-4 font-semibold border-r border-slate-200">ID / Phone</th>
+                  <th scope="col" className="px-6 py-4 font-semibold border-r border-slate-200">Waktu Awal Chat</th>
+                  <th scope="col" className="px-6 py-4 font-semibold border-r border-slate-200">Waktu Akhir Chat</th>
+                  <th scope="col" className="px-6 py-4 font-semibold border-r border-slate-200">Pesan Terakhir</th>
+                  <th scope="col" className="px-6 py-4 font-semibold">Tags</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map((c) => (
+                  <tr key={c._id} className="bg-white border-b hover:bg-slate-50 transition-colors">
+                    <td className="px-6 py-4 font-medium text-slate-900 whitespace-nowrap border-r border-slate-200">{c.name}</td>
+                    <td className="px-6 py-4 border-r border-slate-200">{c.platformAccountId || c.phone || '-'}</td>
+                    <td className="px-6 py-4 border-r border-slate-200">{new Date(c.createdAt).toLocaleString()}</td>
+                    <td className="px-6 py-4 border-r border-slate-200">{new Date(c.lastMessageAt).toLocaleString()}</td>
+                    <td className="px-6 py-4 border-r border-slate-200">{c.lastMessage || '-'}</td>
+                    <td className="px-6 py-4">
+                      <div className="flex flex-wrap gap-2">
+                        {(c.tags || []).map(tag => (
+                          <span key={tag} className="px-2.5 py-1 text-xs font-semibold rounded-full bg-orange-100 text-orange-700">
+                            {tag}
+                          </span>
+                        ))}
+                        {(c.tags || []).length === 0 && '-'}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+        {filtered.length === 0 && (
+          <div className="text-center py-12 text-slate-500">
+            <p>No contacts found.</p>
+          </div>
+        )}
       </div>
     </div>
   )

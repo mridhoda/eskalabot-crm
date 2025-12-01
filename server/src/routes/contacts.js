@@ -14,12 +14,12 @@ router.get('/', authRequired, attachUser, async (req, res) => {
 
   const enrichedContacts = await Promise.all(contacts.map(async (contact) => {
     const chat = await Chat.findOne({ contactId: contact._id }).populate('agentId');
-    const firstMessage = await Message.findOne({ chatId: chat?._id }).sort({ createdAt: 1 });
+    const lastMessage = await Message.findOne({ chatId: chat?._id }).sort({ createdAt: -1 });
 
     return {
       ...contact.toObject(),
       agentName: chat?.agentId?.name || '',
-      firstMessage: firstMessage?.text || '',
+      lastMessage: lastMessage?.text || '',
       lastMessageAt: chat?.lastMessageAt || contact.createdAt, // Fallback to createdAt
     };
   }));
