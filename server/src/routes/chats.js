@@ -110,13 +110,16 @@ router.get('/:chatId/messages', authRequired, attachUser, async (req, res) => {
   if (!chat) {
     return res.status(404).json({ error: 'Chat not found or access denied' });
   }
-  const rows = await Message.find({ chatId }).sort({ createdAt: 1 }).limit(500);
+  const rows = await Message.find({ chatId })
+    .populate('replyTo')
+    .sort({ createdAt: 1 })
+    .limit(500);
   res.json(rows);
 });
 
 router.post('/:chatId/send', authRequired, attachUser, async (req, res) => {
   const { chatId } = req.params;
-  const { text, attachment } = req.body;
+  const { text, attachment, replyTo } = req.body;
   if (!text && !attachment) return res.status(400).json({ error: 'Text or attachment required' });
 
   const chat = await Chat.findOne({ _id: chatId, workspaceId: req.me.workspaceId }).populate('contactId').populate('platformId');
@@ -130,6 +133,7 @@ router.post('/:chatId/send', authRequired, attachUser, async (req, res) => {
     from: 'human',
     text: text || '',
     attachment: attachment || null,
+    replyTo: replyTo || null,
     workspaceId: req.me.workspaceId
   });
   await Chat.updateOne({ _id: chatId }, { $set: { lastMessageAt: new Date() } });
