@@ -287,7 +287,7 @@ function Inbox() {
                 onClick={() => setSelected(chat)}
               >
                 <div className='chat-item-avatar'>
-                  <BrandIcon type={pfById[chat.platform]?.type || 'custom'} size={14} />
+                  <BrandIcon type={chat.platformType || 'custom'} size={20} />
                 </div>
                 <div className='chat-item-content'>
                   <div className='chat-item-top'>
