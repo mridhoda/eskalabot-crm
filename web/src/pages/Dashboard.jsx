@@ -57,6 +57,14 @@ function Inbox() {
   const [agents, setAgents] = useState([])
   const [selected, setSelected] = useState(null)
   const [platforms, setPlatforms] = useState([]) // New state for platforms
+  const [replyingTo, setReplyingTo] = useState(null)
+
+  // Clear reply state when chat selection changes
+  useEffect(() => {
+    if (selected) {
+      setReplyingTo(null);
+    }
+  }, [selected?._id]);
 
   // Filter state
   const [showFilterPopup, setShowFilterPopup] = useState(false)
@@ -342,6 +350,8 @@ function Inbox() {
             <ChatPanel
               selected={selected}
               onChatUpdate={handleChatUpdate}
+              replyingTo={replyingTo}
+              setReplyingTo={setReplyingTo}
             />
           ) : (
             <div className='empty-chat-panel'>

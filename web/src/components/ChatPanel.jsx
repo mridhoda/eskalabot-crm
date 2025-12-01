@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import api from '../api';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPlus, faPaperPlane, faSync, faUserShield, faCheckCircle, faRobot, faSmile, faImage } from '@fortawesome/free-solid-svg-icons';
+import { faPlus, faPaperPlane, faSync, faUserShield, faCheckCircle, faRobot, faSmile, faImage, faReply, faTimes } from '@fortawesome/free-solid-svg-icons';
 import { faWhatsapp, faTelegram, faInstagram, faFacebook } from '@fortawesome/free-brands-svg-icons';
 import EmojiPicker from 'emoji-picker-react';
 
@@ -46,7 +46,7 @@ function MessageFooter({ message, selected, user }) {
   );
 }
 
-export default function ChatPanel({ selected, reload, onChatUpdate }) {
+export default function ChatPanel({ selected, reload, onChatUpdate, replyingTo, setReplyingTo }) {
   const [messages, setMessages] = useState([]);
   const [text, setText] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -106,8 +106,15 @@ export default function ChatPanel({ selected, reload, onChatUpdate }) {
     if (!selectedId || !text.trim()) return;
     setIsSubmitting(true);
     try {
-      await api.post(`/chats/${selectedId}/send`, { text });
+      const payload = { text: text.trim() };
+      if (replyingTo) {
+        payload.replyTo = replyingTo._id;
+      }
+
+      await api.post(`/chats/${selectedId}/send`, payload);
+
       setText('');
+      setReplyingTo(null); // Clear reply state after sending
       shouldScrollRef.current = true; // Trigger scroll after sending
       await loadMessages();
       reload?.();
@@ -340,6 +347,12 @@ export default function ChatPanel({ selected, reload, onChatUpdate }) {
             <div className={`chat-message-wrapper ${getSenderType(m)}`} ref={index === messages.length - 1 ? endRef : null}>
               <div className="chat-message-content">
                 <div className="chat-message-bubble">
+                  {m.replyTo && (
+                    <div className="quoted-reply">
+                      <div className="quoted-reply-sender">{m.replyTo.from === 'user' ? (selected.contactId?.name || 'User') : (m.replyTo.from === 'human' ? 'Human Agent' : 'AI Agent')}</div>
+                      <div className="quoted-reply-text">{m.replyTo.text}</div>
+                    </div>
+                  )}
                   {m.text}
                   {m.attachment && (
                     <div style={{ marginTop: 8 }}>
@@ -361,6 +374,13 @@ export default function ChatPanel({ selected, reload, onChatUpdate }) {
                 </div>
                 <MessageFooter message={m} selected={selected} user={user} />
               </div>
+              {getSenderType(m) === 'user' && (
+                <div className="chat-message-actions">
+                  <button onClick={() => setReplyingTo(m)} title="Reply">
+                    <FontAwesomeIcon icon={faReply} />
+                  </button>
+                </div>
+              )}
             </div>
           </React.Fragment>
         ))}
@@ -368,6 +388,17 @@ export default function ChatPanel({ selected, reload, onChatUpdate }) {
 
       {/* Input */}
       <div className="chat-input-area">
+        {replyingTo && (
+          <div className="reply-preview-bar">
+            <div className="reply-preview-content">
+              <div className="reply-preview-header">Replying to {replyingTo.from === 'user' ? (selected.contactId?.name || 'User') : 'Agent'}</div>
+              <div className="reply-preview-text">{replyingTo.text}</div>
+            </div>
+            <button className="reply-preview-close" onClick={() => setReplyingTo(null)}>
+              <FontAwesomeIcon icon={faTimes} />
+            </button>
+          </div>
+        )}
         {selected.status !== 'resolved' ? (
           selected.takeoverBy ? (
             <div className="chat-input-container-modern">
