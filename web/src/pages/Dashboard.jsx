@@ -976,10 +976,11 @@ function Contacts() {
   const exportToExcel = () => {
     const ws = XLSX.utils.json_to_sheet(
       contacts.map((c) => ({
-        Name: c.name,
-        Phone: c.phone,
-        Email: c.email,
-        Tags: (c.tags || []).join(', '),
+        'Name': c.name,
+        'ID / Phone': c.platformAccountId || c.phone || '-',
+        'Waktu Awal Chat': new Date(c.createdAt).toLocaleString(),
+        'Waktu Akhir Chat': new Date(c.lastMessageAt).toLocaleString(),
+        'Pesan Terakhir': c.lastMessage || '-',
       }))
     )
     const wb = XLSX.utils.book_new()
@@ -993,16 +994,17 @@ function Contacts() {
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold text-slate-800">Contacts</h1>
           <button 
-            className="bg-gradient-to-r from-orange-500 to-pink-500 text-white font-semibold px-6 py-2 rounded-lg shadow-md hover:shadow-lg transition-shadow"
+            className="contacts-export-btn"
             onClick={exportToExcel}
           >
             Export to Excel
           </button>
         </div>
 
-        <div className="mb-8">
+        <div className="relative group mb-8">
+          <svg className="contacts-search-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
           <input
-            className="w-full px-4 py-3 border border-slate-200 rounded-xl bg-white shadow-sm focus:ring-2 focus:ring-orange-300 focus:border-orange-300 transition"
+            className="contacts-search-input"
             placeholder="Search contacts by name..."
             value={q}
             onChange={(e) => setQ(e.target.value)}
@@ -1011,35 +1013,24 @@ function Contacts() {
 
         <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full text-sm text-left text-slate-500 border border-slate-200">
+            <table className="contacts-table-outline w-full text-sm text-left text-slate-500">
               <thead className="text-xs text-slate-700 uppercase bg-slate-50">
                 <tr>
-                  <th scope="col" className="px-6 py-4 font-semibold border-r border-slate-200">Name</th>
-                  <th scope="col" className="px-6 py-4 font-semibold border-r border-slate-200">ID / Phone</th>
-                  <th scope="col" className="px-6 py-4 font-semibold border-r border-slate-200">Waktu Awal Chat</th>
-                  <th scope="col" className="px-6 py-4 font-semibold border-r border-slate-200">Waktu Akhir Chat</th>
-                  <th scope="col" className="px-6 py-4 font-semibold border-r border-slate-200">Pesan Terakhir</th>
-                  <th scope="col" className="px-6 py-4 font-semibold">Tags</th>
+                  <th scope="col" className="px-6 py-4 font-semibold">Name</th>
+                  <th scope="col" className="px-6 py-4 font-semibold">ID / Phone</th>
+                  <th scope="col" className="px-6 py-4 font-semibold">Waktu Awal Chat</th>
+                  <th scope="col" className="px-6 py-4 font-semibold">Waktu Akhir Chat</th>
+                  <th scope="col" className="px-6 py-4 font-semibold">Pesan Terakhir</th>
                 </tr>
               </thead>
               <tbody>
                 {filtered.map((c) => (
                   <tr key={c._id} className="bg-white border-b hover:bg-slate-50 transition-colors">
-                    <td className="px-6 py-4 font-medium text-slate-900 whitespace-nowrap border-r border-slate-200">{c.name}</td>
-                    <td className="px-6 py-4 border-r border-slate-200">{c.platformAccountId || c.phone || '-'}</td>
-                    <td className="px-6 py-4 border-r border-slate-200">{new Date(c.createdAt).toLocaleString()}</td>
-                    <td className="px-6 py-4 border-r border-slate-200">{new Date(c.lastMessageAt).toLocaleString()}</td>
-                    <td className="px-6 py-4 border-r border-slate-200">{c.lastMessage || '-'}</td>
-                    <td className="px-6 py-4">
-                      <div className="flex flex-wrap gap-2">
-                        {(c.tags || []).map(tag => (
-                          <span key={tag} className="px-2.5 py-1 text-xs font-semibold rounded-full bg-orange-100 text-orange-700">
-                            {tag}
-                          </span>
-                        ))}
-                        {(c.tags || []).length === 0 && '-'}
-                      </div>
-                    </td>
+                    <td className="px-6 py-4 font-medium text-slate-900 whitespace-nowrap">{c.name}</td>
+                    <td className="px-6 py-4">{c.platformAccountId || c.phone || '-'}</td>
+                    <td className="px-6 py-4">{new Date(c.createdAt).toLocaleString()}</td>
+                    <td className="px-6 py-4">{new Date(c.lastMessageAt).toLocaleString()}</td>
+                    <td className="px-6 py-4 max-w-xs truncate whitespace-nowrap">{c.lastMessage || '-'}</td>
                   </tr>
                 ))}
               </tbody>
