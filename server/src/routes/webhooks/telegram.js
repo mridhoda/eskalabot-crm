@@ -200,12 +200,28 @@ router.post('/:token?', async (req, res) => {
 
     let userMessage = null;
     if (text || incomingAttachment) {
+      // Check if this is a reply to another message
+      let replyTo = null;
+      const replyToMessage = msgObj.reply_to_message;
+      if (replyToMessage && replyToMessage.message_id) {
+        // Find the original message by platformMessageId
+        const originalMsg = await Message.findOne({
+          platformMessageId: String(replyToMessage.message_id),
+          chatId: chat._id
+        });
+        if (originalMsg) {
+          replyTo = originalMsg._id;
+        }
+      }
+
       userMessage = await Message.create({
         chatId: chat._id,
         workspaceId: platform.workspaceId,
         from: 'user',
         text: text || '',
         attachment: incomingAttachment,
+        platformMessageId: String(msgObj.message_id), // Store Telegram message_id
+        replyTo: replyTo, // Link to replied message
         createdAt: new Date(),
       });
       await Chat.updateOne(

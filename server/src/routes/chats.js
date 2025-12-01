@@ -127,6 +127,15 @@ router.post('/:chatId/send', authRequired, attachUser, async (req, res) => {
     return res.status(404).json({ error: 'Chat not found' });
   }
 
+  // Get platformMessageId for reply if replyTo is provided
+  let replyToMessageId = null;
+  if (replyTo) {
+    const originalMsg = await Message.findById(replyTo);
+    if (originalMsg && originalMsg.platformMessageId) {
+      replyToMessageId = originalMsg.platformMessageId;
+    }
+  }
+
   // as human
   const msg = await Message.create({
     chatId,
@@ -142,12 +151,21 @@ router.post('/:chatId/send', authRequired, attachUser, async (req, res) => {
   if (chat.platformId && chat.contactId) {
     if (chat.platformType === 'telegram') {
       try {
+        let tgResponse;
         if (attachment && attachment.url) {
           const filename = path.basename(attachment.url);
           const localFilePath = path.resolve('uploads', filename);
-          await tgSendDocument(chat.platformId.token, chat.contactId.platformAccountId, localFilePath, text || '');
+          tgResponse = await tgSendDocument(chat.platformId.token, chat.contactId.platformAccountId, localFilePath, text || '', replyToMessageId);
         } else if (text) {
-          await tgSend(chat.platformId.token, chat.contactId.platformAccountId, text);
+          tgResponse = await tgSend(chat.platformId.token, chat.contactId.platformAccountId, text, replyToMessageId);
+        }
+
+        // Save platformMessageId from Telegram response
+        if (tgResponse && tgResponse.ok && tgResponse.result && tgResponse.result.message_id) {
+          await Message.updateOne(
+            { _id: msg._id },
+            { platformMessageId: String(tgResponse.result.message_id) }
+          );
         }
       } catch (e) {
         console.error('Failed to send message to Telegram:', e);

@@ -10,6 +10,7 @@ const MessageSchema = new mongoose.Schema({
     filename: { type: String },
   },
   replyTo: { type: mongoose.Schema.Types.ObjectId, ref: 'Message', default: null },
+  platformMessageId: { type: String, default: null }, // Store platform-specific message ID (e.g., Telegram message_id)
 }, { timestamps: true });
 
 export default mongoose.model('Message', MessageSchema);
