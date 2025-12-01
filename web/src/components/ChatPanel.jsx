@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef, useCallback } from 'react';
 import api from '../api';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPlus, faPaperPlane, faSync, faUserShield, faCheckCircle, faRobot, faSmile, faImage } from '@fortawesome/free-solid-svg-icons';
+import { faWhatsapp, faTelegram, faInstagram, faFacebook } from '@fortawesome/free-brands-svg-icons';
 import EmojiPicker from 'emoji-picker-react';
 
 function MessageFooter({ message, selected, user }) {
@@ -250,6 +251,28 @@ export default function ChatPanel({ selected, reload, onChatUpdate }) {
     return user?.name || 'Human Agent';
   };
 
+  // Get platform icon based on platform type
+  const getPlatformIcon = (platformType) => {
+    const iconMap = {
+      'whatsapp': faWhatsapp,
+      'telegram': faTelegram,
+      'instagram': faInstagram,
+      'facebook': faFacebook,
+    };
+    return iconMap[platformType?.toLowerCase()] || null;
+  };
+
+  // Get platform color based on platform type
+  const getPlatformColor = (platformType) => {
+    const colorMap = {
+      'whatsapp': '#25D366',
+      'telegram': '#0088cc',
+      'instagram': '#E4405F',
+      'facebook': '#1877F2',
+    };
+    return colorMap[platformType?.toLowerCase()] || '#64748B';
+  };
+
   return (
     <div className="chat-modern-container">
       {/* Header */}
@@ -260,8 +283,22 @@ export default function ChatPanel({ selected, reload, onChatUpdate }) {
           </div>
           <div className="chat-header-details">
             <h2>{selected.contactId?.name || 'User'}</h2>
-            <div className="chat-header-platform">
-              via {selected.platform}
+            <div className="chat-header-platform" style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '4px 10px',
+              border: '1px solid #E2E8F0',
+              borderRadius: '8px',
+              background: '#F8FAFC'
+            }}>
+              {selected.platformType && getPlatformIcon(selected.platformType) && (
+                <FontAwesomeIcon
+                  icon={getPlatformIcon(selected.platformType)}
+                  style={{ color: getPlatformColor(selected.platformType), fontSize: '14px' }}
+                />
+              )}
+              <span>{selected.agentId?.name || 'AI Agent'}</span>
             </div>
           </div>
         </div>
