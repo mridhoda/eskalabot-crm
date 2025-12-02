@@ -1613,7 +1613,7 @@
 
 /* Message action buttons */
 .chat-message-actions {
-    display: flex;
+    align-content: center;
     gap: 4px;
     opacity: 0;
     transition: opacity 0.2s;
