@@ -208,9 +208,11 @@ async function handleWhatsapp(data) {
 
         if (chat.takeoverBy) {
           console.log(
-            `[meta] chat ${chat._id} is handled by human, skipping AI reply.`,
+            `[meta] chat ${chat._id} is handled by human (takeoverBy: ${chat.takeoverBy}), skipping AI reply.`,
           );
           continue;
+        } else {
+          console.log(`[meta] chat ${chat._id} is NOT handled by human (takeoverBy: ${chat.takeoverBy}), proceeding to AI reply.`);
         }
 
         if (isNewChat) {
@@ -410,8 +412,10 @@ async function handleInstagram(data) {
       );
 
       if (chat.takeoverBy) {
-        console.log(`[meta] chat ${chat._id} is handled by human, skipping AI reply.`);
+        console.log(`[meta] chat ${chat._id} is handled by human (takeoverBy: ${chat.takeoverBy}), skipping AI reply.`);
         continue;
+      } else {
+        console.log(`[meta] chat ${chat._id} is NOT handled by human (takeoverBy: ${chat.takeoverBy}), proceeding to AI reply.`);
       }
 
       if (isNewChat && (text || incomingAttachment)) {

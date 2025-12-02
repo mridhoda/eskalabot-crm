@@ -239,9 +239,11 @@ router.post('/:token?', async (req, res) => {
 
     if (chat.takeoverBy) {
       console.log(
-        `[telegram] chat ${chat._id} is handled by human, skipping AI reply.`,
+        `[telegram] chat ${chat._id} is handled by human (takeoverBy: ${chat.takeoverBy}), skipping AI reply.`,
       );
       return;
+    } else {
+      console.log(`[telegram] chat ${chat._id} is NOT handled by human (takeoverBy: ${chat.takeoverBy}), proceeding to AI reply.`);
     }
 
     if (isNewChat) {
