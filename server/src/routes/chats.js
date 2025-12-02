@@ -19,6 +19,16 @@ router.get('/', authRequired, attachUser, async (req, res) => {
   } = req.query;
 
   const queryFilter = { workspaceId: req.me.workspaceId };
+
+  // Debug logging
+  console.log('[CHATS] User:', req.me.email, 'Role:', req.me.role, 'Assignment:', assignment);
+
+  // Role-based filtering: agents only see chats assigned to them
+  if (req.me.role === 'agent') {
+    queryFilter.takeoverBy = req.me._id;
+    console.log('[CHATS] Agent filter applied, takeoverBy:', req.me._id);
+  }
+
   if (unreadOnly === 'true') {
     queryFilter.unread = { $gt: 0 };
   }
