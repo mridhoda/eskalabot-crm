@@ -68,6 +68,35 @@ export default function ContactPanel({ selected, onUpdate, onDeleteChat }) {
   const [activeTab, setActiveTab] = useState('info')
   const [showSessionHistory, setShowSessionHistory] = useState(false)
 
+  const [humanAgents, setHumanAgents] = useState([])
+
+  useEffect(() => {
+    const loadAgents = async () => {
+      try {
+        const r = await api.get('/users')
+        console.log('[ContactPanel] Loaded agents:', r.data)
+        setHumanAgents(r.data)
+      } catch (e) {
+        console.error('Failed to load human agents', e)
+      }
+    }
+    loadAgents()
+  }, [])
+
+  const handleAssign = async (e) => {
+    const agentId = e.target.value;
+    if (!agentId) return;
+
+    // Optimistic update or just call parent update
+    try {
+      const r = await api.post(`/chats/${selected._id}/takeover`, { userId: agentId });
+      onUpdate?.(r.data); // Update parent state
+    } catch (err) {
+      console.error('Failed to assign agent:', err);
+      alert('Failed to assign agent');
+    }
+  };
+
   if (!selected || !contact) {
     return (
       <div className='contact-modern-panel' style={{ alignItems: 'center', justifyContent: 'center', color: '#94A3B8' }}>
@@ -191,10 +220,30 @@ export default function ContactPanel({ selected, onUpdate, onDeleteChat }) {
         <div className='contact-section'>
           <div className='contact-section-title' style={{ marginBottom: 8 }}>Handled By</div>
           <div className='contact-select' style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <div style={{ width: 24, height: 24, borderRadius: '50%', background: '#E2E8F0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, color: '#64748B' }}>
-              {(selected.agentId?.name || 'A')[0]}
-            </div>
-            {selected.agentId?.name || 'Super Admin IT Core'}
+            {selected.takeoverBy ? (
+              <>
+                <div style={{ width: 24, height: 24, borderRadius: '50%', background: '#E0E7FF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, color: '#4338CA' }}>
+                  {(selected.takeoverBy.name || 'A')[0]?.toUpperCase()}
+                </div>
+                <span>{selected.takeoverBy.name || 'Human Agent'}</span>
+              </>
+            ) : (
+              <div style={{ width: '100%' }}>
+                <select
+                  className='contact-select'
+                  onChange={handleAssign}
+                  value=""
+                  style={{ width: '100%', cursor: 'pointer' }}
+                >
+                  <option value="" disabled>Assign Agent...</option>
+                  {humanAgents.map(agent => (
+                    <option key={agent._id} value={agent._id}>
+                      {agent.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
           </div>
         </div>
 
