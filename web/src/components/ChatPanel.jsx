@@ -399,97 +399,91 @@ export default function ChatPanel({ selected, reload, onChatUpdate, replyingTo, 
             </button>
           </div>
         )}
-        {selected.status !== 'resolved' ? (
-          selected.takeoverBy ? (
-            <div className="chat-input-container-modern">
-              {/* Hidden file inputs */}
-              <input
-                type="file"
-                ref={fileInputRef}
-                style={{ display: 'none' }}
-                onChange={handleFileSelected}
-              />
-              <input
-                type="file"
-                ref={imageInputRef}
-                accept="image/*"
-                style={{ display: 'none' }}
-                onChange={handleFileSelected}
-              />
+        {selected.takeoverBy ? (
+          <div className="chat-input-container-modern">
+            {/* Hidden file inputs */}
+            <input
+              type="file"
+              ref={fileInputRef}
+              style={{ display: 'none' }}
+              onChange={handleFileSelected}
+            />
+            <input
+              type="file"
+              ref={imageInputRef}
+              accept="image/*"
+              style={{ display: 'none' }}
+              onChange={handleFileSelected}
+            />
 
-              {/* Plus button for attachments */}
+            {/* Plus button for attachments */}
+            <button
+              className="chat-input-icon-btn"
+              onClick={() => fileInputRef.current.click()}
+              disabled={isUploading}
+              title="Attach File"
+            >
+              <FontAwesomeIcon icon={faPlus} />
+            </button>
+
+            {/* Text input */}
+            <textarea
+              className="chat-input-field-modern"
+              placeholder="Type your message…"
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  send();
+                }
+              }}
+              rows={1}
+            />
+
+            {/* Right side icons */}
+            <div className="chat-input-icons-right" style={{ position: 'relative' }}>
               <button
                 className="chat-input-icon-btn"
-                onClick={() => fileInputRef.current.click()}
+                onClick={() => imageInputRef.current.click()}
                 disabled={isUploading}
-                title="Attach File"
+                title="Send Image"
               >
-                <FontAwesomeIcon icon={faPlus} />
+                <FontAwesomeIcon icon={faImage} />
               </button>
-
-              {/* Text input */}
-              <textarea
-                className="chat-input-field-modern"
-                placeholder="Type your message…"
-                value={text}
-                onChange={(e) => setText(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    send();
-                  }
-                }}
-                rows={1}
-              />
-
-              {/* Right side icons */}
-              <div className="chat-input-icons-right" style={{ position: 'relative' }}>
-                <button
-                  className="chat-input-icon-btn"
-                  onClick={() => imageInputRef.current.click()}
-                  disabled={isUploading}
-                  title="Send Image"
-                >
-                  <FontAwesomeIcon icon={faImage} />
-                </button>
-                <button
-                  className="chat-input-icon-btn"
-                  title="Add Emoji"
-                  onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                >
-                  <FontAwesomeIcon icon={faSmile} />
-                </button>
-
-                {showEmojiPicker && (
-                  <div style={{ position: 'absolute', bottom: '50px', right: '0', zIndex: 1000 }}>
-                    <EmojiPicker onEmojiClick={onEmojiClick} width={300} height={400} />
-                  </div>
-                )}
-              </div>
-
-              {/* Send button */}
               <button
-                className="chat-send-btn-modern"
-                onClick={send}
-                disabled={isSubmitting || !text.trim()}
+                className="chat-input-icon-btn"
+                title="Add Emoji"
+                onClick={() => setShowEmojiPicker(!showEmojiPicker)}
               >
-                <FontAwesomeIcon icon={faPaperPlane} />
+                <FontAwesomeIcon icon={faSmile} />
               </button>
-            </div>
-          ) : (
-            <div style={{ display: 'flex', justifyContent: 'center' }}>
-              <button className="chat-takeover-btn" onClick={takeover} disabled={isSubmitting}>
-                <div className='chat-takeover-icon'><FontAwesomeIcon icon={faUserShield} /></div>
-                <div className='chat-takeover-text'>
-                  <div className='chat-takeover-title'>{isSubmitting ? 'Loading...' : 'Takeover Chat'}</div>
-                  <div className='chat-takeover-subtitle'>Switch from AI to human agent</div>
+
+              {showEmojiPicker && (
+                <div style={{ position: 'absolute', bottom: '50px', right: '0', zIndex: 1000 }}>
+                  <EmojiPicker onEmojiClick={onEmojiClick} width={300} height={400} />
                 </div>
-              </button>
+              )}
             </div>
-          )
+
+            {/* Send button */}
+            <button
+              className="chat-send-btn-modern"
+              onClick={send}
+              disabled={isSubmitting || !text.trim()}
+            >
+              <FontAwesomeIcon icon={faPaperPlane} />
+            </button>
+          </div>
         ) : (
-          <div style={{ textAlign: 'center', color: '#94A3B8', padding: '10px' }}>
-            This conversation has been resolved.
+          <div style={{ display: 'flex', justifyContent: 'center' }}>
+            <button className="chat-takeover-btn" onClick={takeover} disabled={isSubmitting}>
+              <div className='chat-takeover-icon'><FontAwesomeIcon icon={faUserShield} /></div>
+              <div className='chat-takeover-text'>
+                <div className='chat-takeover-title'>{isSubmitting ? 'Loading...' : 'Takeover Chat'}</div>
+                <div className='chat-takeover-subtitle'>Switch from AI to human agent</div>
+              </div>
+            </button>
           </div>
         )}
       </div>

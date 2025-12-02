@@ -196,7 +196,7 @@ router.post('/:chatId/takeover', authRequired, attachUser, async (req, res) => {
   const { chatId } = req.params;
   const chat = await Chat.findOneAndUpdate(
     { _id: chatId, workspaceId: req.me.workspaceId },
-    { $set: { takeoverBy: req.me._id } },
+    { $set: { takeoverBy: req.me._id, isEscalated: false, status: 'open' } },
     { new: true }
   ).populate('contactId').populate('agentId').populate('takeoverBy');
   res.json(chat);
