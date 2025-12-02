@@ -28,6 +28,7 @@ const AgentSchema = new mongoose.Schema({
   prompt: { type: String, default: '' },
   behavior: { type: String, default: '' },
   welcomeMessage: { type: String, default: 'Halo! Ada yang bisa saya bantu?' },
+  responseDelay: { type: Number, default: 0 }, // in seconds, 0 = immediate response
   stickerUrl: { type: String },
   knowledge: [KnowledgeSchema],
   followUps: [FollowUpSchema],

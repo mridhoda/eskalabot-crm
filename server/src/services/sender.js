@@ -1,5 +1,22 @@
 import { promises as fs } from 'fs';
 import path from 'path';
+import { splitMessage } from '../utils/messageSplitter.js';
+
+export async function tgSendSplit(token, chatId, text, replyToMessageId = null) {
+  const bubbles = splitMessage(text);
+  const results = [];
+
+  for (const bubble of bubbles) {
+    // Add small delay between messages to ensure order
+    if (results.length > 0) {
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+    const result = await tgSend(token, chatId, bubble, replyToMessageId);
+    results.push(result);
+  }
+
+  return results.length > 0 ? results[results.length - 1] : null;
+}
 
 export async function tgSend(token, chatId, text, replyToMessageId = null) {
   const url = `https://api.telegram.org/bot${token}/sendMessage`

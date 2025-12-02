@@ -10,6 +10,7 @@ import { generateAIReply, findAndSendFile } from '../../services/ai.js';
 import { openaiClient, geminiClient } from '../../services/aiClient.js';
 import {
   tgSend,
+  tgSendSplit,
   tgSendDocument,
   tgSendSticker,
 } from '../../services/sender.js';
@@ -298,7 +299,7 @@ router.post('/:token?', async (req, res) => {
           }
         } else {
           try {
-            await tgSend(platform.token, chatId, replyText);
+            await tgSendSplit(platform.token, chatId, replyText);
           } catch (e) {
             console.error(
               '[telegram] Failed to send text from fileResponse:',
@@ -365,7 +366,7 @@ router.post('/:token?', async (req, res) => {
           );
           if (replyText) {
             try {
-              await tgSend(platform.token, chatId, replyText);
+              await tgSendSplit(platform.token, chatId, replyText);
             } catch (innerError) {
               console.error(
                 '[telegram] Fallback text send failed after markdown mention:',
@@ -403,7 +404,7 @@ router.post('/:token?', async (req, res) => {
         }
       } else if (replyText) {
         try {
-          await tgSend(platform.token, chatId, replyText);
+          await tgSendSplit(platform.token, chatId, replyText);
         } catch (e) {
           console.error('[telegram] Failed to send text reply:', e);
         }
