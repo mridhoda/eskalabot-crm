@@ -14,7 +14,8 @@ import {
   tgSendDocument,
   tgSendSticker,
 } from '../../services/sender.js';
-import { findDatabaseFileMention } from '../../utils/fileMentions.js';
+import { findDatabaseFileMention, findUrlFileMention } from '../../utils/fileMentions.js';
+import { downloadFile } from '../../utils/downloader.js';
 
 const router = express.Router();
 
@@ -393,6 +394,51 @@ router.post('/:token?', async (req, res) => {
         });
 
         if (documentSent) return;
+      }
+
+      // Check for external file URL mention
+      const urlMention = findUrlFileMention(replyText);
+      if (urlMention) {
+        const { url, token, altText } = urlMention;
+        console.log(`[telegram] Found external file URL: ${url}`);
+
+        const cleanedText = (replyText || '').replace(token, altText || '').trim();
+        const caption = cleanedText || altText || '';
+
+        try {
+          // Download file
+          const { filePath, filename, originalName } = await downloadFile(url);
+          console.log(`[telegram] Downloaded file to: ${filePath}`);
+
+          // Send file
+          await tgSendDocument(
+            platform.token,
+            chatId,
+            filePath,
+            caption || undefined
+          );
+
+          // Delete temp file
+          fs.unlink(filePath).catch(err => console.error('[telegram] Failed to delete temp file:', err));
+
+          // Save message
+          await Message.create({
+            chatId: chat._id,
+            workspaceId: platform.workspaceId,
+            from: 'ai',
+            text: caption || 'File sent',
+            attachment: {
+              url: url,
+              filename: originalName,
+            },
+            createdAt: new Date(),
+          });
+
+          return; // Stop processing, file sent
+        } catch (e) {
+          console.error('[telegram] Failed to send external file:', e);
+          // Fallback to sending text with link if download/send fails
+        }
       }
 
       if (attachment && attachment.storedName) {

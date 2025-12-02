@@ -34,3 +34,23 @@ export function findDatabaseFileMention(text, agent) {
   }
   return null;
 }
+
+export function findUrlFileMention(text) {
+  if (!text) return null;
+
+  // Regex to find markdown links or plain URLs ending with file extensions
+  // Matches: [Title](url) or just url
+  const regex = /(?:\[([^\]]*)\]\((https?:\/\/[^)]+\.(?:pdf|jpg|jpeg|png|mp4|docx|xlsx|pptx))\)|(https?:\/\/[^\s]+\.(?:pdf|jpg|jpeg|png|mp4|docx|xlsx|pptx)))/gi;
+
+  const match = regex.exec(text);
+  if (match) {
+    // match[2] is url from markdown, match[3] is plain url
+    const url = match[2] || match[3];
+    const altText = match[1] || '';
+    const token = match[0];
+
+    return { url, token, altText };
+  }
+
+  return null;
+}
