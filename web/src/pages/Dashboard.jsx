@@ -749,6 +749,21 @@ function Humans() {
               {(u.email || '-').slice(0, 60) || '-'}
             </div>
 
+            {/* Role Badge */}
+            <div style={{ marginTop: 8, display: 'flex', justifyContent: 'center' }}>
+              <span style={{
+                padding: '4px 12px',
+                borderRadius: 12,
+                fontSize: 11,
+                fontWeight: 600,
+                textTransform: 'uppercase',
+                background: u.role === 'owner' ? '#EF4444' : u.role === 'super' ? '#F59E0B' : '#3B82F6',
+                color: 'white'
+              }}>
+                {u.role || 'agent'}
+              </span>
+            </div>
+
             <div className='agent-actions'>
               <button
                 className='btn ghost'
@@ -1003,7 +1018,7 @@ function Contacts() {
       <div className="max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold text-slate-800">Contacts</h1>
-          <button 
+          <button
             className="contacts-export-btn"
             onClick={exportToExcel}
           >
