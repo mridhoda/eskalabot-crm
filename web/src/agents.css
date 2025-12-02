@@ -198,6 +198,17 @@
     font-family: inherit;
     font-size: 14px;
     line-height: 1.5;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    transition: all 0.2s;
+}
+
+.col .textarea:focus,
+.col .input:focus {
+    border-color: var(--brand);
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.1);
 }
 
 .col .textarea {
