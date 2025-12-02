@@ -109,24 +109,33 @@ export async function generateAIReply({ system, prompt, message, knowledge, agen
         for (const msg of history) {
           const role = msg.from === 'user' ? 'user' : 'model';
           const parts = [];
+
           if (msg.text) {
             parts.push({ text: msg.text });
           }
+
           if (msg.attachment?.url) {
             const storedName = msg.attachment.url.split('/files/')[1];
             if (storedName) {
-              try {
-                const filePath = path.resolve('uploads', storedName);
-                await fs.access(filePath); // Check if file exists
-                const mimeType = getMimeType(msg.attachment.filename);
-                const data = await fs.readFile(filePath, 'base64');
-                parts.push({ inlineData: { mimeType, data } });
-              } catch (e) {
-                console.warn('[AI] History attachment not found or unreadable: ', storedName);
-                parts.push({ text: '[Attachment unreadable]' });
+              // Only add inlineData (images) for USER messages. Model cannot have inlineData.
+              if (role === 'user') {
+                try {
+                  const filePath = path.resolve('uploads', storedName);
+                  await fs.access(filePath); // Check if file exists
+                  const mimeType = getMimeType(msg.attachment.filename);
+                  const data = await fs.readFile(filePath, 'base64');
+                  parts.push({ inlineData: { mimeType, data } });
+                } catch (e) {
+                  console.warn('[AI] History attachment not found or unreadable: ', storedName);
+                  parts.push({ text: '[Attachment unreadable]' });
+                }
+              } else {
+                // For model, just mention it sent a file
+                parts.push({ text: `[Sent attachment: ${msg.attachment.filename || 'file'}]` });
               }
             }
           }
+
           if (parts.length > 0) {
             geminiHistory.push({ role, parts });
           }

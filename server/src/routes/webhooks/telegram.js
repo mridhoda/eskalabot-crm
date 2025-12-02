@@ -456,14 +456,16 @@ router.post('/:token?', async (req, res) => {
         }
       }
 
-      await Message.create({
-        chatId: chat._id,
-        workspaceId: platform.workspaceId,
-        from: 'ai',
-        text: replyText,
-        attachment,
-        createdAt: new Date(),
-      });
+      if (replyText || attachment) {
+        await Message.create({
+          chatId: chat._id,
+          workspaceId: platform.workspaceId,
+          from: 'ai',
+          text: replyText || '[Attachment]',
+          attachment,
+          createdAt: new Date(),
+        });
+      }
     }
   } catch (err) {
     console.error('Webhook /telegram error:', err);
