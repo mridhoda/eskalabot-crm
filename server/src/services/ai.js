@@ -131,7 +131,7 @@ export async function generateAIReply({ system, prompt, message, knowledge, agen
                 }
               } else {
                 // For model, just mention it sent a file
-                parts.push({ text: `[Sent attachment: ${msg.attachment.filename || 'file'}]` });
+                parts.push({ text: `[System: Assistant previously sent ${msg.attachment.filename || 'a file'}]` });
               }
             }
           }

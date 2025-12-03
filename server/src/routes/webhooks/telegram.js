@@ -12,6 +12,8 @@ import {
   tgSend,
   tgSendSplit,
   tgSendDocument,
+  tgSendPhoto,
+  tgSendVideo,
   tgSendSticker,
 } from '../../services/sender.js';
 import { findDatabaseFileMention, findUrlFileMention } from '../../utils/fileMentions.js';
@@ -410,13 +412,24 @@ router.post('/:token?', async (req, res) => {
           const { filePath, filename, originalName } = await downloadFile(url);
           console.log(`[telegram] Downloaded file to: ${filePath}`);
 
-          // Send file
-          await tgSendDocument(
-            platform.token,
-            chatId,
-            filePath,
-            caption || undefined
-          );
+          // Determine file type
+          const ext = path.extname(filename).toLowerCase();
+          const isImage = ['.jpg', '.jpeg', '.png', '.webp'].includes(ext);
+          const isVideo = ['.mp4', '.mov', '.avi'].includes(ext);
+
+          // Send text first (if any)
+          if (caption && caption.length > 0) {
+            await tgSendSplit(platform.token, chatId, caption);
+          }
+
+          // Then send file separately
+          if (isImage) {
+            await tgSendPhoto(platform.token, chatId, filePath);
+          } else if (isVideo) {
+            await tgSendVideo(platform.token, chatId, filePath);
+          } else {
+            await tgSendDocument(platform.token, chatId, filePath);
+          }
 
           // Delete temp file
           fs.unlink(filePath).catch(err => console.error('[telegram] Failed to delete temp file:', err));

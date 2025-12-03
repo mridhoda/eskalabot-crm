@@ -184,3 +184,63 @@ export async function tgSendDocument(token, chatId, localFilePath, caption, repl
   if (!j.ok) throw new Error(`Telegram sendDocument failed: ${JSON.stringify(j)}`);
   return j;
 }
+
+export async function tgSendPhoto(token, chatId, localFilePath, caption, replyToMessageId = null) {
+  const url = `https://api.telegram.org/bot${token}/sendPhoto`;
+
+  const fileContent = await fs.readFile(localFilePath);
+  const filename = path.basename(localFilePath);
+  const fileBlob = new Blob([fileContent]);
+
+  const formData = new FormData();
+  formData.append('chat_id', String(chatId));
+  if (caption) {
+    formData.append('caption', caption);
+  }
+  if (replyToMessageId) {
+    formData.append('reply_to_message_id', String(parseInt(replyToMessageId)));
+  }
+  formData.append('photo', fileBlob, filename);
+
+  const r = await fetch(url, {
+    method: 'POST',
+    body: formData,
+  });
+
+  const j = await r.json();
+  if (!j.ok) {
+    console.error('Telegram sendPhoto failed:', JSON.stringify(j));
+    throw new Error(`Telegram sendPhoto failed: ${JSON.stringify(j)}`);
+  }
+  return j;
+}
+
+export async function tgSendVideo(token, chatId, localFilePath, caption, replyToMessageId = null) {
+  const url = `https://api.telegram.org/bot${token}/sendVideo`;
+
+  const fileContent = await fs.readFile(localFilePath);
+  const filename = path.basename(localFilePath);
+  const fileBlob = new Blob([fileContent]);
+
+  const formData = new FormData();
+  formData.append('chat_id', String(chatId));
+  if (caption) {
+    formData.append('caption', caption);
+  }
+  if (replyToMessageId) {
+    formData.append('reply_to_message_id', String(parseInt(replyToMessageId)));
+  }
+  formData.append('video', fileBlob, filename);
+
+  const r = await fetch(url, {
+    method: 'POST',
+    body: formData,
+  });
+
+  const j = await r.json();
+  if (!j.ok) {
+    console.error('Telegram sendVideo failed:', JSON.stringify(j));
+    throw new Error(`Telegram sendVideo failed: ${JSON.stringify(j)}`);
+  }
+  return j;
+}
