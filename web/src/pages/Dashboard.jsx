@@ -1591,11 +1591,18 @@ function AgentDetail() {
 
 
 
-      <div className='split'>
+      <div className='split' style={{ gridTemplateColumns: tab === 'general' ? '1fr 400px' : '1fr' }}>
 
         {/* LEFT */}
 
-        <div className='left col' style={{ borderRight: tab === 'general' ? '1px solid var(--border)' : 'none' }}>
+        <div
+          className='left col'
+          style={{
+            borderRight: tab === 'general' ? '1px solid var(--border)' : 'none',
+            paddingRight: tab === 'general' ? '32px' : '0',
+            maxWidth: tab === 'general' ? undefined : '100%'
+          }}
+        >
 
           {tab === 'general' && (
 
