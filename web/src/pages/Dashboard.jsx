@@ -1167,7 +1167,6 @@ function AgentDetail() {
   const [database, setDatabase] = useState([])
   const [knowledgeTab, setKnowledgeTab] = useState('url')
   const [localDatabase, setLocalDatabase] = useState([])
-  const [databaseCustomId, setDatabaseCustomId] = useState('')
   const [dbUploadStatus, setDbUploadStatus] = useState({
     status: 'idle',
     message: '',
@@ -1374,8 +1373,7 @@ function AgentDetail() {
 
   const handleDatabaseFileSelect = async (file) => {
     if (!file) return
-    const customId = databaseCustomId.trim()
-    const entryId = customId || generateLocalId()
+    const entryId = generateLocalId()
     setDbUploadStatus({
       status: 'loading',
       message: `Processing ${file.name}...`,
@@ -1397,9 +1395,6 @@ function AgentDetail() {
 
     const formData = new FormData()
     formData.append('file', file)
-    if (customId) {
-      formData.append('id', customId)
-    }
     try {
       const response = await api.post(`/agents/${id}/database`, formData, {
         headers: {
@@ -1412,7 +1407,6 @@ function AgentDetail() {
         status: 'success',
         message: `${file.name} uploaded successfully.`,
       })
-      setDatabaseCustomId('')
     } catch (error) {
       console.error('Database file upload error:', error)
       setDbUploadStatus({
@@ -2369,13 +2363,6 @@ function AgentDetail() {
                     flex: '0 0 auto',
                   }}
                 >
-                  <input
-                    id='custom-file-id'
-                    className='input'
-                    placeholder='Custom file ID (optional)'
-                    value={databaseCustomId}
-                    onChange={(e) => setDatabaseCustomId(e.target.value)}
-                  />
                   <FileInput onFileSelect={handleDatabaseFileSelect} />
                   {dbUploadStatus.status !== 'idle' && (
                     <div className={`upload-status ${dbUploadStatus.status}`}>
@@ -2437,9 +2424,6 @@ function AgentDetail() {
                         </div>
 
                         <div className='row' style={{ gap: 6 }}>
-                          <button className='btn ghost' onClick={() => alert(f.id)}>
-                            ID
-                          </button>
                           <button
                             className='btn ghost'
                             onClick={() => toggleLinkPanel(fileKey, f)}
@@ -2449,8 +2433,9 @@ function AgentDetail() {
                           <button
                             className='btn ghost'
                             onClick={() => deleteDatabaseFile(f)}
+                            title='Delete'
                           >
-                            ???
+                            <FontAwesomeIcon icon={faTrash} />
                           </button>
                         </div>
                       </div>
