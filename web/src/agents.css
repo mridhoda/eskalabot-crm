@@ -290,11 +290,7 @@
     margin-top: 24px;
 }
 
-.split .left {
-    min-width: 0;
-    padding-right: 32px;
-    border-right: 1px solid var(--border);
-}
+
 
 .split .right {
     position: sticky;
@@ -455,8 +451,9 @@
 
 /* Integrations Grid */
 .integration-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
     gap: 16px;
     margin-top: 16px;
 }
@@ -469,6 +466,8 @@
     display: flex;
     flex-direction: column;
     transition: all 0.2s;
+    flex: 1 1 300px;
+    max-width: 400px;
 }
 
 .integration-card:hover {

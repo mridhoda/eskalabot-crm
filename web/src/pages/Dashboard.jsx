@@ -1595,7 +1595,7 @@ function AgentDetail() {
 
         {/* LEFT */}
 
-        <div className='left col'>
+        <div className='left col' style={{ borderRight: tab === 'general' ? '1px solid var(--border)' : 'none' }}>
 
           {tab === 'general' && (
 
