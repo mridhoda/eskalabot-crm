@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import api from '../api';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPlus, faPaperPlane, faSync, faUserShield, faCheckCircle, faRobot, faSmile, faImage, faReply, faTimes } from '@fortawesome/free-solid-svg-icons';
+import { faPlus, faPaperPlane, faSync, faUserShield, faCheckCircle, faRobot, faSmile, faImage, faReply, faTimes, faMicrophone } from '@fortawesome/free-solid-svg-icons';
 import { faWhatsapp, faTelegram, faInstagram, faFacebook } from '@fortawesome/free-brands-svg-icons';
 import EmojiPicker from 'emoji-picker-react';
 
@@ -353,24 +353,37 @@ export default function ChatPanel({ selected, reload, onChatUpdate, replyingTo, 
                       <div className="quoted-reply-text">{m.replyTo.text}</div>
                     </div>
                   )}
-                  {m.text}
-                  {m.attachment && !m.text && (
-                    <div style={{ marginTop: 8 }}>
-                      {(() => {
-                        const filename = m.attachment.filename || '';
-                        const url = m.attachment.url?.startsWith('http') ? m.attachment.url : `${api.defaults.baseURL}${m.attachment.url || ''}`;
-                        const isImage = /\.(png|jpe?g|gif|webp)$/i.test(filename);
-                        if (isImage) {
-                          return <img src={url} alt={filename} style={{ maxWidth: 220, borderRadius: 8, display: 'block' }} />;
-                        }
-                        return (
-                          <a href={url} target="_blank" rel="noopener noreferrer" className='btn ghost'>
-                            Download {filename || 'file'}
-                          </a>
-                        );
-                      })()}
-                    </div>
-                  )}
+                  {m.text && (() => {
+                    const filename = m.attachment?.filename || '';
+                    const isAudio = /\.(mp3|wav|ogg|m4a)$/i.test(filename);
+                    if (isAudio) {
+                      return (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <FontAwesomeIcon icon={faMicrophone} style={{ color: '#64748B', fontSize: '14px' }} />
+                          <span>{m.text}</span>
+                        </div>
+                      );
+                    }
+                    return m.text;
+                  })()}
+                  {m.attachment && !m.text && (() => {
+                    const filename = m.attachment.filename || '';
+                    const url = m.attachment.url?.startsWith('http') ? m.attachment.url : `${api.defaults.baseURL}${m.attachment.url || ''}`;
+                    const isImage = /\.(png|jpe?g|gif|webp)$/i.test(filename);
+                    const isAudio = /\.(mp3|wav|ogg|m4a)$/i.test(filename);
+
+                    if (isImage) {
+                      return <img src={url} alt={filename} style={{ maxWidth: 220, borderRadius: 8, display: 'block' }} />;
+                    }
+                    if (isAudio) {
+                      return null; // Don't show download button for audio files
+                    }
+                    return (
+                      <a href={url} target="_blank" rel="noopener noreferrer" className='btn ghost'>
+                        Download {filename || 'file'}
+                      </a>
+                    );
+                  })()}
                 </div>
                 <MessageFooter message={m} selected={selected} user={user} />
               </div>
@@ -384,28 +397,37 @@ export default function ChatPanel({ selected, reload, onChatUpdate, replyingTo, 
             </div>
 
             {/* Render attachment as separate bubble if message has both text and attachment */}
-            {m.text && m.attachment && (
-              <div className={`chat-message-wrapper ${getSenderType(m)}`} ref={index === messages.length - 1 ? endRef : null}>
-                <div className="chat-message-content">
-                  <div className="chat-message-bubble">
-                    {(() => {
-                      const filename = m.attachment.filename || '';
-                      const url = m.attachment.url?.startsWith('http') ? m.attachment.url : `${api.defaults.baseURL}${m.attachment.url || ''}`;
-                      const isImage = /\.(png|jpe?g|gif|webp)$/i.test(filename);
-                      if (isImage) {
-                        return <img src={url} alt={filename} style={{ maxWidth: 220, borderRadius: 8, display: 'block' }} />;
-                      }
-                      return (
-                        <a href={url} target="_blank" rel="noopener noreferrer" className='btn ghost'>
-                          Download {filename || 'file'}
-                        </a>
-                      );
-                    })()}
+            {m.text && m.attachment && (() => {
+              const filename = m.attachment.filename || '';
+              const isAudio = /\.(mp3|wav|ogg|m4a)$/i.test(filename);
+
+              // Don't render separate bubble for audio files (already shown with mic icon)
+              if (isAudio) {
+                return null;
+              }
+
+              return (
+                <div className={`chat-message-wrapper ${getSenderType(m)}`} ref={index === messages.length - 1 ? endRef : null}>
+                  <div className="chat-message-content">
+                    <div className="chat-message-bubble">
+                      {(() => {
+                        const url = m.attachment.url?.startsWith('http') ? m.attachment.url : `${api.defaults.baseURL}${m.attachment.url || ''}`;
+                        const isImage = /\.(png|jpe?g|gif|webp)$/i.test(filename);
+                        if (isImage) {
+                          return <img src={url} alt={filename} style={{ maxWidth: 220, borderRadius: 8, display: 'block' }} />;
+                        }
+                        return (
+                          <a href={url} target="_blank" rel="noopener noreferrer" className='btn ghost'>
+                            Download {filename || 'file'}
+                          </a>
+                        );
+                      })()}
+                    </div>
+                    <MessageFooter message={m} selected={selected} user={user} />
                   </div>
-                  <MessageFooter message={m} selected={selected} user={user} />
                 </div>
-              </div>
-            )}
+              );
+            })()}
           </React.Fragment>
         ))}
       </div>

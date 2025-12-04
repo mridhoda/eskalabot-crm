@@ -6,7 +6,7 @@ import Agent from '../../models/Agent.js';
 import Chat from '../../models/Chat.js';
 import Message from '../../models/Message.js';
 import Contact from '../../models/Contact.js';
-import { generateAIReply, findAndSendFile } from '../../services/ai.js';
+import { generateAIReply, findAndSendFile, transcribeAudio } from '../../services/ai.js';
 import { openaiClient, geminiClient } from '../../services/aiClient.js';
 import {
   tgSend,
@@ -162,8 +162,18 @@ router.post('/:token?', async (req, res) => {
           filename: saved.originalName,
           storedName: saved.storedName,
         };
+
+        // Transcribe the audio file
         if (!text) {
-          text = '[Voice Note]';
+          try {
+            const storedPath = path.resolve('uploads', saved.storedName);
+            const transcription = await transcribeAudio(storedPath);
+            text = transcription;
+            console.log('[telegram] Voice note transcribed successfully');
+          } catch (transcribeError) {
+            console.error('[telegram] Failed to transcribe audio:', transcribeError);
+            text = '[Voice Note]'; // Fallback if transcription fails
+          }
         }
       } catch (e) {
         console.error('[telegram] Failed to store incoming voice/audio:', e);

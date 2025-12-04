@@ -293,3 +293,27 @@ export async function findAndSendFile({ agent, message, openaiClient, geminiClie
 
   return null;
 }
+export async function transcribeAudio(filePath) {
+  if (!geminiClient) {
+    throw new Error('Gemini client not available for transcription');
+  }
+  
+  try {
+    const filename = path.basename(filePath);
+    const mimeType = getMimeType(filename);
+    const data = await fs.readFile(filePath, 'base64');
+    
+    const model = geminiClient.getGenerativeModel({ model: 'gemini-2.5-flash' });
+    const result = await model.generateContent([
+      { text: 'Please transcribe this audio file. Only return the transcribed text, nothing else.' },
+      { inlineData: { mimeType, data } }
+    ]);
+    
+    const transcription = result.response.text();
+    console.log('[AI] Audio transcription successful:', transcription.substring(0, 100));
+    return transcription;
+  } catch (e) {
+    console.error('[AI] Audio transcription failed:', e.message);
+    throw e;
+  }
+}
