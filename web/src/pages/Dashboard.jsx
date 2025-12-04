@@ -1377,23 +1377,37 @@ function AgentDetail() {
   const handleDatabaseFileSelect = async (file) => {
     if (!file) return
     const entryId = generateLocalId()
+
+    // Skip localStorage for large files (>5MB) to avoid quota exceeded errors
+    const MAX_LOCAL_STORAGE_SIZE = 5 * 1024 * 1024; // 5MB
+    const skipLocalStorage = file.size > MAX_LOCAL_STORAGE_SIZE;
+
     setDbUploadStatus({
       status: 'loading',
       message: `Processing ${file.name}...`,
     })
-    try {
-      await readFileAsDataUrl(file, entryId)
+
+    // Only store in localStorage if file is small enough
+    if (!skipLocalStorage) {
+      try {
+        await readFileAsDataUrl(file, entryId)
+        setDbUploadStatus({
+          status: 'loading',
+          message: 'Stored locally. Uploading to server...',
+        })
+      } catch (error) {
+        console.error('Failed to store database file locally:', error)
+        setDbUploadStatus({
+          status: 'error',
+          message: 'Cannot store file locally. Please try another file.',
+        })
+        return
+      }
+    } else {
       setDbUploadStatus({
         status: 'loading',
-        message: 'Stored locally. Uploading to server...',
+        message: 'File is large, uploading directly to server...',
       })
-    } catch (error) {
-      console.error('Failed to store database file locally:', error)
-      setDbUploadStatus({
-        status: 'error',
-        message: 'Cannot store file locally. Please try another file.',
-      })
-      return
     }
 
     const formData = new FormData()
@@ -1405,7 +1419,9 @@ function AgentDetail() {
         },
       })
       setDatabase((prev) => [...prev, response.data])
-      persistLocalDatabase((prev) => prev.filter((item) => item.id !== entryId))
+      if (!skipLocalStorage) {
+        persistLocalDatabase((prev) => prev.filter((item) => item.id !== entryId))
+      }
       setDbUploadStatus({
         status: 'success',
         message: `${file.name} uploaded successfully.`,
@@ -1414,7 +1430,9 @@ function AgentDetail() {
       console.error('Database file upload error:', error)
       setDbUploadStatus({
         status: 'error',
-        message: 'Upload failed, file saved locally on this device.',
+        message: skipLocalStorage
+          ? 'Upload failed. Please try again.'
+          : 'Upload failed, file saved locally on this device.',
       })
     }
   }
