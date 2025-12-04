@@ -148,6 +148,26 @@ router.post('/:token?', async (req, res) => {
       } catch (e) {
         console.error('[telegram] Failed to store incoming document:', e);
       }
+    } else if (msgObj.voice || msgObj.audio) {
+      const audioObj = msgObj.voice || msgObj.audio;
+      try {
+        const ext = msgObj.voice ? '.ogg' : '.mp3'; // Default extensions
+        const saved = await saveTelegramFileLocally({
+          token: platform.token,
+          fileId: audioObj.file_id,
+          preferredName: `voice_${audioObj.file_unique_id || Date.now()}${ext}`,
+        });
+        incomingAttachment = {
+          url: `/files/${saved.storedName}`,
+          filename: saved.originalName,
+          storedName: saved.storedName,
+        };
+        if (!text) {
+          text = '[Voice Note]';
+        }
+      } catch (e) {
+        console.error('[telegram] Failed to store incoming voice/audio:', e);
+      }
     }
 
     let agent = await Agent.findOne({ platformId: platform._id });

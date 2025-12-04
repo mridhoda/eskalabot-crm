@@ -15,6 +15,11 @@ function getMimeType(filename = '') {
   if (lower.endsWith('.webp')) return 'image/webp';
   if (lower.endsWith('.heic')) return 'image/heic';
   if (lower.endsWith('.heif')) return 'image/heif';
+  // Audio types
+  if (lower.endsWith('.mp3')) return 'audio/mp3';
+  if (lower.endsWith('.wav')) return 'audio/wav';
+  if (lower.endsWith('.ogg')) return 'audio/ogg';
+  if (lower.endsWith('.m4a')) return 'audio/m4a';
   // Default for safety, though Gemini supports various types
   return 'image/jpeg';
 }
