@@ -103,7 +103,13 @@ export async function generateAIReply({ system, prompt, message, knowledge, agen
         4. Do not add any other text if you decide to escalate.
         `;
 
-        const systemInstruction = (system || 'You are a helpful assistant.') + contactName + escalationInstruction;
+        let systemInstruction = (system || 'You are a helpful assistant.') + contactName + escalationInstruction;
+
+        // --- Tools Injection ---
+        if (agent.tools && agent.tools.includes('time')) {
+          const now = new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' });
+          systemInstruction += `\n\n[System Tool: Time]\nCurrent Time (WIB): ${now}\nYou have access to the current time. If the user asks for the time, use this information. If the user asks to set a reminder, acknowledge it and say you have noted it (mock functionality).`;
+        }
 
         const geminiHistory = [
           { role: 'user', parts: [{ text: systemInstruction }] },

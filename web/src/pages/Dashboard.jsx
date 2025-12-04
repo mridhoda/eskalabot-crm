@@ -12,7 +12,7 @@ import Platforms from './Platforms'
 import * as XLSX from 'xlsx'
 import { Line, Pie, Bar } from 'react-chartjs-2'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faMagnifyingGlass, faSliders, faEnvelopeOpen, faCopy, faTrash } from '@fortawesome/free-solid-svg-icons'
+import { faMagnifyingGlass, faSliders, faEnvelopeOpen, faCopy, faTrash, faComments, faClock, faGlobe, faFileExcel } from '@fortawesome/free-solid-svg-icons'
 import '../inbox-modern.css'
 import '../analytics.css'
 import '../modal.css'
@@ -1162,6 +1162,7 @@ function AgentDetail() {
   const [prompt, setPrompt] = useState('')
   const [welcomeMessage, setWelcomeMessage] = useState('')
   const [stickerUrl, setStickerUrl] = useState('')
+  const [tools, setTools] = useState([])
   const [knowledge, setKnowledge] = useState([])
   const [followUps, setFollowUps] = useState([])
   const [database, setDatabase] = useState([])
@@ -1285,6 +1286,7 @@ function AgentDetail() {
         setPrompt(a.data.prompt || '')
         setWelcomeMessage(a.data.welcomeMessage || '')
         setStickerUrl(a.data.stickerUrl || '')
+        setTools(a.data.tools || [])
         setKnowledge(Array.isArray(a.data.knowledge) ? a.data.knowledge : [])
         setFollowUps(Array.isArray(a.data.followUps) ? a.data.followUps : [])
         setDatabase(Array.isArray(a.data.database) ? a.data.database : [])
@@ -1307,6 +1309,7 @@ function AgentDetail() {
         prompt,
         welcomeMessage,
         stickerUrl,
+        tools,
         knowledge,
         followUps,
         database,
@@ -2147,69 +2150,127 @@ function AgentDetail() {
 
 
           {tab === 'integrations' && (
-
             <div className='col'>
-
-              <h3>Integrations</h3>
-
-              <div className='muted'>
-
-                Hubungkan agent ke platform yang sudah terdaftar.
-
+              <div className='row' style={{ justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                <div>
+                  <h3 style={{ margin: 0 }}>Connected Apps</h3>
+                  <div className='muted' style={{ marginTop: 4 }}>
+                    Connect your chatbot with third-party applications to extend its functionality.
+                  </div>
+                </div>
               </div>
 
-              <div className='row' style={{ gap: 8, alignItems: 'center' }}>
+              <div className='integration-grid'>
+                {/* Messaging Platform (Existing) */}
+                <div className={`integration-card ${platformId ? 'active' : ''}`}>
+                  <div className='integration-header'>
+                    <div className='integration-icon' style={{ background: '#e0f2fe', color: '#0284c7' }}>
+                      <FontAwesomeIcon icon={faComments} />
+                    </div>
+                    <div className='integration-status'>
+                      {platformId ? <span className='status-dot active'></span> : <span className='status-dot'></span>}
+                    </div>
+                  </div>
+                  <div className='integration-body'>
+                    <h4>Messaging Platform</h4>
+                    <p>Hubungkan agent ke platform messaging seperti Telegram atau WhatsApp.</p>
+                  </div>
+                  <div className='integration-footer'>
+                    <div className='row' style={{ gap: 8, alignItems: 'center', width: '100%' }}>
+                      <select
+                        className='select'
+                        style={{ flex: 1, fontSize: 12 }}
+                        value={platformId || ''}
+                        onChange={(e) => setPlatformId(e.target.value)}
+                      >
+                        <option value=''>Select Platform</option>
+                        {platforms.map((p) => (
+                          <option key={p._id} value={p._id}>
+                            {p.label} ({p.type})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    {platformId && (
+                      <div className='muted' style={{ fontSize: 10, marginTop: 4 }}>
+                        Webhook: <code>{`<BASE>/webhook/<platform>`}</code>
+                      </div>
+                    )}
+                  </div>
+                </div>
 
-                <BrandIcon
+                {/* Auto Reminder (New) */}
+                <div className={`integration-card ${tools.includes('time') ? 'active' : ''}`}>
+                  <div className='integration-header'>
+                    <div className='integration-icon' style={{ background: '#fce7f3', color: '#db2777' }}>
+                      <FontAwesomeIcon icon={faClock} />
+                    </div>
+                    <div className='integration-status'>
+                      {tools.includes('time') ? <span className='status-dot active'></span> : <span className='status-dot'></span>}
+                    </div>
+                  </div>
+                  <div className='integration-body'>
+                    <h4>Auto Reminder</h4>
+                    <p>Buat reminder untuk melakukan tugas tertentu pada waktu tertentu. (Uses Time API)</p>
+                  </div>
+                  <div className='integration-footer'>
+                    <button className='btn ghost small'>Settings</button>
+                    <button
+                      className={`btn small ${tools.includes('time') ? 'active' : ''}`}
+                      onClick={() => {
+                        const newTools = tools.includes('time')
+                          ? tools.filter(t => t !== 'time')
+                          : [...tools, 'time'];
+                        setTools(newTools);
+                      }}
+                    >
+                      {tools.includes('time') ? 'Active' : 'Activate'}
+                    </button>
+                  </div>
+                </div>
 
-                  type={
+                {/* Web Search (Placeholder) */}
+                <div className='integration-card'>
+                  <div className='integration-header'>
+                    <div className='integration-icon' style={{ background: '#dbeafe', color: '#2563eb' }}>
+                      <FontAwesomeIcon icon={faGlobe} />
+                    </div>
+                    <div className='integration-status'>
+                      <span className='status-dot'></span>
+                    </div>
+                  </div>
+                  <div className='integration-body'>
+                    <h4>Web Search</h4>
+                    <p>Cari informasi terkini dari web untuk menjawab pertanyaan pelanggan.</p>
+                  </div>
+                  <div className='integration-footer'>
+                    <button className='btn ghost small'>Settings</button>
+                    <button className='btn small'>Activate</button>
+                  </div>
+                </div>
 
-                    platforms.find((p) => p._id === platformId)?.type ||
-
-                    'custom'
-
-                  }
-
-                  size={18}
-
-                />
-
-                <select
-
-                  className='select'
-
-                  value={platformId || ''}
-
-                  onChange={(e) => setPlatformId(e.target.value)}
-
-                >
-
-                  <option value=''> (Tidak terhubung)</option>
-
-                  {platforms.map((p) => (
-
-                    <option key={p._id} value={p._id}>
-
-                      {p.label} ({p.type})
-
-                    </option>
-
-                  ))}
-
-                </select>
+                {/* Google Sheets (Placeholder) */}
+                <div className='integration-card'>
+                  <div className='integration-header'>
+                    <div className='integration-icon' style={{ background: '#dcfce7', color: '#16a34a' }}>
+                      <FontAwesomeIcon icon={faFileExcel} />
+                    </div>
+                    <div className='integration-status'>
+                      <span className='status-dot'></span>
+                    </div>
+                  </div>
+                  <div className='integration-body'>
+                    <h4>Google Sheets</h4>
+                    <p>Hubungkan ke Google Sheets untuk membaca dan menulis data.</p>
+                  </div>
+                  <div className='integration-footer'>
+                    <button className='btn ghost small'>Settings</button>
+                    <button className='btn small'>Activate</button>
+                  </div>
+                </div>
 
               </div>
-
-              <div className='muted' style={{ marginTop: 6 }}>
-
-                Webhook URL umum: c
-
-                <code>{`<PUBLIC_BASE_URL>/webhook/<platform>`}</code>
-
-              </div>
-
             </div>
-
           )}
 
 
