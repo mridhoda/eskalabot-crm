@@ -354,7 +354,7 @@ export default function ChatPanel({ selected, reload, onChatUpdate, replyingTo, 
                     </div>
                   )}
                   {m.text}
-                  {m.attachment && (
+                  {m.attachment && !m.text && (
                     <div style={{ marginTop: 8 }}>
                       {(() => {
                         const filename = m.attachment.filename || '';
@@ -382,6 +382,30 @@ export default function ChatPanel({ selected, reload, onChatUpdate, replyingTo, 
                 </div>
               )}
             </div>
+
+            {/* Render attachment as separate bubble if message has both text and attachment */}
+            {m.text && m.attachment && (
+              <div className={`chat-message-wrapper ${getSenderType(m)}`} ref={index === messages.length - 1 ? endRef : null}>
+                <div className="chat-message-content">
+                  <div className="chat-message-bubble">
+                    {(() => {
+                      const filename = m.attachment.filename || '';
+                      const url = m.attachment.url?.startsWith('http') ? m.attachment.url : `${api.defaults.baseURL}${m.attachment.url || ''}`;
+                      const isImage = /\.(png|jpe?g|gif|webp)$/i.test(filename);
+                      if (isImage) {
+                        return <img src={url} alt={filename} style={{ maxWidth: 220, borderRadius: 8, display: 'block' }} />;
+                      }
+                      return (
+                        <a href={url} target="_blank" rel="noopener noreferrer" className='btn ghost'>
+                          Download {filename || 'file'}
+                        </a>
+                      );
+                    })()}
+                  </div>
+                  <MessageFooter message={m} selected={selected} user={user} />
+                </div>
+              </div>
+            )}
           </React.Fragment>
         ))}
       </div>
