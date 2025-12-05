@@ -250,14 +250,16 @@ a:hover {
 
 .sidebar:hover .label {
     opacity: 1;
-    max-width: 100%;
+    max-width: 200px;
+    white-space: nowrap;
+    word-break: break-word;
     /* Allow it to expand fully within its flex container */
     flex-grow: 1;
     /* Takes up remaining space */
 }
 
 .sidebar:hover {
-    width: 230px;
+    width: 270px;
 }
 
 .sidebar .item {
@@ -319,7 +321,7 @@ a:hover {
 }
 
 .sidebar:hover~.main {
-    margin-left: 230px;
+    margin-left: 270px;
 }
 
 .main-body {
@@ -353,7 +355,7 @@ a:hover {
 }
 
 .dashboard-layout .sidebar-container:hover~.navbar {
-    margin-left: 230px;
+    margin-left: 270px;
 }
 
 .logo {

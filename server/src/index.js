@@ -27,8 +27,8 @@ const rawCorsOrigin = process.env.CORS_ORIGIN || '*';
 const allowedOrigins = rawCorsOrigin === '*'
   ? '*'
   : rawCorsOrigin.split(',')
-      .map((origin) => origin.trim())
-      .filter(Boolean);
+    .map((origin) => origin.trim())
+    .filter(Boolean);
 
 app.use(
   cors({
@@ -57,10 +57,10 @@ mongoose.connect(MONGODB_URI).then(() => {
   app.use('/chats', chatRoutes);
   app.use('/webhook', webhookRoutes); // webhooks path roots
   app.use('/analytics', analyticsRoutes);
-app.use('/billing', billingRoutes);
-app.use('/profile', profileRoutes);
-app.use('/contacts', contactRoutes);
-app.use('/integrations', integrationsRoutes);
+  app.use('/billing', billingRoutes);
+  app.use('/profile', profileRoutes);
+  app.use('/contacts', contactRoutes);
+  app.use('/integrations', integrationsRoutes);
 
   // global error handler
   app.use((err, req, res, next) => {

@@ -107,10 +107,21 @@ export async function generateAIReply({ system, prompt, message, knowledge, agen
 
         // --- Tools Injection ---
         if (agent.tools && agent.tools.includes('time')) {
-          const now = new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' });
-          systemInstruction += `\n\n[System Tool: Time]\nCurrent Time (WIB): ${now}\nYou have access to the current time. If the user asks for the time, use this information. If the user asks to set a reminder, acknowledge it and say you have noted it (mock functionality).`;
+          const now = new Date();
+          // WITA = UTC+8 untuk Kalimantan Timur
+          const witaTime = new Date(now.getTime() + (8 * 60 * 60 * 1000));
+          const formattedTime = witaTime.toLocaleString('id-ID', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false
+          });
+          systemInstruction += `\\n\\n[System Tool: Time]\\nCurrent Time (WITA): ${formattedTime}\\nTimezone: WITA = UTC+8 (Kalimantan Timur)\\nYou have access to the current time. Always use WITA timezone.`;
         }
-
+      
         const geminiHistory = [
           { role: 'user', parts: [{ text: systemInstruction }] },
           { role: 'model', parts: [{ text: 'Baik, saya mengerti.' }] },
@@ -159,7 +170,20 @@ export async function generateAIReply({ system, prompt, message, knowledge, agen
           }
         });
 
-        const promptText = `${prompt || ''}\n\nKnowledge:\n${knowledgeContent}\n\nUser: ${currentMessageText}`;
+        // Inject real-time timestamp for EVERY message
+        const now = new Date();
+        const currentTime = now.toLocaleString('id-ID', {
+          weekday: 'long',
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+          hour12: false
+        });
+        
+        const promptText = `${prompt || ''}\n\nKnowledge:\n${knowledgeContent}\n\n[CURRENT TIME RIGHT NOW: ${currentTime} WITA - This is the ACTUAL real-time clock for THIS message. Do NOT use time from previous messages.]\n\nUser: ${currentMessageText}`;
         const promptParts = [{ text: promptText }];
 
         if (message.attachment?.url) {
@@ -317,3 +341,4 @@ export async function transcribeAudio(filePath) {
     throw e;
   }
 }
+
