@@ -223,69 +223,115 @@ router.get('/knowledge/list', authRequired, attachUser, async (req, res) => {
 });
 
 // POST /agents/:id/test (Test UI)
-  router.post('/:id/test', authRequired, attachUser, async (req, res) => {
-    try {
-      const { id } = req.params
-    const { message, history: rawHistory } = req.body || {}
+router.post('/:id/test', authRequired, attachUser, async (req, res) => {
+  try {
+    const { id } = req.params
+    const { message, attachment, history: rawHistory } = req.body || {}
     if (!mongoose.Types.ObjectId.isValid(id)) return res.status(400).json({ error: 'Invalid agent id' })
-    if (!message) return res.status(400).json({ error: 'Message required' })
+    if (!message && !attachment) return res.status(400).json({ error: 'Message or attachment required' })
     const history =
       Array.isArray(rawHistory) && rawHistory.length > 0
         ? rawHistory
-            .filter((h) => h && typeof h.text === 'string')
-            .map((h) => ({
-              from: h.from === 'ai' ? 'ai' : 'user',
-              text: h.text,
-              createdAt: h.createdAt ? new Date(h.createdAt) : new Date(),
-            }))
+          .filter((h) => h && typeof h.text === 'string')
+          .map((h) => ({
+            from: h.from === 'ai' ? 'ai' : 'user',
+            text: h.text,
+            createdAt: h.createdAt ? new Date(h.createdAt) : new Date(),
+          }))
         : []
 
-      const agent = await Agent.findOne({ _id: id, workspaceId: req.me.workspaceId })
-      if (!agent) return res.status(404).json({ error: 'Agent not found' })
+    const agent = await Agent.findOne({ _id: id, workspaceId: req.me.workspaceId })
+    if (!agent) return res.status(404).json({ error: 'Agent not found' })
 
-      const fileResponse = await findAndSendFile({
-        agent,
-        message,
-        openaiClient,
-        geminiClient,
-      });
+    const fileResponse = await findAndSendFile({
+      agent,
+      message,
+      openaiClient,
+      geminiClient,
+    });
 
-      if (fileResponse) {
-        return res.json({ reply: fileResponse });
+    if (fileResponse) {
+      return res.json({ reply: fileResponse });
+    }
+
+    // Prepare message object with attachment if provided
+    const messageObj = {
+      text: message || '',
+      attachment: attachment || null
+    }
+
+    const system = agent.behavior || 'You are a helpful assistant.'
+    const reply = await generateAIReply({
+      system,
+      prompt: agent.prompt,
+      message: messageObj,
+      knowledge: agent.knowledge,
+      agent: agent,
+      chat: { workspaceId: req.me.workspaceId, contactId: null }, // Mock chat object
+      history,
+    })
+
+    let replyText = typeof reply === 'string' ? reply : reply.text
+    let replyAttachment = typeof reply === 'object' && reply.attachment ? reply.attachment : null
+
+    if (!replyAttachment) {
+      const mention = findDatabaseFileMention(replyText, agent)
+      if (mention && mention.file?.storedName) {
+        const cleanedText = (replyText || '').replace(mention.token, mention.altText || '').trim()
+        replyAttachment = {
+          url: `/files/${mention.file.storedName}`,
+          filename: mention.file.originalName || mention.file.storedName,
+          storedName: mention.file.storedName,
+        }
+        replyText = cleanedText || mention.altText || replyText
       }
+    }
 
-      const system = agent.behavior || 'You are a helpful assistant.'
-      const reply = await generateAIReply({ 
-        system, 
-        prompt: agent.prompt, 
-        message, 
-        knowledge: agent.knowledge,
-        agent: agent,
-        chat: { workspaceId: req.me.workspaceId, contactId: null }, // Mock chat object
-        history,
-      })
+    // Check for external URL file mention (like in main program)
+    if (!replyAttachment) {
+      const { findUrlFileMention } = await import('../utils/fileMentions.js');
+      const { downloadFile } = await import('../utils/downloader.js');
+      const { promises: fsPromises } = await import('fs');
 
-      let replyText = typeof reply === 'string' ? reply : reply.text
-      let attachment = typeof reply === 'object' && reply.attachment ? reply.attachment : null
+      const urlMention = findUrlFileMention(replyText);
+      if (urlMention) {
+        const { url, token, altText } = urlMention;
+        console.log(`[test] Found external file URL: ${url}`);
 
-      if (!attachment) {
-        const mention = findDatabaseFileMention(replyText, agent)
-        if (mention && mention.file?.storedName) {
-          const cleanedText = (replyText || '').replace(mention.token, mention.altText || '').trim()
-          attachment = {
-            url: `/files/${mention.file.storedName}`,
-            filename: mention.file.originalName || mention.file.storedName,
-            storedName: mention.file.storedName,
-          }
-          replyText = cleanedText || mention.altText || replyText
+        const cleanedText = (replyText || '').replace(token, altText || '').trim();
+
+        try {
+          // Download file
+          const { filePath, filename, originalName } = await downloadFile(url);
+          console.log(`[test] Downloaded file to: ${filePath}`);
+
+          // Move to uploads directory
+          const storedName = filename;
+          const uploadsPath = path.resolve('uploads', storedName);
+          await fsPromises.rename(filePath, uploadsPath);
+
+          replyAttachment = {
+            url: `/files/${storedName}`,
+            filename: originalName,
+            storedName: storedName,
+          };
+          replyText = cleanedText || altText || 'File sent';
+
+          console.log(`[test] File uploaded successfully: ${storedName}`);
+        } catch (e) {
+          console.error('[test] Failed to download/upload external file:', e);
+          // Fallback: keep the URL in text
         }
       }
-
-      res.json({ reply: attachment ? { text: replyText, attachment } : replyText })
-    } catch (err) {
-      console.error('POST /agents/:id/test error:', err)
-      res.status(500).json({ error: 'Test failed' })
     }
-  })
+
+    res.json({ reply: replyAttachment ? { text: replyText, attachment: replyAttachment } : replyText })
+
+  } catch (err) {
+    console.error('POST /agents/:id/test error:', err)
+    res.status(500).json({ error: 'Test failed' })
+  }
+})
+
 
 export default router

@@ -1176,6 +1176,7 @@ function AgentDetail() {
 
   const [messages, setMessages] = useState([])
   const [testMsg, setTestMsg] = useState('')
+  const [testAttachment, setTestAttachment] = useState(null)
   const [testing, setTesting] = useState(false)
   const combinedDatabase = useMemo(
     () => [
@@ -1457,7 +1458,7 @@ function AgentDetail() {
   }
 
   const sendTest = async () => {
-    if (!testMsg.trim()) return
+    if (!testMsg.trim() && !testAttachment) return
     setTesting(true)
 
     const historyPayload = messages
@@ -1466,6 +1467,9 @@ function AgentDetail() {
       .map((m) => ({ from: m.from, text: m.text }));
 
     const userMessage = { from: 'user', text: testMsg }
+    if (testAttachment) {
+      userMessage.attachment = testAttachment
+    }
     let newMessages = [...messages, userMessage]
 
     if (messages.length === 0) {
@@ -1480,10 +1484,25 @@ function AgentDetail() {
 
     setMessages(newMessages)
     setTestMsg('')
+    setTestAttachment(null)
 
     try {
+      let payload = { message: testMsg, history: historyPayload }
 
-      const r = await api.post(`/agents/${id}/test`, { message: testMsg, history: historyPayload })
+      // If there's an attachment, upload it first
+      if (testAttachment && testAttachment.file) {
+        const formData = new FormData()
+        formData.append('file', testAttachment.file)
+        const uploadRes = await api.post('/agents/upload', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        })
+        payload.attachment = {
+          url: uploadRes.data.filePath,
+          filename: uploadRes.data.originalName
+        }
+      }
+
+      const r = await api.post(`/agents/${id}/test`, payload)
 
       const reply = r.data.reply;
 
@@ -1497,6 +1516,9 @@ function AgentDetail() {
 
       }
 
+    } catch (error) {
+      console.error('Test message error:', error)
+      setMessages((prev) => [...prev, { from: 'ai', text: 'Error: Failed to send message' }])
     } finally {
 
       setTesting(false)
@@ -2687,28 +2709,77 @@ function AgentDetail() {
 
               </div>
 
-              <div className='row'>
+              <div className='col' style={{ gap: 8 }}>
+                {testAttachment && (
+                  <div className='row' style={{ gap: 8, alignItems: 'center', padding: 8, background: '#f3f4f6', borderRadius: 8 }}>
+                    <img
+                      src={testAttachment.preview}
+                      alt='Preview'
+                      style={{ width: 60, height: 60, objectFit: 'cover', borderRadius: 4 }}
+                    />
+                    <span style={{ flex: 1, fontSize: 12 }}>{testAttachment.file?.name}</span>
+                    <button
+                      className='btn ghost'
+                      onClick={() => setTestAttachment(null)}
+                      style={{ padding: '4px 8px' }}
+                    >
+                      ✕
+                    </button>
+                  </div>
+                )}
 
-                <input
+                <div className='row'>
 
-                  className='input'
+                  <input
 
-                  placeholder='Ketik pesan uji…'
+                    className='input'
 
-                  value={testMsg}
+                    placeholder='Ketik pesan uji…'
 
-                  onChange={(e) => setTestMsg(e.target.value)}
+                    value={testMsg}
 
-                  onKeyDown={(e) => e.key === 'Enter' && sendTest()}
+                    onChange={(e) => setTestMsg(e.target.value)}
 
-                />
+                    onKeyDown={(e) => e.key === 'Enter' && sendTest()}
 
-                <button className='btn' onClick={sendTest} disabled={testing}>
+                  />
 
-                  {testing ? '...' : 'Kirim'}
+                  <input
+                    type='file'
+                    accept='image/*'
+                    style={{ display: 'none' }}
+                    id='test-photo-input'
+                    onChange={(e) => {
+                      const file = e.target.files?.[0]
+                      if (file) {
+                        const reader = new FileReader()
+                        reader.onload = () => {
+                          setTestAttachment({
+                            file,
+                            preview: reader.result
+                          })
+                        }
+                        reader.readAsDataURL(file)
+                      }
+                      e.target.value = ''
+                    }}
+                  />
 
-                </button>
+                  <button
+                    className='btn ghost'
+                    onClick={() => document.getElementById('test-photo-input')?.click()}
+                    title='Attach photo'
+                  >
+                    📎
+                  </button>
 
+                  <button className='btn' onClick={sendTest} disabled={testing}>
+
+                    {testing ? '...' : 'Kirim'}
+
+                  </button>
+
+                </div>
               </div>
 
               <div className='muted' style={{ marginTop: 6 }}>
