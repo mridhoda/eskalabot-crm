@@ -63,12 +63,11 @@ export default function Navbar({ authed, user, plan, className }) {
           </div>
           <div
             ref={dropdownRef}
-            className='row'
-            style={{ gap: 8, alignItems: 'center', position: 'relative' }}
+            style={{ display: 'flex', gap: 8, alignItems: 'center', position: 'relative', margin: 0, padding: 0 }}
           >
             <button
               className='btn ghost'
-              style={{ display: 'flex', alignItems: 'center', gap: 8 }}
+              style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 12px', height: '40px' }}
               onClick={() => setShowDropdown((prev) => !prev)}
             >
               {user?.name}
@@ -112,29 +111,29 @@ export default function Navbar({ authed, user, plan, className }) {
                   padding: 12,
                   marginTop: 4,
                   boxShadow: 'var(--shadow)',
-                  zIndex: 10,
+                  zIndex: 1000,
                   display: 'flex',
                   flexDirection: 'column',
                   gap: '8px'
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12, borderBottom: '1px solid var(--border)', paddingBottom: 12, marginBottom: 4 }}>
-                    <div style={{
-                      width: '40px',
-                      height: '40px',
-                      borderRadius: '50%',
-                      background: 'var(--lp-slate-100)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      flexShrink: 0
-                    }}>
-                      <FontAwesomeIcon icon={faUser} style={{ fontSize: '20px', color: 'var(--muted)' }} />
-                    </div>
-                    <div style={{ minWidth: 0 }}>
-                        <div style={{ fontWeight: 600, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{user?.name}</div>
-                        <div style={{ fontSize: '12px', color: 'var(--muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{user?.email}</div>
-                    </div>
+                  <div style={{
+                    width: '40px',
+                    height: '40px',
+                    borderRadius: '50%',
+                    background: 'var(--lp-slate-100)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0
+                  }}>
+                    <FontAwesomeIcon icon={faUser} style={{ fontSize: '20px', color: 'var(--muted)' }} />
+                  </div>
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ fontWeight: 600, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{user?.name}</div>
+                    <div style={{ fontSize: '12px', color: 'var(--muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{user?.email}</div>
+                  </div>
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 0' }}>

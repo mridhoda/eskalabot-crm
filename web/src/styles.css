@@ -345,7 +345,7 @@ a:hover {
     backdrop-filter: blur(10px);
     position: sticky;
     top: 0;
-    z-index: 30;
+    z-index: 50;
     transition: margin-left 0.2s ease-out;
     box-shadow: var(--panel-shadow);
 }
