@@ -2707,6 +2707,16 @@ function AgentDetail() {
 
                 ))}
 
+                {testing && (
+                  <div className='bbl ai' style={{ opacity: 0.7 }}>
+                    <div className='typing-indicator'>
+                      <span></span>
+                      <span></span>
+                      <span></span>
+                    </div>
+                  </div>
+                )}
+
               </div>
 
               <div className='col' style={{ gap: 8 }}>
