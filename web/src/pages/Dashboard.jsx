@@ -986,17 +986,61 @@ function AnalyticsPage() {
 }
 
 /* ========================= CONTACTS ========================= */
+/* ========================= CONTACTS ========================= */
 function Contacts() {
   const [contacts, setContacts] = useState([])
   const [q, setQ] = useState('')
+  const [currentPage, setCurrentPage] = useState(1)
+  const [itemsPerPage, setItemsPerPage] = useState(10)
 
   useEffect(() => {
     api.get('/contacts').then((r) => setContacts(r.data))
   }, [])
 
+  // Filter contacts
   const filtered = contacts.filter((c) =>
     c.name?.toLowerCase().includes(q.toLowerCase())
   )
+
+  // Pagination Logic
+  const totalPages = Math.ceil(filtered.length / itemsPerPage)
+
+  // Reset to page 1 when search changes
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [q, itemsPerPage])
+
+  const paginatedContacts = filtered.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  )
+
+  const handlePageChange = (p) => {
+    if (p >= 1 && p <= totalPages) {
+      setCurrentPage(p)
+    }
+  }
+
+  // Generate page numbers
+  const getPageNumbers = () => {
+    const delta = 2
+    const range = []
+    for (let i = Math.max(2, currentPage - delta); i <= Math.min(totalPages - 1, currentPage + delta); i++) {
+      range.push(i)
+    }
+    if (currentPage - delta > 2) {
+      range.unshift('...')
+    }
+    if (currentPage + delta < totalPages - 1) {
+      range.push('...')
+    }
+    range.unshift(1)
+    if (totalPages > 1) {
+      range.push(totalPages)
+    }
+    return range
+  }
+
 
   const exportToExcel = () => {
     const ws = XLSX.utils.json_to_sheet(
@@ -1014,60 +1058,119 @@ function Contacts() {
   }
 
   return (
-    <div className="p-8 bg-slate-50 min-h-screen">
-      <div className="max-w-7xl mx-auto">
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold text-slate-800">Contacts</h1>
-          <button
-            className="contacts-export-btn"
-            onClick={exportToExcel}
-          >
-            Export to Excel
+    <div className='contacts-container'>
+      {/* Header */}
+      <div className='contacts-header'>
+        <h1>Contacts</h1>
+        <div className='contacts-actions'>
+          <button className='contacts-export-btn' onClick={exportToExcel}>
+            <span style={{ fontSize: 16 }}>⬇</span> Export to Excel
           </button>
         </div>
-
-        <div className="relative group mb-8">
-          <svg className="contacts-search-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-          <input
-            className="contacts-search-input"
-            placeholder="Search contacts by name..."
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-          />
-        </div>
-
-        <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="contacts-table-outline w-full text-sm text-left text-slate-500">
-              <thead className="text-xs text-slate-700 uppercase bg-slate-50">
-                <tr>
-                  <th scope="col" className="px-6 py-4 font-semibold">Name</th>
-                  <th scope="col" className="px-6 py-4 font-semibold">ID / Phone</th>
-                  <th scope="col" className="px-6 py-4 font-semibold">Waktu Awal Chat</th>
-                  <th scope="col" className="px-6 py-4 font-semibold">Waktu Akhir Chat</th>
-                  <th scope="col" className="px-6 py-4 font-semibold">Pesan Terakhir</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map((c) => (
-                  <tr key={c._id} className="bg-white border-b hover:bg-slate-50 transition-colors">
-                    <td className="px-6 py-4 font-medium text-slate-900 whitespace-nowrap">{c.name}</td>
-                    <td className="px-6 py-4">{c.platformAccountId || c.phone || '-'}</td>
-                    <td className="px-6 py-4">{new Date(c.createdAt).toLocaleString()}</td>
-                    <td className="px-6 py-4">{new Date(c.lastMessageAt).toLocaleString()}</td>
-                    <td className="px-6 py-4 max-w-xs truncate whitespace-nowrap">{c.lastMessage || '-'}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-        {filtered.length === 0 && (
-          <div className="text-center py-12 text-slate-500">
-            <p>No contacts found.</p>
-          </div>
-        )}
       </div>
+
+      {/* Search */}
+      <div className='contacts-search-wrapper'>
+        <input
+          className='contacts-search-input'
+          placeholder='Search contacts by name...'
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+        />
+        <svg className="contacts-search-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+      </div>
+
+      {/* Grid */}
+      <div className='contacts-grid'>
+        {paginatedContacts.map((c) => (
+          <div key={c._id} className='contact-card'>
+            <div className='contact-header'>
+              <div className='contact-avatar'>
+                {c.name?.charAt(0).toUpperCase() || '?'}
+              </div>
+              <div className='contact-info'>
+                <div className='contact-name' title={c.name}>{c.name}</div>
+                <div className='contact-phone'>{c.platformAccountId || c.phone || '-'}</div>
+              </div>
+            </div>
+
+            <div className='contact-body'>
+              <div className='contact-message-label'>Last Message</div>
+              <div className='contact-message-text'>
+                {c.lastMessage ? `"${c.lastMessage}"` : <span style={{ opacity: 0.5 }}>No messages yet</span>}
+              </div>
+            </div>
+
+            <div className='contact-footer'>
+              <div className='contact-date'>
+                <span>Started</span>
+                {new Date(c.createdAt).toLocaleDateString()}
+              </div>
+              <div className='contact-date' style={{ alignItems: 'flex-end' }}>
+                <span>Last Active</span>
+                {new Date(c.lastMessageAt).toLocaleDateString()}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {filtered.length === 0 && (
+        <div className='contacts-empty'>
+          <div className='contacts-empty-icon'>📭</div>
+          <p>No contacts found matching "{q}"</p>
+        </div>
+      )}
+
+      {/* Pagination Footer */}
+      {filtered.length > 0 && (
+        <div className='contacts-footer-bar'>
+          <div>Total Data: <strong>{filtered.length.toLocaleString()}</strong></div>
+
+          <div className='pagination-controls'>
+            <button
+              className='page-btn'
+              disabled={currentPage === 1}
+              onClick={() => handlePageChange(currentPage - 1)}
+            >
+              &lt;
+            </button>
+
+            {getPageNumbers().map((p, i) => (
+              <button
+                key={i}
+                className={`page-btn ${currentPage === p ? 'active' : ''}`}
+                onClick={() => p !== '...' && handlePageChange(p)}
+                disabled={p === '...'}
+              >
+                {p}
+              </button>
+            ))}
+
+            <button
+              className='page-btn'
+              disabled={currentPage === totalPages}
+              onClick={() => handlePageChange(currentPage + 1)}
+            >
+              &gt;
+            </button>
+          </div>
+
+          <div className='rows-per-page-selector'>
+            <button className="btn ghost small" style={{ marginRight: 8 }}>Show per Page</button>
+            <select
+              className='rows-select'
+              value={itemsPerPage}
+              onChange={(e) => setItemsPerPage(Number(e.target.value))}
+            >
+              <option value={10}>10 rows</option>
+              <option value={20}>20 rows</option>
+              <option value={50}>50 rows</option>
+              <option value={100}>100 rows</option>
+            </select>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
