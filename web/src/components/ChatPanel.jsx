@@ -49,6 +49,7 @@ function MessageFooter({ message, selected, user }) {
 export default function ChatPanel({ selected, reload, onChatUpdate, replyingTo, setReplyingTo }) {
   const [messages, setMessages] = useState([]);
   const [text, setText] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
@@ -316,7 +317,42 @@ export default function ChatPanel({ selected, reload, onChatUpdate, replyingTo, 
               <span>Resolve Chat</span>
             </button>
           )}
-          <button className="chat-icon-btn" onClick={loadMessages} title="Refresh">
+        </div>
+        <div className="chat-search-bar" style={{ padding: '10px 15px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div style={{ flex: 1 }}>
+            <input
+              type="text"
+              className="chat-search-input"
+              placeholder="Search messages..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '8px 12px',
+                borderRadius: '8px',
+                border: '1px solid #CBD5E1',
+                fontSize: '14px',
+                boxSizing: 'border-box',
+              }}
+            />
+          </div>
+          <button
+            className="chat-icon-btn"
+            onClick={loadMessages}
+            title="Refresh"
+            style={{
+              height: '35px',
+              width: '35px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              border: '1px solid #E2E8F0',
+              borderRadius: '8px',
+              backgroundColor: 'white',
+              cursor: 'pointer',
+              color: '#64748B'
+            }}
+          >
             <FontAwesomeIcon icon={faSync} />
           </button>
         </div>
@@ -324,112 +360,114 @@ export default function ChatPanel({ selected, reload, onChatUpdate, replyingTo, 
 
       {/* Messages */}
       <div className="chat-messages-area">
-        {messages.map((m, index) => (
-          <React.Fragment key={m._id}>
-            {shouldShowDateSeparator(m, messages[index - 1]) && (
-              <div className="chat-date-separator">
-                <span className="chat-date-separator-text">
-                  {formatDateSeparator(m.createdAt)}
-                </span>
-              </div>
-            )}
-            {shouldShowTakeoverMessage(m, messages[index - 1]) && (
-              <div className="chat-system-message">
-                <div className="chat-system-message-content">
-                  <FontAwesomeIcon icon={faUserShield} className="chat-system-message-icon" />
-                  <span className="chat-system-message-text">
-                    <strong>{getAgentName()}</strong> self assigned to this conversation
+        {messages
+          .filter(m => m.text?.toLowerCase().includes(searchTerm.toLowerCase()))
+          .map((m, index) => (
+            <React.Fragment key={m._id}>
+              {shouldShowDateSeparator(m, messages[index - 1]) && (
+                <div className="chat-date-separator">
+                  <span className="chat-date-separator-text">
+                    {formatDateSeparator(m.createdAt)}
                   </span>
-                  <span className="chat-system-message-time">{formatTime(m.createdAt)}</span>
-                </div>
-              </div>
-            )}
-            <div className={`chat-message-wrapper ${getSenderType(m)}`} ref={index === messages.length - 1 ? endRef : null}>
-              <div className="chat-message-content">
-                <div className="chat-message-bubble">
-                  {m.replyTo && (
-                    <div className="quoted-reply">
-                      <div className="quoted-reply-sender">{m.replyTo.from === 'user' ? (selected.contactId?.name || 'User') : (m.replyTo.from === 'human' ? 'Human Agent' : 'AI Agent')}</div>
-                      <div className="quoted-reply-text">{m.replyTo.text}</div>
-                    </div>
-                  )}
-                  {m.text && (() => {
-                    const filename = m.attachment?.filename || '';
-                    const isAudio = /\.(mp3|wav|ogg|m4a)$/i.test(filename);
-                    if (isAudio) {
-                      return (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <FontAwesomeIcon icon={faMicrophone} style={{ color: '#64748B', fontSize: '14px' }} />
-                          <span>{m.text}</span>
-                        </div>
-                      );
-                    }
-                    return m.text;
-                  })()}
-                  {m.attachment && !m.text && (() => {
-                    const filename = m.attachment.filename || '';
-                    const url = m.attachment.url?.startsWith('http') ? m.attachment.url : `${api.defaults.baseURL}${m.attachment.url || ''}`;
-                    const isImage = /\.(png|jpe?g|gif|webp)$/i.test(filename);
-                    const isAudio = /\.(mp3|wav|ogg|m4a)$/i.test(filename);
-
-                    if (isImage) {
-                      return <img src={url} alt={filename} style={{ maxWidth: 220, borderRadius: 8, display: 'block' }} />;
-                    }
-                    if (isAudio) {
-                      return null; // Don't show download button for audio files
-                    }
-                    return (
-                      <a href={url} target="_blank" rel="noopener noreferrer" className='btn ghost'>
-                        Download {filename || 'file'}
-                      </a>
-                    );
-                  })()}
-                </div>
-                <MessageFooter message={m} selected={selected} user={user} />
-              </div>
-              {getSenderType(m) === 'user' && (
-                <div className="chat-message-actions">
-                  <button onClick={() => setReplyingTo(m)} title="Reply">
-                    <FontAwesomeIcon icon={faReply} />
-                  </button>
                 </div>
               )}
-            </div>
-
-            {/* Render attachment as separate bubble if message has both text and attachment */}
-            {m.text && m.attachment && (() => {
-              const filename = m.attachment.filename || '';
-              const isAudio = /\.(mp3|wav|ogg|m4a)$/i.test(filename);
-
-              // Don't render separate bubble for audio files (already shown with mic icon)
-              if (isAudio) {
-                return null;
-              }
-
-              return (
-                <div className={`chat-message-wrapper ${getSenderType(m)}`} ref={index === messages.length - 1 ? endRef : null}>
-                  <div className="chat-message-content">
-                    <div className="chat-message-bubble">
-                      {(() => {
-                        const url = m.attachment.url?.startsWith('http') ? m.attachment.url : `${api.defaults.baseURL}${m.attachment.url || ''}`;
-                        const isImage = /\.(png|jpe?g|gif|webp)$/i.test(filename);
-                        if (isImage) {
-                          return <img src={url} alt={filename} style={{ maxWidth: 220, borderRadius: 8, display: 'block' }} />;
-                        }
-                        return (
-                          <a href={url} target="_blank" rel="noopener noreferrer" className='btn ghost'>
-                            Download {filename || 'file'}
-                          </a>
-                        );
-                      })()}
-                    </div>
-                    <MessageFooter message={m} selected={selected} user={user} />
+              {shouldShowTakeoverMessage(m, messages[index - 1]) && (
+                <div className="chat-system-message">
+                  <div className="chat-system-message-content">
+                    <FontAwesomeIcon icon={faUserShield} className="chat-system-message-icon" />
+                    <span className="chat-system-message-text">
+                      <strong>{getAgentName()}</strong> self assigned to this conversation
+                    </span>
+                    <span className="chat-system-message-time">{formatTime(m.createdAt)}</span>
                   </div>
                 </div>
-              );
-            })()}
-          </React.Fragment>
-        ))}
+              )}
+              <div className={`chat-message-wrapper ${getSenderType(m)}`} ref={index === messages.length - 1 ? endRef : null}>
+                <div className="chat-message-content">
+                  <div className="chat-message-bubble">
+                    {m.replyTo && (
+                      <div className="quoted-reply">
+                        <div className="quoted-reply-sender">{m.replyTo.from === 'user' ? (selected.contactId?.name || 'User') : (m.replyTo.from === 'human' ? 'Human Agent' : 'AI Agent')}</div>
+                        <div className="quoted-reply-text">{m.replyTo.text}</div>
+                      </div>
+                    )}
+                    {m.text && (() => {
+                      const filename = m.attachment?.filename || '';
+                      const isAudio = /\.(mp3|wav|ogg|m4a)$/i.test(filename);
+                      if (isAudio) {
+                        return (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <FontAwesomeIcon icon={faMicrophone} style={{ color: '#64748B', fontSize: '14px' }} />
+                            <span>{m.text}</span>
+                          </div>
+                        );
+                      }
+                      return m.text;
+                    })()}
+                    {m.attachment && !m.text && (() => {
+                      const filename = m.attachment.filename || '';
+                      const url = m.attachment.url?.startsWith('http') ? m.attachment.url : `${api.defaults.baseURL}${m.attachment.url || ''}`;
+                      const isImage = /\.(png|jpe?g|gif|webp)$/i.test(filename);
+                      const isAudio = /\.(mp3|wav|ogg|m4a)$/i.test(filename);
+
+                      if (isImage) {
+                        return <img src={url} alt={filename} style={{ maxWidth: 220, borderRadius: 8, display: 'block' }} />;
+                      }
+                      if (isAudio) {
+                        return null; // Don't show download button for audio files
+                      }
+                      return (
+                        <a href={url} target="_blank" rel="noopener noreferrer" className='btn ghost'>
+                          Download {filename || 'file'}
+                        </a>
+                      );
+                    })()}
+                  </div>
+                  <MessageFooter message={m} selected={selected} user={user} />
+                </div>
+                {getSenderType(m) === 'user' && (
+                  <div className="chat-message-actions">
+                    <button onClick={() => setReplyingTo(m)} title="Reply">
+                      <FontAwesomeIcon icon={faReply} />
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Render attachment as separate bubble if message has both text and attachment */}
+              {m.text && m.attachment && (() => {
+                const filename = m.attachment.filename || '';
+                const isAudio = /\.(mp3|wav|ogg|m4a)$/i.test(filename);
+
+                // Don't render separate bubble for audio files (already shown with mic icon)
+                if (isAudio) {
+                  return null;
+                }
+
+                return (
+                  <div className={`chat-message-wrapper ${getSenderType(m)}`} ref={index === messages.length - 1 ? endRef : null}>
+                    <div className="chat-message-content">
+                      <div className="chat-message-bubble">
+                        {(() => {
+                          const url = m.attachment.url?.startsWith('http') ? m.attachment.url : `${api.defaults.baseURL}${m.attachment.url || ''}`;
+                          const isImage = /\.(png|jpe?g|gif|webp)$/i.test(filename);
+                          if (isImage) {
+                            return <img src={url} alt={filename} style={{ maxWidth: 220, borderRadius: 8, display: 'block' }} />;
+                          }
+                          return (
+                            <a href={url} target="_blank" rel="noopener noreferrer" className='btn ghost'>
+                              Download {filename || 'file'}
+                            </a>
+                          );
+                        })()}
+                      </div>
+                      <MessageFooter message={m} selected={selected} user={user} />
+                    </div>
+                  </div>
+                );
+              })()}
+            </React.Fragment>
+          ))}
       </div>
 
       {/* Input */}
