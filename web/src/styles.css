@@ -58,6 +58,11 @@
     --chat-bubble-user-bg: var(--lp-slate-100);
     --chat-bubble-ai-bg: white;
     --chat-bubble-human-bg: var(--lp-blue-100);
+    --chat-bubble-human-bg: var(--lp-blue-100);
+}
+
+html {
+    scroll-behavior: smooth;
 }
 
 body {
