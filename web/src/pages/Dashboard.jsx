@@ -355,9 +355,7 @@ function Inbox() {
             />
           ) : (
             <div className='empty-chat-panel'>
-              <div className='empty-icon'>💬</div>
-              <h3>Select a conversation</h3>
-              <p>Choose a chat from the list to start messaging</p>
+              <QuickActions />
             </div>
           )}
         </div>
