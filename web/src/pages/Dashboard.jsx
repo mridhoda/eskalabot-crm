@@ -219,7 +219,7 @@ function Inbox() {
 
   return (
     <>
-      <div className='inbox-modern-container' style={{ height: panelHeight }}>
+      <div className='inbox-modern-container' style={{ height: panelHeight, gridTemplateColumns: selected ? '280px 1fr 300px' : '280px 1fr' }}>
         {/* LEFT COLUMN: Chat List */}
         <div className='inbox-modern-sidebar'>
           <div className='inbox-modern-header'>
@@ -361,18 +361,14 @@ function Inbox() {
         </div>
 
         {/* RIGHT COLUMN: Contact Info */}
-        <div className='inbox-modern-details'>
-          {selected ? (
+        {selected && (
+          <div className='inbox-modern-details'>
             <ContactPanel
               selected={selected}
               onUpdate={handleContactUpdate}
             />
-          ) : (
-            <div className='empty-details-panel'>
-              <p>Contact details will appear here</p>
-            </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
 
       {showFilterPopup && (

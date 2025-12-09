@@ -31,7 +31,7 @@ export default function QuickActions() {
   ]
   return (
     <div className='quick-container'>
-      <h2>Selamat datang kembali di Cokat AI!</h2>
+      <h2>Selamat datang kembali di KALIS AI!</h2>
       <div className='quick'>
         {items.map((item) => (
           <div key={item.href + item.title} className='card' onClick={() => nav(item.href)}>
