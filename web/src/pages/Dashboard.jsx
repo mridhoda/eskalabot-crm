@@ -1265,6 +1265,7 @@ function AgentDetail() {
   const [followUps, setFollowUps] = useState([])
   const [database, setDatabase] = useState([])
   const [complaintFields, setComplaintFields] = useState([]) // Dynamic complaint fields
+  const [complaintNotification, setComplaintNotification] = useState({ enabled: false, platformId: '', destination: '' })
   const [knowledgeTab, setKnowledgeTab] = useState('url')
   const [localDatabase, setLocalDatabase] = useState([])
   const [dbUploadStatus, setDbUploadStatus] = useState({
@@ -1391,6 +1392,7 @@ function AgentDetail() {
         setFollowUps(Array.isArray(a.data.followUps) ? a.data.followUps : [])
         setDatabase(Array.isArray(a.data.database) ? a.data.database : [])
         setComplaintFields(Array.isArray(a.data.complaintFields) ? a.data.complaintFields : [])
+        setComplaintNotification(a.data.complaintNotification || { enabled: false, platformId: '', destination: '' })
         setPlatforms(p.data)
       } catch (error) {
         console.error('Error fetching agent data:', error)
@@ -1415,6 +1417,7 @@ function AgentDetail() {
         followUps,
         database,
         complaintFields,
+        complaintNotification,
       }
       const r = await api.put(`/agents/${id}`, payload)
       setAgent(r.data)
@@ -2327,6 +2330,50 @@ function AgentDetail() {
                   ))}
                   <button className='btn ghost' onClick={() => setComplaintFields([...complaintFields, ''])}>+ Add Field</button>
                 </div>
+
+                <hr style={{ margin: '24px 0', borderTop: '1px solid var(--border)' }} />
+
+                <h3>Complaint Notifications</h3>
+                <p className="muted">Automatically forward complaints to a manager or specific account.</p>
+
+                <div className='row' style={{ alignItems: 'center', gap: 8, marginBottom: 16 }}>
+                  <input
+                    type='checkbox'
+                    checked={complaintNotification.enabled}
+                    onChange={(e) => setComplaintNotification({ ...complaintNotification, enabled: e.target.checked })}
+                  />
+                  <span onClick={() => setComplaintNotification({ ...complaintNotification, enabled: !complaintNotification.enabled })} style={{ cursor: 'pointer' }}>Enable Notifications</span>
+                </div>
+
+                {complaintNotification.enabled && (
+                  <div className='col' style={{ gap: 16 }}>
+                    <div className='col'>
+                      <div className='muted'>Notification Platform</div>
+                      <select
+                        className='input'
+                        value={complaintNotification.platformId || ''}
+                        onChange={(e) => setComplaintNotification({ ...complaintNotification, platformId: e.target.value })}
+                      >
+                        <option value="">Select Platform</option>
+                        {platforms.map(p => (
+                          <option key={p._id} value={p._id}>{p.name} ({p.type})</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className='col'>
+                      <div className='muted'>Destination (Phone Number or Chat ID)</div>
+                      <input
+                        className='input'
+                        placeholder="e.g. 628123456789 (WA) or 123456789 (Telegram ID)"
+                        value={complaintNotification.destination || ''}
+                        onChange={(e) => setComplaintNotification({ ...complaintNotification, destination: e.target.value })}
+                      />
+                      <p className="muted" style={{ fontSize: '0.8em', marginTop: 4 }}>
+                        Ensure the destination is valid for the selected platform. For WhatsApp, use the country code (e.g., 62...).
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           )}

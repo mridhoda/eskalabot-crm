@@ -7,6 +7,8 @@ import Chat from '../models/Chat.js';
 import Contact from '../models/Contact.js';
 import Knowledge from '../models/Knowledge.js';
 import Complaint from '../models/Complaint.js';
+import Platform from '../models/Platform.js';
+import { tgSend, waSend } from './sender.js';
 
 // Helper to get MIME type from filename
 function getMimeType(filename = '') {
@@ -251,8 +253,29 @@ export async function generateAIReply({ system, prompt, message, knowledge, agen
                 platformType: chat.platformType,
                 text: complaintData.text || 'No description provided',
                 formData: complaintData.formData || {}, // Capture dynamic form data
+                formData: complaintData.formData || {}, // Capture dynamic form data
                 status: 'open'
               });
+
+              // Notification Logic
+              if (agent.complaintNotification && agent.complaintNotification.enabled && agent.complaintNotification.platformId && agent.complaintNotification.destination) {
+                try {
+                  const notificationPlatform = await Platform.findById(agent.complaintNotification.platformId);
+                  if (notificationPlatform) {
+                    const notifText = `⚠️ *New Complaint Received*\n\n*Agent:* ${agent.name}\n*Platform:* ${chat.platformType}\n*Issue:* ${complaintData.text || '-'}\n*Contact:* ${complaintData.contactName || chat.contactId?.name || '-'}\n*Phone/ID:* ${complaintData.contactPhone || chat.contactId?.phone || '-'}\n\n*Details:* \n${JSON.stringify(complaintData.formData || {}, null, 2)}`;
+
+                    console.log(`[AI] Sending complaint notification to ${notificationPlatform.type} (${agent.complaintNotification.destination})`);
+
+                    if (notificationPlatform.type === 'telegram') {
+                      await tgSend(notificationPlatform.token, agent.complaintNotification.destination, notifText);
+                    } else if (notificationPlatform.type === 'whatsapp') {
+                      await waSend(notificationPlatform.token, notificationPlatform.phoneNumberId, agent.complaintNotification.destination, notifText);
+                    }
+                  }
+                } catch (notifWarn) {
+                  console.error('[AI] Failed to send complaint notification:', notifWarn);
+                }
+              }
 
               // Remove the JSON command from the reply shown to user, keep the rest
               // We construct the exact string we want to remove: "FILE_COMPLAINT_JSON:" + any whitespace + jsonString

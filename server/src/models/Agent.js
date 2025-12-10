@@ -34,6 +34,11 @@ const AgentSchema = new mongoose.Schema({
   followUps: [FollowUpSchema],
   database: [DatabaseFileSchema],
   complaintFields: [{ type: String }], // List of custom fields for complaints
+  complaintNotification: {
+    enabled: { type: Boolean, default: false },
+    platformId: { type: mongoose.Schema.Types.ObjectId, ref: 'Platform' },
+    destination: { type: String }, // Phone number or Chat ID
+  },
 }, { timestamps: true });
 
 export default mongoose.model('Agent', AgentSchema);
