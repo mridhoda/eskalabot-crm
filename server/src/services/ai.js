@@ -97,8 +97,8 @@ export async function generateAIReply({ system, prompt, message, knowledge, agen
         const model = geminiClient.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
         const complaintInstruction = (agent.complaintFields && agent.complaintFields.length > 0)
-          ? `\n        4. If the user is making a COMPLAINT, you must collect the following information: ${agent.complaintFields.join(', ')}. Ask for them one by one if not provided. When ALL information is gathered, reply with "FILE_COMPLAINT_JSON:" followed by JSON with "text" (summary) and "formData" (object with captured fields: {${agent.complaintFields.map(f => `"${f}": "..."`).join(', ')}}).`
-          : `\n        4. If the user is making a COMPLAINT and has provided necessary details (issue, name, contact info), you MUST reply with "FILE_COMPLAINT_JSON:" followed by a valid JSON object with fields: "text" (the complaint issue), "contactName" (user's name), "contactPhone" (user's phone/email). Example: FILE_COMPLAINT_JSON: {"text": "Drink was bad", "contactName": "John", "contactPhone": "08123"}`;
+          ? `\n        4. If the user is making a COMPLAINT, you must collect the following information: ${agent.complaintFields.join(', ')}. Ask for them one by one if not provided. When ALL information is gathered, reply with "FILE_COMPLAINT_JSON:" followed by JSON with "text" (summary) and "formData" (object with captured fields: {${agent.complaintFields.map(f => `"${f}": "..."`).join(', ')}}). After the JSON, add a polite confirmation message to the user on a new line.`
+          : `\n        4. If the user is making a COMPLAINT and has provided necessary details (issue, name, contact info), you MUST reply with "FILE_COMPLAINT_JSON:" followed by a valid JSON object with fields: "text" (the complaint issue), "contactName" (user's name), "contactPhone" (user's phone/email). Example: FILE_COMPLAINT_JSON: {"text": "Drink was bad", "contactName": "John", "contactPhone": "08123"} After the JSON, add a polite confirmation message to the user on a new line.`;
 
         const escalationInstruction = `
         IMPORTANT: You are a smart assistant.
@@ -268,6 +268,11 @@ export async function generateAIReply({ system, prompt, message, knowledge, agen
               // Fallback if regex fails (e.g. slight mismatch in whitespace), just remove the known parts manually
               if (reply.includes('FILE_COMPLAINT_JSON:')) {
                 reply = reply.replace('FILE_COMPLAINT_JSON:', '').replace(jsonString, '').trim();
+              }
+
+              // Ensure we have a reply text. If AI returned only JSON, add a default confirmation.
+              if (!reply) {
+                reply = "Terima kasih, laporan keluhan Anda telah kami catat dan akan segera kami tindak lanjuti.";
               }
 
             }
