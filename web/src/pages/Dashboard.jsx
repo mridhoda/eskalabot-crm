@@ -2337,11 +2337,14 @@ function AgentDetail() {
                 <p className="muted">Automatically forward complaints to a manager or specific account.</p>
 
                 <div className='row' style={{ alignItems: 'center', gap: 8, marginBottom: 16 }}>
-                  <input
-                    type='checkbox'
-                    checked={complaintNotification.enabled}
-                    onChange={(e) => setComplaintNotification({ ...complaintNotification, enabled: e.target.checked })}
-                  />
+                  <label className="switch">
+                    <input
+                      type='checkbox'
+                      checked={complaintNotification.enabled}
+                      onChange={(e) => setComplaintNotification({ ...complaintNotification, enabled: e.target.checked })}
+                    />
+                    <span className="slider"></span>
+                  </label>
                   <span onClick={() => setComplaintNotification({ ...complaintNotification, enabled: !complaintNotification.enabled })} style={{ cursor: 'pointer' }}>Enable Notifications</span>
                 </div>
 
