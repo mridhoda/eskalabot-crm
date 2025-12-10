@@ -93,7 +93,14 @@ export default function Complaints() {
                                         <div style={{ fontSize: '0.8em', color: '#64748b' }}>{c.contactId?.phone || c.contactId?.email || ''}</div>
                                     </td>
                                     <td style={{ padding: '12px 16px', maxWidth: '300px', color: '#334155' }}>
-                                        {c.text}
+                                        <div>{c.text}</div>
+                                        {c.formData && Object.keys(c.formData).length > 0 && (
+                                            <div style={{ marginTop: 8, fontSize: '0.9em', color: '#64748b', background: '#f8fafc', padding: 8, borderRadius: 4 }}>
+                                                {Object.entries(c.formData).map(([k, v]) => (
+                                                    <div key={k}><strong>{k}:</strong> {v}</div>
+                                                ))}
+                                            </div>
+                                        )}
                                     </td>
                                     <td style={{ padding: '12px 16px', textTransform: 'capitalize', color: '#334155' }}>
                                         {c.platformType || '-'}

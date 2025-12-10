@@ -33,6 +33,7 @@ const AgentSchema = new mongoose.Schema({
   knowledge: [KnowledgeSchema],
   followUps: [FollowUpSchema],
   database: [DatabaseFileSchema],
+  complaintFields: [{ type: String }], // List of custom fields for complaints
 }, { timestamps: true });
 
 export default mongoose.model('Agent', AgentSchema);

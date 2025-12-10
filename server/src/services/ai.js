@@ -96,13 +96,15 @@ export async function generateAIReply({ system, prompt, message, knowledge, agen
       try {
         const model = geminiClient.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
+        const complaintInstruction = (agent.complaintFields && agent.complaintFields.length > 0)
+          ? `\n        4. If the user is making a COMPLAINT, you must collect the following information: ${agent.complaintFields.join(', ')}. Ask for them one by one if not provided. When ALL information is gathered, reply with "FILE_COMPLAINT_JSON:" followed by JSON with "text" (summary) and "formData" (object with captured fields: {${agent.complaintFields.map(f => `"${f}": "..."`).join(', ')}}).`
+          : `\n        4. If the user is making a COMPLAINT and has provided necessary details (issue, name, contact info), you MUST reply with "FILE_COMPLAINT_JSON:" followed by a valid JSON object with fields: "text" (the complaint issue), "contactName" (user's name), "contactPhone" (user's phone/email). Example: FILE_COMPLAINT_JSON: {"text": "Drink was bad", "contactName": "John", "contactPhone": "08123"}`;
+
         const escalationInstruction = `
         IMPORTANT: You are a smart assistant.
         1. If the user EXPLICITLY asks to speak with a human agent, customer service, admin, or a real person (e.g., "bisa bicara dengan orang?", "mana adminnya?", "hubungkan ke CS"), you MUST reply with exactly: "ESCALATE_TO_HUMAN".
         2. If the user just says "halo", "hi", "selamat pagi", or asks general questions, DO NOT escalate. Answer them politely.
-        3. If the user asks a specific question about the business/product that is NOT in your knowledge base, you MAY escalate by replying "ESCALATE_TO_HUMAN", but try to be helpful first if possible.
-        4. If the user is making a COMPLAINT and has provided necessary details (issue, name, contact info), you MUST reply with "FILE_COMPLAINT_JSON:" followed by a valid JSON object with fields: "text" (the complaint issue), "contactName" (user's name), "contactPhone" (user's phone/email). Example: FILE_COMPLAINT_JSON: {"text": "Drink was bad", "contactName": "John", "contactPhone": "08123"}
-           After the JSON, add a polite confirmation message to the user on a new line.
+        3. If the user asks a specific question about the business/product that is NOT in your knowledge base, you MAY escalate by replying "ESCALATE_TO_HUMAN", but try to be helpful first if possible.${complaintInstruction}
         5. Do not add any other text if you decide to escalate.
         `;
 
@@ -223,9 +225,23 @@ export async function generateAIReply({ system, prompt, message, knowledge, agen
             const jsonStr = lines[0]; // Assuming JSON is on one line or we can regex extract it
 
             // Robust extraction if JSON spans lines or is embedded
-            const jsonMatch = jsonPart.match(/\{[\s\S]*?\}/);
-            if (jsonMatch) {
-              const complaintData = JSON.parse(jsonMatch[0]);
+            let jsonString = '';
+            const startIndex = jsonPart.indexOf('{');
+            if (startIndex !== -1) {
+              let braceCount = 0;
+              for (let i = startIndex; i < jsonPart.length; i++) {
+                if (jsonPart[i] === '{') braceCount++;
+                else if (jsonPart[i] === '}') braceCount--;
+
+                if (braceCount === 0) {
+                  jsonString = jsonPart.substring(startIndex, i + 1);
+                  break;
+                }
+              }
+            }
+
+            if (jsonString) {
+              const complaintData = JSON.parse(jsonString);
               console.log('[AI] Filing Complaint:', complaintData);
 
               await Complaint.create({
@@ -234,17 +250,32 @@ export async function generateAIReply({ system, prompt, message, knowledge, agen
                 agentId: agent._id,
                 platformType: chat.platformType,
                 text: complaintData.text || 'No description provided',
+                formData: complaintData.formData || {}, // Capture dynamic form data
                 status: 'open'
               });
 
               // Remove the JSON command from the reply shown to user, keep the rest
-              reply = reply.replace(/FILE_COMPLAINT_JSON:[\s\S]*?\}/, '').trim();
+              // We construct the exact string we want to remove: "FILE_COMPLAINT_JSON:" + any whitespace + jsonString
+              // However, since we split by FILE_COMPLAINT_JSON:, we can just remove everything involving it.
+              // The safest way is to remove "FILE_COMPLAINT_JSON:" and the jsonString.
+
+              // Let's rely on the fact that we know exactly what `jsonString` is.
+              // But there might be characters between FILE_COMPLAINT_JSON: and the start of jsonString (like space or newline)
+
+              const fullCommandRegex = new RegExp(`FILE_COMPLAINT_JSON:\\s*${jsonString.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`);
+              reply = reply.replace(fullCommandRegex, '').trim();
+
+              // Fallback if regex fails (e.g. slight mismatch in whitespace), just remove the known parts manually
+              if (reply.includes('FILE_COMPLAINT_JSON:')) {
+                reply = reply.replace('FILE_COMPLAINT_JSON:', '').replace(jsonString, '').trim();
+              }
+
             }
           } catch (err) {
             console.error('[AI] Failed to parse complaint JSON:', err);
-            // If parsing fails, we still want to show the text part if possible, or just fail gracefully
-            // Clean up the command so user doesn't see it
-            reply = reply.replace(/FILE_COMPLAINT_JSON:[\s\S]*?\}/, '').trim();
+            // Parsing failed, try to hide the command anyway using robust regex for "balanced braces" is hard in regex.
+            // Best effort: hide the line containing FILE_COMPLAINT_JSON
+            reply = reply.replace(/FILE_COMPLAINT_JSON:.*(\n|$)/, '').trim();
           }
         }
 

@@ -1264,6 +1264,7 @@ function AgentDetail() {
   const [knowledge, setKnowledge] = useState([])
   const [followUps, setFollowUps] = useState([])
   const [database, setDatabase] = useState([])
+  const [complaintFields, setComplaintFields] = useState([]) // Dynamic complaint fields
   const [knowledgeTab, setKnowledgeTab] = useState('url')
   const [localDatabase, setLocalDatabase] = useState([])
   const [dbUploadStatus, setDbUploadStatus] = useState({
@@ -1389,6 +1390,7 @@ function AgentDetail() {
         setKnowledge(Array.isArray(a.data.knowledge) ? a.data.knowledge : [])
         setFollowUps(Array.isArray(a.data.followUps) ? a.data.followUps : [])
         setDatabase(Array.isArray(a.data.database) ? a.data.database : [])
+        setComplaintFields(Array.isArray(a.data.complaintFields) ? a.data.complaintFields : [])
         setPlatforms(p.data)
       } catch (error) {
         console.error('Error fetching agent data:', error)
@@ -1412,6 +1414,7 @@ function AgentDetail() {
         knowledge,
         followUps,
         database,
+        complaintFields,
       }
       const r = await api.put(`/agents/${id}`, payload)
       setAgent(r.data)
@@ -1706,6 +1709,7 @@ function AgentDetail() {
           'evaluation',
 
           'database',
+          'complaints',
 
         ].map((t) => (
 
@@ -2293,6 +2297,39 @@ function AgentDetail() {
           )}
 
 
+
+
+          {tab === 'complaints' && (
+            <div className='col'>
+              <div className='card'>
+                <h3>Complaint Form Configuration</h3>
+                <p className="muted">Define the specific fields or questions the AI should ask when a user wants to file a complaint. The AI will collect this information before filing the report.</p>
+
+                <div className='col' style={{ gap: 8, marginTop: 16 }}>
+                  {complaintFields.map((field, i) => (
+                    <div key={i} className='row' style={{ gap: 8 }}>
+                      <input
+                        className='input'
+                        value={field}
+                        onChange={(e) => {
+                          const next = [...complaintFields];
+                          next[i] = e.target.value;
+                          setComplaintFields(next);
+                        }}
+                        placeholder="e.g. Nama Lengkap"
+                      />
+                      <button className='btn ghost' onClick={() => {
+                        const next = [...complaintFields];
+                        next.splice(i, 1);
+                        setComplaintFields(next);
+                      }}>🗑️</button>
+                    </div>
+                  ))}
+                  <button className='btn ghost' onClick={() => setComplaintFields([...complaintFields, ''])}>+ Add Field</button>
+                </div>
+              </div>
+            </div>
+          )}
 
           {tab === 'integrations' && (
             <div className='col'>
