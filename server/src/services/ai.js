@@ -6,6 +6,7 @@ import { openaiClient, geminiClient } from './aiClient.js';
 import Chat from '../models/Chat.js';
 import Contact from '../models/Contact.js';
 import Knowledge from '../models/Knowledge.js';
+import Complaint from '../models/Complaint.js';
 
 // Helper to get MIME type from filename
 function getMimeType(filename = '') {
@@ -100,7 +101,9 @@ export async function generateAIReply({ system, prompt, message, knowledge, agen
         1. If the user EXPLICITLY asks to speak with a human agent, customer service, admin, or a real person (e.g., "bisa bicara dengan orang?", "mana adminnya?", "hubungkan ke CS"), you MUST reply with exactly: "ESCALATE_TO_HUMAN".
         2. If the user just says "halo", "hi", "selamat pagi", or asks general questions, DO NOT escalate. Answer them politely.
         3. If the user asks a specific question about the business/product that is NOT in your knowledge base, you MAY escalate by replying "ESCALATE_TO_HUMAN", but try to be helpful first if possible.
-        4. Do not add any other text if you decide to escalate.
+        4. If the user is making a COMPLAINT and has provided necessary details (issue, name, contact info), you MUST reply with "FILE_COMPLAINT_JSON:" followed by a valid JSON object with fields: "text" (the complaint issue), "contactName" (user's name), "contactPhone" (user's phone/email). Example: FILE_COMPLAINT_JSON: {"text": "Drink was bad", "contactName": "John", "contactPhone": "08123"}
+           After the JSON, add a polite confirmation message to the user on a new line.
+        5. Do not add any other text if you decide to escalate.
         `;
 
         let systemInstruction = (system || 'You are a helpful assistant.') + contactName + escalationInstruction;
@@ -121,7 +124,7 @@ export async function generateAIReply({ system, prompt, message, knowledge, agen
           });
           systemInstruction += `\\n\\n[System Tool: Time]\\nCurrent Time (WITA): ${formattedTime}\\nTimezone: WITA = UTC+8 (Kalimantan Timur)\\nYou have access to the current time. Always use WITA timezone.`;
         }
-      
+
         const geminiHistory = [
           { role: 'user', parts: [{ text: systemInstruction }] },
           { role: 'model', parts: [{ text: 'Baik, saya mengerti.' }] },
@@ -182,7 +185,7 @@ export async function generateAIReply({ system, prompt, message, knowledge, agen
           second: '2-digit',
           hour12: false
         });
-        
+
         const promptText = `${prompt || ''}\n\nKnowledge:\n${knowledgeContent}\n\n[CURRENT TIME RIGHT NOW: ${currentTime} WITA - This is the ACTUAL real-time clock for THIS message. Do NOT use time from previous messages.]\n\nUser: ${currentMessageText}`;
         const promptParts = [{ text: promptText }];
 
@@ -206,6 +209,44 @@ export async function generateAIReply({ system, prompt, message, knowledge, agen
         const result = await chatSession.sendMessage(promptParts);
         reply = result.response.text();
         console.log('Gemini AI reply:', reply);
+
+
+        // Check for complaint filing
+        if (reply.includes('FILE_COMPLAINT_JSON:')) {
+          try {
+            const jsonPart = reply.split('FILE_COMPLAINT_JSON:')[1].trim();
+            // Extract JSON until the end of the line or structure (in case there is text after)
+            // Simple approach: try to parse the first line that looks like JSON or just parse the chunk
+            // We'll rely on our prompt asking for JSON followed by newline text.
+            // Let's split by newline to separate JSON from user message
+            const lines = jsonPart.split('\n');
+            const jsonStr = lines[0]; // Assuming JSON is on one line or we can regex extract it
+
+            // Robust extraction if JSON spans lines or is embedded
+            const jsonMatch = jsonPart.match(/\{[\s\S]*?\}/);
+            if (jsonMatch) {
+              const complaintData = JSON.parse(jsonMatch[0]);
+              console.log('[AI] Filing Complaint:', complaintData);
+
+              await Complaint.create({
+                chatId: chat._id,
+                contactId: chat.contactId,
+                agentId: agent._id,
+                platformType: chat.platformType,
+                text: complaintData.text || 'No description provided',
+                status: 'open'
+              });
+
+              // Remove the JSON command from the reply shown to user, keep the rest
+              reply = reply.replace(/FILE_COMPLAINT_JSON:[\s\S]*?\}/, '').trim();
+            }
+          } catch (err) {
+            console.error('[AI] Failed to parse complaint JSON:', err);
+            // If parsing fails, we still want to show the text part if possible, or just fail gracefully
+            // Clean up the command so user doesn't see it
+            reply = reply.replace(/FILE_COMPLAINT_JSON:[\s\S]*?\}/, '').trim();
+          }
+        }
 
         // Check for escalation
         if (reply.includes('ESCALATE_TO_HUMAN')) {
@@ -321,18 +362,18 @@ export async function transcribeAudio(filePath) {
   if (!geminiClient) {
     throw new Error('Gemini client not available for transcription');
   }
-  
+
   try {
     const filename = path.basename(filePath);
     const mimeType = getMimeType(filename);
     const data = await fs.readFile(filePath, 'base64');
-    
+
     const model = geminiClient.getGenerativeModel({ model: 'gemini-2.5-flash' });
     const result = await model.generateContent([
       { text: 'Please transcribe this audio file. Only return the transcribed text, nothing else.' },
       { inlineData: { mimeType, data } }
     ]);
-    
+
     const transcription = result.response.text();
     console.log('[AI] Audio transcription successful:', transcription.substring(0, 100));
     return transcription;

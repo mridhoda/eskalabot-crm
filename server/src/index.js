@@ -15,6 +15,7 @@ import billingRoutes from './routes/billing.js';
 import profileRoutes from './routes/profile.js';
 import contactRoutes from './routes/contacts.js';
 import integrationsRoutes from './routes/integrations.js';
+import complaintRoutes from './routes/complaints.js';
 import './services/followups.js';
 
 
@@ -61,6 +62,7 @@ mongoose.connect(MONGODB_URI).then(() => {
   app.use('/profile', profileRoutes);
   app.use('/contacts', contactRoutes);
   app.use('/integrations', integrationsRoutes);
+  app.use('/complaints', complaintRoutes);
 
   // global error handler
   app.use((err, req, res, next) => {

@@ -9,6 +9,7 @@ import BrandIcon from '../components/BrandIcon'
 import ContactPanel from '../components/ContactPanel'
 import FilterPopup from '../components/FilterPopup'
 import Platforms from './Platforms'
+import Complaints from './Complaints'
 import * as XLSX from 'xlsx'
 import { Line, Pie, Bar } from 'react-chartjs-2'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
@@ -2937,6 +2938,7 @@ export default function Dashboard() {
             <Route index element={<Inbox />} />
             <Route path='analytics' element={<AnalyticsPage />} />
             <Route path='contacts' element={<Contacts />} />
+            <Route path='complaints' element={<Complaints />} />
             <Route path='platforms' element={<Platforms />} />
             <Route path='agents' element={<Agents />} />
             <Route path='/agents/:id' element={<Navigate to='general' replace />} />

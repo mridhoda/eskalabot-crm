@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import api from '../api';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPlus, faPaperPlane, faSync, faUserShield, faCheckCircle, faRobot, faSmile, faImage, faReply, faTimes, faMicrophone } from '@fortawesome/free-solid-svg-icons';
+import { faPlus, faPaperPlane, faSync, faUserShield, faCheckCircle, faRobot, faSmile, faImage, faReply, faTimes, faMicrophone, faExclamationCircle } from '@fortawesome/free-solid-svg-icons';
 import { faWhatsapp, faTelegram, faInstagram, faFacebook } from '@fortawesome/free-brands-svg-icons';
 import EmojiPicker from 'emoji-picker-react';
 
@@ -169,6 +169,26 @@ export default function ChatPanel({ selected, reload, onChatUpdate, replyingTo, 
     }
   };
 
+  const reportComplaint = async () => {
+    if (!selectedId) return;
+    const issue = prompt('Please describe the complaint issue:');
+    if (!issue) return;
+
+    try {
+      await api.post('/complaints', {
+        chatId: selectedId,
+        contactId: selected.contactId?._id,
+        platformType: selected.platformType,
+        text: issue,
+        agentId: selected.agentId?._id
+      });
+      alert('Complaint recorded successfully');
+    } catch (err) {
+      console.error(err);
+      alert('Failed to record complaint');
+    }
+  };
+
   const resolve = async () => {
     if (!selectedId) return;
     setIsSubmitting(true);
@@ -317,6 +337,10 @@ export default function ChatPanel({ selected, reload, onChatUpdate, replyingTo, 
               <span>Resolve Chat</span>
             </button>
           )}
+          <button className="chat-resolve-btn" onClick={reportComplaint} style={{ marginLeft: 8, backgroundColor: '#fee2e2', color: '#991b1b', borderColor: '#fecaca' }} title="Report Complaint">
+            <FontAwesomeIcon icon={faExclamationCircle} />
+            <span>Complaint</span>
+          </button>
         </div>
         <div className="chat-search-bar" style={{ padding: '10px 15px', display: 'flex', alignItems: 'center', gap: '10px' }}>
           <div style={{ flex: 1 }}>
