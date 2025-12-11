@@ -39,6 +39,12 @@ const AgentSchema = new mongoose.Schema({
     platformId: { type: mongoose.Schema.Types.ObjectId, ref: 'Platform' },
     destination: { type: String }, // Phone number or Chat ID
   },
+  salesForms: [{
+    name: { type: String, required: true },
+    triggerKeywords: [{ type: String }],
+    fields: [{ type: String }],
+    isActive: { type: Boolean, default: true }
+  }],
 }, { timestamps: true });
 
 export default mongoose.model('Agent', AgentSchema);

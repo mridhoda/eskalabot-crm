@@ -98,6 +98,25 @@ export async function generateAIReply({ system, prompt, message, knowledge, agen
       try {
         const model = geminiClient.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
+        // --- Sales Form Logic ---
+        if (agent.salesForms && agent.salesForms.length > 0) {
+          const salesInstructions = agent.salesForms
+            .filter(f => f.isActive)
+            .map(f => {
+              return `
+              - **Sales Form "${f.name}"**:
+                - Trigger when user says keywords like: ${f.triggerKeywords.join(', ')}.
+                - You must collect these fields: ${f.fields.join(', ')}.
+                - Ask for them one by one.
+                - When ALL info is gathered, reply with "FILE_ORDER_JSON:" followed by JSON with "formName", "formData" (fields captured), "contactName", "contactPhone".
+              `;
+            }).join('\n');
+
+          if (salesInstructions) {
+            system = (system || '') + `\n\n### Sales Instructions\nYou can take orders. ${salesInstructions}`;
+          }
+        }
+
         const complaintInstruction = (agent.complaintFields && agent.complaintFields.length > 0)
           ? `\n        4. If the user is making a COMPLAINT, you must collect the following information: ${agent.complaintFields.join(', ')}. Ask for them one by one if not provided. When ALL information is gathered, reply with "FILE_COMPLAINT_JSON:" followed by JSON with "text" (summary) and "formData" (object with captured fields: {${agent.complaintFields.map(f => `"${f}": "..."`).join(', ')}}). After the JSON, add a polite confirmation message to the user on a new line.`
           : `\n        4. If the user is making a COMPLAINT and has provided necessary details (issue, name, contact info), you MUST reply with "FILE_COMPLAINT_JSON:" followed by a valid JSON object with fields: "text" (the complaint issue), "contactName" (user's name), "contactPhone" (user's phone/email). Example: FILE_COMPLAINT_JSON: {"text": "Drink was bad", "contactName": "John", "contactPhone": "08123"} After the JSON, add a polite confirmation message to the user on a new line.`;
@@ -214,6 +233,52 @@ export async function generateAIReply({ system, prompt, message, knowledge, agen
         reply = result.response.text();
         console.log('Gemini AI reply:', reply);
 
+        // Check for order filing
+        if (reply.includes('FILE_ORDER_JSON:')) {
+          try {
+            const jsonPart = reply.split('FILE_ORDER_JSON:')[1].trim();
+            let jsonString = '';
+            const startIndex = jsonPart.indexOf('{');
+            if (startIndex !== -1) {
+              let braceCount = 0;
+              for (let i = startIndex; i < jsonPart.length; i++) {
+                if (jsonPart[i] === '{') braceCount++;
+                else if (jsonPart[i] === '}') braceCount--;
+                if (braceCount === 0) {
+                  jsonString = jsonPart.substring(startIndex, i + 1);
+                  break;
+                }
+              }
+            }
+
+            if (jsonString) {
+              const orderData = JSON.parse(jsonString);
+              console.log('[AI] Filing Order:', orderData);
+
+              // Dynamic import to avoid circular dependency issues if any, or just standard import usage
+              const Order = (await import('../models/Order.js')).default;
+
+              await Order.create({
+                chatId: chat._id,
+                contactId: chat.contactId,
+                agentId: agent._id,
+                formName: orderData.formName || 'General Order',
+                formData: orderData.formData || {},
+                status: 'new'
+              });
+
+              const fullCommandRegex = new RegExp(`FILE_ORDER_JSON:\\s*${jsonString.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`);
+              reply = reply.replace(fullCommandRegex, '').trim();
+              if (reply.includes('FILE_ORDER_JSON:')) {
+                reply = reply.replace('FILE_ORDER_JSON:', '').replace(jsonString, '').trim();
+              }
+              if (!reply) reply = "Terima kasih, pesanan Anda telah kami terima.";
+            }
+          } catch (err) {
+            console.error('[AI] Failed to parse order JSON:', err);
+            reply = reply.replace(/FILE_ORDER_JSON:.*(\n|$)/, '').trim();
+          }
+        }
 
         // Check for complaint filing
         if (reply.includes('FILE_COMPLAINT_JSON:')) {

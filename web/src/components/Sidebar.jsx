@@ -7,6 +7,7 @@ import {
   faUserTie,
   faCog,
   faExclamationCircle,
+  faShoppingCart,
 } from '@fortawesome/free-solid-svg-icons'
 import {
   faComment,
@@ -26,6 +27,7 @@ const topItems = [
   [faRobot, 'AI Agents', '/app/agents'],
   [faUserTie, 'Human Agents', '/app/humans'],
   [faExclamationCircle, 'Complaints', '/app/complaints'],
+  [faShoppingCart, 'Orders', '/app/orders'],
 ]
 
 const bottomItems = [
